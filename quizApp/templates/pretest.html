@@ -1,0 +1,55 @@
+{% include 'header.html' %}
+
+<div id='index' class='index wrapper container'>
+    <header id='main-search' class='container'>
+      <div class='page-header row'>
+        <div class='col-xs-12 col-sm-12 col-md-12'>
+          <h3>Training and Quiz</h3>
+      </div>
+    </header>
+    <section class='container'>
+      <div class='row'>
+        <div class='col-sm-12 col-md-12'>
+          <p>Login with the id you were assigned to begin.<br>
+          A start button will appear once you have logged in.</p>
+
+        </div>
+      </div> <!-- end .row -->
+    </section>
+    <div class="container col-xs-12 col-sm-12 col-md-12">
+
+    <h2>Checkbox (multiple choice)</h2>
+
+    <div class="btn-group-vertical" data-toggle="buttons">
+      <label class="btn btn-primary">
+        <input type="checkbox"> Option 1
+      </label>
+      <label class="btn btn-primary">
+        <input type="checkbox"> Option 2
+      </label>
+      <label class="btn btn-primary">
+        <input type="checkbox"> Option 3
+      </label>
+    </div>
+
+    <h2>Radio (single choice)</h2>
+
+    <div class="btn-group-vertical" data-toggle="buttons">
+      <label class="btn btn-primary">
+        <input type="radio" name="options" id="option1"> Option 1
+      </label>
+      <label class="btn btn-primary">
+        <input type="radio" name="options" id="option2"> Option 2
+      </label>
+      <label class="btn btn-primary">
+        <input type="radio" name="options" id="option3"> Option 3
+      </label>
+    </div>
+
+  </div>
+
+  <div class='col-xs-12 col-sm-12 col-md-offset-10 col-md-12'>
+    <button id="quiz-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>
+  </div>
+
+{% include 'footer.html' %}
