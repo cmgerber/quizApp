@@ -179,6 +179,9 @@ $("#quiz-start-begin").on("click", function(e) {
       });
   });
 
+//****************
+//PRETEST
+//****************
 
 $("#pretest-start-button").on("click", function(e) {
         replace_pretest_html();
@@ -186,21 +189,96 @@ $("#pretest-start-button").on("click", function(e) {
 
 
 function replace_pretest_html() {
-  console.log('in function');
+
+  var dropdown1 ='<div id="pretest-drop1" class="btn-group form-inline">'+
+                '<button type="button" class="btn btn-primary">Graph</button>'+
+                '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'+
+                  '<span class="caret"></span>'+
+                '</button>'+
+                '<ul class="dropdown-menu" role="menu">'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop1-val">Graph 1</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop1-val">Graph 2</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop1-val">Graph 3</a></li>'+
+                '</ul>'+
+              '</div>';
+  var dropdown2 ='<div id="pretest-drop2" class="btn-group form-inline">'+
+                '<button type="button" class="btn btn-primary">Graph</button>'+
+                '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'+
+                  '<span class="caret"></span>'+
+                '</button>'+
+                '<ul class="dropdown-menu" role="menu">'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop2-val">Graph 1</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop2-val">Graph 2</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop2-val">Graph 3</a></li>'+
+                '</ul>'+
+              '</div>';
+  var dropdown3 ='<div id="pretest-drop3" class="btn-group form-inline">'+
+                '<button type="button" class="btn btn-primary">Graph</button>'+
+                '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'+
+                  '<span class="caret"></span>'+
+                '</button>'+
+                '<ul class="dropdown-menu" role="menu">'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop3-val">Graph 1</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop3-val">Graph 2</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop3-val">Graph 3</a></li>'+
+                '</ul>'+
+              '</div>';
+
     $.getJSON( $SCRIPT_ROOT + "first_question", function(d) {
         if(d.progress == 'pre_test' || d.progress == 'post_test'){
-          console.log('in if');
+          //remove start button
           $('#pretest-start-area').remove();
-          var graph1 = "{{ url_for('static', filename='graphs/" +d.graph1+ "') }}";
-          $('#graph1').empty().append('<img src='+graph1+'>'+
-                            '<p>This is a graph</p>');
-          $('#graph2').empty().append('<img src=graphs/'+d.graph2+'>'+
-                            '<p>This is a graph</p>');
-          $('#graph3').empty().append('<img src=graphs/'+d.graph3+'>'+
-                            '<p>This is a graph</p>');
+          //add the three graphs
+          $('#graph1').empty().append(d.graph1+
+                            '<p>Graph 1</p>');
+          $('#graph2').empty().append(d.graph2+
+                            '<p>Graph 2</p>');
+          $('#graph3').empty().append(d.graph3+
+                            '<p>Graph 3</p>');
+          //add the question
+          $('#pretest-question').empty().append('<h3>'+d.question+'</h3>');
+          $('#pretest-question').append('<br><p>Best Graph</p>'+dropdown1+
+                                        '<br><br><p>Second Best Graph</p>'+dropdown2+
+                                        '<br><br><p>Third Best Graph</p>'+dropdown3);
+          //add next button
+          $('#pretest-next').empty().append('<button id="pretest-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');
         }
     });
 }
+
+//pretest dropdown
+// update distance dropdown text based on selection
+$("body").delegate(".pretest-drop1-val", "click", function(e) {
+  $("#pretest-drop1 button").empty().append($(this).text() + ' <span class="caret"></span>');
+});
+
+$("body").delegate(".pretest-drop2-val", "click", function(e) {
+  $("#pretest-drop2 button").empty().append($(this).text() + ' <span class="caret"></span>');
+});
+
+$("body").delegate(".pretest-drop3-val", "click", function(e) {
+  $("#pretest-drop3 button").empty().append($(this).text() + ' <span class="caret"></span>');
+});
+
+//next button click
+$('#pretest-next').on('click', function() {
+  //get answers and write them to db
+  var best1 = $("#pretest-drop1 button").text(),
+      best2 = $("#pretest-drop2 button").text(),
+      best3 = $("#pretest-drop3 button").text(),
+      order = getParameterByName('order');
+
+  $.getJSON($SCRIPT_ROOT + "_pretest_answers", {
+    best1:best1,
+    best2:best2,
+    best3:best3,
+    order:order
+  }, function(d) {
+
+  }
+  );
+
+});
 
 
 // check login and alert or redirect as necessary

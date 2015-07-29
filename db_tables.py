@@ -25,7 +25,7 @@ Results = Table('results', metadata,
     Column('student_id', Integer, ForeignKey('students.student_id')),
     Column('student_test_id', Integer, ForeignKey('students_test.student_test_id')),
     Column('answer', String),
-    Column('correct', String),
+    Column('graph_id', Integer, ForeignKey('graphs.graph_id'))
 )
 
 Students = Table('students', metadata,

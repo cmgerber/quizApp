@@ -93,7 +93,7 @@ student_question_list = [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
 question_student_id_list = [x + 1 for x in range(30)]
 heuristic_student_id_list = [x + 1 for x in range(30,60)]
 
-def create_student_data(sid_list, test):
+def create_student_data(sid_list, test, group):
     for n, student in enumerate(student_question_list):
         student_id = sid_list[n]
         #count the order for each student per test
@@ -107,6 +107,20 @@ def create_student_data(sid_list, test):
             else:
                 graph_id = int(str(dataset)+str(graph[1]))
             if test == 'pre_test' or test == 'post_test':
+                order += 1
+                if dataset == 0:
+                    question_id = 6
+                else:
+                    question_id = int(str(dataset)+str(6))
+                #write row to db
+                conn.execute(StudentsTest.insert(), {'student_id':student_id,
+                                    'test':test,
+                                    'graph_id':graph_id,
+                                    'dataset':dataset,
+                                    'question_id':question_id,
+                                    'order':order,
+                                    'complete':'no'})
+            elif group == 'heuristic':
                 order += 1
                 if dataset == 0:
                     question_id = 4
@@ -136,6 +150,19 @@ def create_student_data(sid_list, test):
                                     'question_id':question_id,
                                     'order':order,
                                     'complete':'no'})
+            order += 1
+            if dataset == 0:
+                question_id = 5
+            else:
+                question_id = int(str(dataset)+str(5))
+            #write row to db
+            conn.execute(StudentsTest.insert(), {'student_id':student_id,
+                                'test':test,
+                                'graph_id':graph_id,
+                                'dataset':dataset,
+                                'question_id':question_id,
+                                'order':order,
+                                'complete':'no'})
 
 #check for table and if it is there clear before writing to
 if engine.dialect.has_table(engine.connect(), "students_test"):
@@ -143,8 +170,8 @@ if engine.dialect.has_table(engine.connect(), "students_test"):
 
 #create all the student_test table data
 for test in ['pre_test', 'training', 'post_test']:
-    create_student_data(question_student_id_list, test)
-    create_student_data(heuristic_student_id_list, test)
+    create_student_data(question_student_id_list, test, 'question')
+    create_student_data(heuristic_student_id_list, test, 'heuristic')
 
 
 

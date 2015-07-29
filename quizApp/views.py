@@ -95,13 +95,14 @@ def quizStart():
     return flask.jsonify(progress=progress)
 
 def get_question(order):
-    progress, graph_id, questions, question_type, answers, complete, dataset = conn.execute(select([Students.c.progress,
+    progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id = conn.execute(select([Students.c.progress,
                                             StudentsTest.c.graph_id,
                                             Questions.c.question,
                                             Questions.c.question_type,
                                             Answers.c.answer,
                                             StudentsTest.c.complete,
-                                            StudentsTest.c.dataset]).\
+                                            StudentsTest.c.dataset,
+                                            StudentsTest.c.student_test_id]).\
                                 select_from(StudentsTest.join(Students,
                                             Students.c.student_id == StudentsTest.c.student_id).\
                                 join(Questions,
@@ -109,20 +110,19 @@ def get_question(order):
                             where(and_(StudentsTest.c.student_id == flask.session['userid'],
                                   StudentsTest.c.test == Students.c.progress,
                                   StudentsTest.c.order == order))).fetchone()
-    return progress, graph_id, questions, question_type, answers, complete, dataset
+    return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id
 
 #provide first quiz question
 @app.route('/first_question')
 def first_question():
     userid = flask.session['userid']
 
-    params = request.args
-    if 'o' in params:
-        order = params['o']
-    else:
+    try:
+        order = flask.session['order']
+    except:
         order = 1
 
-    progress, graph_id, question, question_type, answers, complete, dataset = get_question(order)
+    progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order)
 
     #check to make sure they have not done the question before
     if complete == 'yes':
@@ -136,34 +136,36 @@ def first_question():
 
         order_list = sorted(order_list, reverse=True)
 
-        progress, graph_id, question, question_type, answers, complete, dataset = get_question(order_list[0]+1)
+        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order_list[0]+1)
 
+    #put the student_test_id in session
+    flask.session['student_test_id'] = student_test_id
+    flask.session['order'] = order
 
     #check which test
     if progress == 'pre_test':
         # query three graphs
 
-        graph_list = conn.execute(select([Graphs.c.graph_location]).\
+        graph_list = conn.execute(select([Graphs.c.graph_location,
+                                            Graphs.c.graph_id]).\
                                         where(Graphs.c.dataset == dataset)).fetchall()
 
         #randomly shuffle order of graphs
         shuffle(graph_list)
 
-        return flask.jsonify(graph1=str(graph_list[0][0]),
-                             graph2=str(graph_list[1][0]),
-                             graph3=str(graph_list[2][0]),
+        #put graph id's in session
+        flask.session['graph1'] = graph_list[0][1]
+        flask.session['graph2'] = graph_list[1][1]
+        flask.session['graph3'] = graph_list[2][1]
+
+
+        return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + '>',
+                             graph2='<img src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + '>',
+                             graph3='<img src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + '>',
                              question=question,
                              order=order,
                              progress=progress)
 
-        # #use the 3 graphs for the current dataset based on order
-        # graph_list = sorted(graph_list, key=lambda x: x[0])
-        # if order > 4:
-        #     return graph_list[:4], question
-        # elif order > 3 and order < 7:
-        #     return graph_list[4:7], question
-        # else:
-        #     return graph_list[7:], question
     elif progress == 'post_test':
         filler = 1
         #three graphs and then survey
@@ -171,5 +173,41 @@ def first_question():
         #get answers query
         filler = 1
         #multiple choice, one graph
+
+#get answers to question, write to db then get next question
+@app.route('_pretest_answers')
+def pretest_answers():
+    params = request.args
+
+    #data
+    best1 = params['best1']
+    best2 = params['best2']
+    best3 = params['best3']
+    order = params['order']
+    graph1 = flask.session['graph1']
+    graph2 = flask.session['graph2']
+    graph3 = flask.session['graph3']
+    student_test_id = flask.session['student_test_id']
+    student_id = flask.session['userid']
+
+
+    answer_list = [(best1,graph1),(best2,graph2),(best3,graph3)]
+
+    #write to db
+    #update complete row in StudentsTest table
+    r = conn.execute(StudentsTest.update().\
+                     where(StudentsTest.c.student_test_id == student_test_id).\
+                     values(complete='yes'))
+    rr = conn.execute(Results.insert(), {
+                      'student_id':student_id,
+                      'student_test_id':student_test_id,
+                      'answer':answer[0],
+                      'graph_id':answer[1],
+                      for answer in answer_list})
+
+    #update order number
+    flask.session['order'] = flask.session['order'] + 1
+
+    return True
 
 
