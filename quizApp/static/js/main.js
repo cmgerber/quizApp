@@ -39,53 +39,6 @@ var substringMatcher = function(strs) {
 };
 
 
-// on page load:
-$(function() {
-
-    var conditions = new Bloodhound({
-      datumTokenizer: Bloodhound.tokenizers.obj.whitespace('text'),
-      queryTokenizer: Bloodhound.tokenizers.whitespace,
-      prefetch: $SCRIPT_ROOT + "static/assets/conditions.json"
-    });
-
-    var institutions = new Bloodhound({
-      datumTokenizer: Bloodhound.tokenizers.obj.whitespace('text'),
-      queryTokenizer: Bloodhound.tokenizers.whitespace,
-      prefetch: $SCRIPT_ROOT + "static/assets/institutions.json"
-    });
-
-    conditions.initialize();
-    institutions.initialize();
-
-    $('#search-text').typeahead({
-      highlight: true,
-      minLength: 1
-    },
-    {
-      name: 'conditions',
-      displayKey: 'text',
-      source: conditions.ttAdapter(),
-      templates: {
-        header: '<div class="search-header">Conditions</div>'
-      }
-    },
-    {
-      name: 'institutions',
-      displayKey: 'text',
-      source: institutions.ttAdapter(),
-      templates: {
-        header: '<div class="search-header">Institutions</div>'
-      }
-    });
-
-      //color: '#d9534f'
-    var pulse_props = {
-      boxShadow: "0px 0px 15px 3px #FFCC11"
-    }
-
-    $("#add-mesh-btn, #structure-criteria-btn").pulse(pulse_props, {duration: 1500, pulses: 5})
-
-});
 
 
 var cur_obj = {},
@@ -218,18 +171,36 @@ $("#quiz-start-area").on('click', "#quiz-button", function (e) {
   });
 });
 
+//start quiz modal button
 
 $("#quiz-start-begin").on("click", function(e) {
   $.getJSON( $SCRIPT_ROOT + "_quizStart", function(e) {
-      window.open($SCRIPT_ROOT + e.progress, "_self");
-      return false;
+      var newWindow = window.open($SCRIPT_ROOT + e.progress, "_self");
+      });
+  });
+
+
+$("#pretest-start-button").on("click", function(e) {
+        replace_pretest_html();
+  });
+
+
+function replace_pretest_html() {
+  console.log('in function');
+    $.getJSON( $SCRIPT_ROOT + "first_question", function(d) {
+        if(d.progress == 'pre_test' || d.progress == 'post_test'){
+          console.log('in if');
+          $('#pretest-start-area').remove();
+          var graph1 = "{{ url_for('static', filename='graphs/" +d.graph1+ "') }}";
+          $('#graph1').empty().append('<img src='+graph1+'>'+
+                            '<p>This is a graph</p>');
+          $('#graph2').empty().append('<img src=graphs/'+d.graph2+'>'+
+                            '<p>This is a graph</p>');
+          $('#graph3').empty().append('<img src=graphs/'+d.graph3+'>'+
+                            '<p>This is a graph</p>');
+        }
     });
-  $.getJSON( $SCRIPT_ROOT + "first_quetion", function(e) {
-
-  });
-  });
-
-
+}
 
 
 // check login and alert or redirect as necessary

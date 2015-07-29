@@ -11,7 +11,7 @@ from sqlalchemy import Column, Date, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
 
-from db_tables import metadata, Questions, Answers, Results, Students, StudentsTests, Graphs
+from db_tables import metadata, Questions, Answers, Results, Students, StudentsTest, Graphs
 
 #initialize db
 
@@ -24,7 +24,7 @@ def initializeDB():
 engine, conn = initializeDB()
 
 #global variables
-student_id_list = [1,2,3,4]
+student_id_list = [x+1 for x in range(60)]
 
 app.secret_key = str(uuid.uuid4())
 
@@ -81,6 +81,11 @@ def clear_session():
 def pre_test():
     return flask.render_template('pretest.html')
 
+#posttest
+@app.route('/post_test')
+def post_test():
+    return flask.render_template('pretest.html')
+
 #quiz start button
 @app.route('/_quizStart')
 def quizStart():
@@ -90,23 +95,21 @@ def quizStart():
     return flask.jsonify(progress=progress)
 
 def get_question(order):
-    progress, graph, questions, question_type answers, complete, dataset = conn.execute(select([Students.c.progress,
-                                            StudentsTests.c.graph,
+    progress, graph_id, questions, question_type, answers, complete, dataset = conn.execute(select([Students.c.progress,
+                                            StudentsTest.c.graph_id,
                                             Questions.c.question,
-                                            Questions.c.question_type
+                                            Questions.c.question_type,
                                             Answers.c.answer,
-                                            StudentsTests.c.complete,
-                                            StudentsTests.c.dataset]).\
-                                select_from(StudentsTests.join(Students,
-                                            Students.c.student_id == StudentsTests.c.student_id)).\
+                                            StudentsTest.c.complete,
+                                            StudentsTest.c.dataset]).\
+                                select_from(StudentsTest.join(Students,
+                                            Students.c.student_id == StudentsTest.c.student_id).\
                                 join(Questions,
-                                     Questions.c.question_id == StudentsTests.c.question_id).\
-                                join(Answers,
-                                     Answers.c.question_id == Questions.c.question_id).\
-                            where(and_(StudentsTests.c.student_id == flask.session['userid'],
-                                  StudentsTests.c.test == Students.c.progress,
-                                  StudentsTests.c.order == order))).fetchone()
-    return progress, graph, questions, question_type answers, complete, dataset
+                                     Questions.c.question_id == StudentsTest.c.question_id)).\
+                            where(and_(StudentsTest.c.student_id == flask.session['userid'],
+                                  StudentsTest.c.test == Students.c.progress,
+                                  StudentsTest.c.order == order))).fetchone()
+    return progress, graph_id, questions, question_type, answers, complete, dataset
 
 #provide first quiz question
 @app.route('/first_question')
@@ -119,36 +122,39 @@ def first_question():
     else:
         order = 1
 
-    progress, graph, question, question_type, answers, complete, dataset = get_question(order)
+    progress, graph_id, question, question_type, answers, complete, dataset = get_question(order)
 
     #check to make sure they have not done the question before
     if complete == 'yes':
         #this means the question has already been completed
-        order_list = conn.execute(select([StudentsTests.c.order]).\
-                             select_from(StudentsTests.join(Students,
-                                         Students.c.student_id == StudentsTests.c.student_id)).\
-                             where(and_(StudentsTests.c.student_id == flask.session['userid'],
-                                   StudentsTests.c.complete == 'yes',
-                                   StudentsTests.c.test == Student.c.progress))).fetchall()
+        order_list = conn.execute(select([StudentsTest.c.order]).\
+                             select_from(StudentsTest.join(Students,
+                                         Students.c.student_id == StudentsTest.c.student_id)).\
+                             where(and_(StudentsTest.c.student_id == flask.session['userid'],
+                                   StudentsTest.c.complete == 'yes',
+                                   StudentsTest.c.test == Student.c.progress))).fetchall()
 
         order_list = sorted(order_list, reverse=True)
 
-        progress, graph, question, question_type, answers, complete, dataset = get_question(order_list[0]+1)
+        progress, graph_id, question, question_type, answers, complete, dataset = get_question(order_list[0]+1)
 
 
     #check which test
-    if progress = 'pre_test':
+    if progress == 'pre_test':
         # query three graphs
-
-        put in random order
 
         graph_list = conn.execute(select([Graphs.c.graph_location]).\
                                         where(Graphs.c.dataset == dataset)).fetchall()
 
         #randomly shuffle order of graphs
-        suffle(graph_list)
+        shuffle(graph_list)
 
-        return graph_list, question, order
+        return flask.jsonify(graph1=str(graph_list[0][0]),
+                             graph2=str(graph_list[1][0]),
+                             graph3=str(graph_list[2][0]),
+                             question=question,
+                             order=order,
+                             progress=progress)
 
         # #use the 3 graphs for the current dataset based on order
         # graph_list = sorted(graph_list, key=lambda x: x[0])
@@ -159,8 +165,11 @@ def first_question():
         # else:
         #     return graph_list[7:], question
     elif progress == 'post_test':
+        filler = 1
         #three graphs and then survey
     elif progress == 'training':
+        #get answers query
+        filler = 1
         #multiple choice, one graph
 
 
