@@ -86,6 +86,11 @@ def pre_test():
 def post_test():
     return flask.render_template('pretest.html')
 
+#training
+@app.route('/training')
+def training():
+    return flask.render_template('training.html')
+
 #quiz start button
 @app.route('/_quizStart')
 def quizStart():
@@ -141,6 +146,7 @@ def first_question():
     #put the student_test_id in session
     flask.session['student_test_id'] = student_test_id
     flask.session['order'] = order
+    flask.session['question_type'] = question_type
 
     #check which test
     if progress == 'pre_test':
@@ -163,6 +169,7 @@ def first_question():
                              graph2='<img src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + '>',
                              graph3='<img src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + '>',
                              question=question,
+                             question_type=question_type,
                              order=order,
                              progress=progress)
 

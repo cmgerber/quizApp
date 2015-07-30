@@ -184,11 +184,95 @@ $("#quiz-start-begin").on("click", function(e) {
 //****************
 
 $("#pretest-start-button").on("click", function(e) {
-        replace_pretest_html();
+        replace_html();
   });
 
+//pretest dropdown
+// update distance dropdown text based on selection
+$("body").delegate(".pretest-drop1-val", "click", function(e) {
+  $("#pretest-drop1 button").html($(this).text() + ' <span class="caret"></span>');
+});
 
-function replace_pretest_html() {
+$("body").delegate(".pretest-drop2-val", "click", function(e) {
+  $("#pretest-drop2 button").empty().append($(this).text() + ' <span class="caret"></span>');
+});
+
+$("body").delegate(".pretest-drop3-val", "click", function(e) {
+  $("#pretest-drop3 button").empty().append($(this).text() + ' <span class="caret"></span>');
+});
+
+//next button click
+$('#pretest-next').on('click', function() {
+  //get answers and write them to db
+  var best1 = $("#pretest-drop1 button").text(),
+      best2 = $("#pretest-drop2 button").text(),
+      best3 = $("#pretest-drop3 button").text(),
+      order = getParameterByName('order');
+
+  $.getJSON($SCRIPT_ROOT + "_pretest_answers", {
+    best1:best1,
+    best2:best2,
+    best3:best3,
+    order:order
+  }, function(data) {
+    setTimeout(function() {
+      replace_html();
+    }, 1000);
+  }
+  );
+
+});
+
+
+//**********
+//TRAINING
+//**********
+
+$("#training-start-button").on("click", function(e) {
+        replace_html();
+  });
+
+//for rating drop downs
+$("body").delegate(".training-rating1-val", "click", function(e) {
+  $("#training-rating1 button").html($(this).text() + ' <span class="caret"></span>');
+});
+
+$("body").delegate(".training-rating2-val", "click", function(e) {
+  $("#training-rating2 button").empty().append($(this).text() + ' <span class="caret"></span>');
+});
+
+$("body").delegate(".training-rating3-val", "click", function(e) {
+  $("#training-rating3 button").empty().append($(this).text() + ' <span class="caret"></span>');
+});
+
+//next button click
+$('#pretest-next').on('click', function() {
+  //get answers and write them to db
+  var best1 = getParameterByName('question_type') == 'rating' ? $("#training-rating1 button").text(): $("#training-drop1 button").text(),
+      best2 = getParameterByName('question_type') == 'rating' ? $("#training-rating2 button").text(): $("#training-drop2 button").text(),
+      best3 = getParameterByName('question_type') == 'rating' ? $("#training-rating3 button").text(): $("#training-drop3 button").text(),
+      order = getParameterByName('order');
+
+  $.getJSON($SCRIPT_ROOT + "_training_answers", {
+    best1:best1,
+    best2:best2,
+    best3:best3,
+    order:order
+  }, function(data) {
+    setTimeout(function() {
+      replace_html();
+    }, 1000);
+  }
+  );
+
+});
+
+
+//**********
+//QUESTION CREATION
+//**********
+
+function replace_html() {
 
   var dropdown1 ='<div id="pretest-drop1" class="btn-group form-inline">'+
                 '<button type="button" class="btn btn-primary">Graph</button>'+
@@ -223,6 +307,48 @@ function replace_pretest_html() {
                   '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="pretest-drop3-val">Graph 3</a></li>'+
                 '</ul>'+
               '</div>';
+  var rating1 ='<div id="training-rating1" class="btn-group form-inline">'+
+                '<button type="button" class="btn btn-primary">na</button>'+
+                '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'+
+                  '<span class="caret"></span>'+
+                '</button>'+
+                '<ul class="dropdown-menu" role="menu">'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating1-val">0</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating1-val">1</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating1-val">2</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating1-val">3</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating1-val">4</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating1-val">5</a></li>'+
+                '</ul>'+
+              '</div>';
+  var rating2 ='<div id="training-rating2" class="btn-group form-inline">'+
+                '<button type="button" class="btn btn-primary">na</button>'+
+                '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'+
+                  '<span class="caret"></span>'+
+                '</button>'+
+                '<ul class="dropdown-menu" role="menu">'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating2-val">0</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating2-val">1</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating2-val">2</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating2-val">3</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating2-val">4</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating2-val">5</a></li>'+
+                '</ul>'+
+              '</div>';
+  var rating3 ='<div id="training-rating3" class="btn-group form-inline">'+
+                '<button type="button" class="btn btn-primary">na</button>'+
+                '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'+
+                  '<span class="caret"></span>'+
+                '</button>'+
+                '<ul class="dropdown-menu" role="menu">'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating3-val">0</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating3-val">1</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating3-val">2</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating3-val">3</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating3-val">4</a></li>'+
+                  '<li><a role="menuitem" tabindex="-1" href="#" onClick="return false;" class="training-rating3-val">5</a></li>'+
+                '</ul>'+
+              '</div>';
 
     $.getJSON( $SCRIPT_ROOT + "first_question", function(d) {
         if(d.progress == 'pre_test' || d.progress == 'post_test'){
@@ -235,50 +361,38 @@ function replace_pretest_html() {
                             '<p>Graph 2</p>');
           $('#graph3').empty().append(d.graph3+
                             '<p>Graph 3</p>');
-          //add the question
-          $('#pretest-question').empty().append('<h3>'+d.question+'</h3>');
-          $('#pretest-question').append('<br><p>Best Graph</p>'+dropdown1+
-                                        '<br><br><p>Second Best Graph</p>'+dropdown2+
-                                        '<br><br><p>Third Best Graph</p>'+dropdown3);
+            //add the question
+            $('#pretest-question').empty().append('<h3>'+d.question+'</h3>');
+            $('#pretest-question').append('<br><p>Best Graph</p>'+dropdown1+
+                                          '<br><br><p>Second Best Graph</p>'+dropdown2+
+                                          '<br><br><p>Third Best Graph</p>'+dropdown3);
+
           //add next button
           $('#pretest-next').empty().append('<button id="pretest-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');
+        }else{
+          //remove start button
+          $('#training-start-area').remove();
+          //add the three graphs
+          $('#graph1').empty().append(d.graph1+
+                            '<p>Graph 1</p>');
+          if(d.question_type == 'rating') {
+            //add the question
+            $('#training-question').empty().append('<h3>'+d.question+'</h3>');
+            $('#training-question').append('<br><p>Graph 1</p>'+rating1+
+                                          '<br><br><p>Graph 2</p>'+rating2+
+                                          '<br><br><p>Graph 3</p>'+rating3);
+          }else{
+            //add the question
+            $('#training-question').empty().append('<h3>'+d.question+'</h3>');
+            $('#training-question').append('<br><p>Best Graph</p>'+dropdown1+
+                                          '<br><br><p>Second Best Graph</p>'+dropdown2+
+                                          '<br><br><p>Third Best Graph</p>'+dropdown3);
+          }
+          //add next button
+          $('#training-next').empty().append('<button id="training-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');
         }
     });
 }
-
-//pretest dropdown
-// update distance dropdown text based on selection
-$("body").delegate(".pretest-drop1-val", "click", function(e) {
-  $("#pretest-drop1 button").html($(this).text() + ' <span class="caret"></span>');
-});
-
-$("body").delegate(".pretest-drop2-val", "click", function(e) {
-  $("#pretest-drop2 button").empty().append($(this).text() + ' <span class="caret"></span>');
-});
-
-$("body").delegate(".pretest-drop3-val", "click", function(e) {
-  $("#pretest-drop3 button").empty().append($(this).text() + ' <span class="caret"></span>');
-});
-
-//next button click
-$('#pretest-next').on('click', function() {
-  //get answers and write them to db
-  var best1 = $("#pretest-drop1 button").text(),
-      best2 = $("#pretest-drop2 button").text(),
-      best3 = $("#pretest-drop3 button").text(),
-      order = getParameterByName('order');
-
-  $.getJSON($SCRIPT_ROOT + "_pretest_answers", {
-    best1:best1,
-    best2:best2,
-    best3:best3,
-    order:order
-  }, function(data) {
-    replace_pretest_html();
-  }
-  );
-
-});
 
 
 // check login and alert or redirect as necessary
