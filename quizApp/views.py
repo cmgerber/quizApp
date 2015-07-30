@@ -131,12 +131,12 @@ def first_question():
                              select_from(StudentsTest.join(Students,
                                          Students.c.student_id == StudentsTest.c.student_id)).\
                              where(and_(StudentsTest.c.student_id == flask.session['userid'],
-                                   StudentsTest.c.complete == 'yes',
-                                   StudentsTest.c.test == Student.c.progress))).fetchall()
+                                   StudentsTest.c.complete == 'no',
+                                   StudentsTest.c.test == Students.c.progress))).fetchall()
 
-        order_list = sorted(order_list, reverse=True)
+        order_list = sorted(order_list)
 
-        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order_list[0]+1)
+        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order_list[0][0])
 
     #put the student_test_id in session
     flask.session['student_test_id'] = student_test_id
@@ -175,9 +175,12 @@ def first_question():
         #multiple choice, one graph
 
 #get answers to question, write to db then get next question
-@app.route('_pretest_answers')
+@app.route('/_pretest_answers')
 def pretest_answers():
     params = request.args
+
+    #update order number
+    flask.session['order'] = flask.session['order'] + 1
 
     #data
     best1 = params['best1']
@@ -198,16 +201,16 @@ def pretest_answers():
     r = conn.execute(StudentsTest.update().\
                      where(StudentsTest.c.student_test_id == student_test_id).\
                      values(complete='yes'))
-    rr = conn.execute(Results.insert(), {
+
+    conn.execute(Results.insert(), [{
                       'student_id':student_id,
                       'student_test_id':student_test_id,
                       'answer':answer[0],
                       'graph_id':answer[1],
-                      for answer in answer_list})
+                      } for answer in answer_list])
 
-    #update order number
-    flask.session['order'] = flask.session['order'] + 1
-
-    return True
-
+    #get next question
+    # question_json = first_question()
+    # return question_json
+    return flask.jsonify(result={"status": 200})
 

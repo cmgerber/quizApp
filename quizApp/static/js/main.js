@@ -249,7 +249,7 @@ function replace_pretest_html() {
 //pretest dropdown
 // update distance dropdown text based on selection
 $("body").delegate(".pretest-drop1-val", "click", function(e) {
-  $("#pretest-drop1 button").empty().append($(this).text() + ' <span class="caret"></span>');
+  $("#pretest-drop1 button").html($(this).text() + ' <span class="caret"></span>');
 });
 
 $("body").delegate(".pretest-drop2-val", "click", function(e) {
@@ -273,8 +273,8 @@ $('#pretest-next').on('click', function() {
     best2:best2,
     best3:best3,
     order:order
-  }, function(d) {
-
+  }, function(data) {
+    replace_pretest_html();
   }
   );
 
