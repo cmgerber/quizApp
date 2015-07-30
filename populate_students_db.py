@@ -8,6 +8,9 @@ engine = create_engine('sqlite:///quizDB.db?check_same_thread=False', echo=True)
 conn = engine.connect()
 metadata.create_all(engine)
 
+#CLEAR RESULTS TABLE
+if engine.dialect.has_table(engine.connect(), "results"):
+    conn.execute(Results.delete())
 
 df_questions = pd.read_excel('quizApp/data/question_table.xlsx', 'Sheet1')
 

@@ -91,6 +91,16 @@ def post_test():
 def training():
     return flask.render_template('training.html')
 
+#landing page between tests
+@app.route('/next')
+def next():
+    return flask.render_template('lobby.html')
+
+#Complete page
+@app.route('/done')
+def done():
+    return flask.render_template('done.html')
+
 #quiz start button
 @app.route('/_quizStart')
 def quizStart():
@@ -127,7 +137,13 @@ def first_question():
     except:
         order = 1
 
-    progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order)
+    try:
+        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order)
+    except:
+        complete = 'yes'
+        progress = conn.execute(select([Students.c.progress]).\
+                                where(Students.c.student_id == flask.session['userid'])).fetchone()
+        progress = progress[0]
 
     #check to make sure they have not done the question before
     if complete == 'yes':
@@ -141,7 +157,24 @@ def first_question():
 
         order_list = sorted(order_list)
 
-        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order_list[0][0])
+        if len(order_list) >= 1:
+            progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order_list[0][0])
+        else:
+            #the section has been completed, update progress and return to home page
+            progress_list = ['pre_test', 'training', 'post_test']
+            ix = progress_list.index(progress) + 1
+            if ix == len(progress_list):
+                new_progress = 'complete'
+            else:
+                new_progress = progress_list[ix]
+            r = conn.execute(Students.update().\
+                             where(Students.c.student_id == flask.session['userid']).\
+                             values(progress=new_progress))
+            #return to homepage
+            if new_progress == 'complete':
+                return flask.jsonify(progress='done')
+            else:
+                return flask.jsonify(progress='next')
 
     #put the student_test_id in session
     flask.session['student_test_id'] = student_test_id

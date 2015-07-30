@@ -72,25 +72,6 @@ $("#search-text").keydown(function(event) {
       }
 });
 
-$("#search-button").on('click', function(e) {
-  respond_to_event();
-});
-
-$("#search-text").on('typeahead:cursorchanged typeahead:autocompleted', function (e, datum) {
-    cur_obj = datum;
-    full_val = true;
-});
-
-$("#search-text").on('typeahead:selected', function(e, datum) {
-  var page = '';
-  if (datum.type == 'cond') {
-    page = 'condition';
-  } else {
-    page = 'institution';
-  }
-  window.open($SCRIPT_ROOT + page + "?" + datum.type + "=" + datum.value, "_self");
-})
-
 
 
 
@@ -246,7 +227,7 @@ $("body").delegate(".training-rating3-val", "click", function(e) {
 });
 
 //next button click
-$('#pretest-next').on('click', function() {
+$('#training-next').on('click', function() {
   //get answers and write them to db
   var best1 = getParameterByName('question_type') == 'rating' ? $("#training-rating1 button").text(): $("#training-drop1 button").text(),
       best2 = getParameterByName('question_type') == 'rating' ? $("#training-rating2 button").text(): $("#training-drop2 button").text(),
@@ -351,6 +332,12 @@ function replace_html() {
               '</div>';
 
     $.getJSON( $SCRIPT_ROOT + "first_question", function(d) {
+        if(d.progress == 'next') {
+          window.open($SCRIPT_ROOT + "next", "_self");
+        }
+        if(d.progress == 'done') {
+          window.open($SCRIPT_ROOT + "done", "_self");
+        }
         if(d.progress == 'pre_test' || d.progress == 'post_test'){
           //remove start button
           $('#pretest-start-area').remove();
@@ -410,164 +397,4 @@ function loginCheck(ok_fcn, warn_msg) {
     }
   });
 }
-
-// structure criteria jump
-$("#structure-criteria-btn").on("click", function(e) {
-  $("#goto-criteria-modal").modal('show');
-})
-
-$("#goto-criteria-ok").on("click", function(e) {
-  function redir(admin) {
-      var nct_id = getParameterByName('nct_id');
-      window.open($SCRIPT_ROOT + "structure_trial_criteria?nct_id=" + nct_id, "_self");
-      return false;
-  }
-  loginCheck(redir, "Whoops, you need to log in before you can use that tool.");
-});
-
-$("#goto-criteria-enter").on("click", function(e) {
-  $("#create-concept-modal").modal('show');
-  $("#goto-criteria-modal").modal('hide');
-});
-
-// accepting MeSH term suggestions interaction
-$("#add-mesh-btn").on('click', function(e) {
-  loginCheck(function(admin) {
-    $("#add-mesh-modal").modal('show');
-    $("#add-mesh-submit").on("click", function(g) {
-      var nct_id = getParameterByName('nct_id'),
-          cond_ids = [];
-      $.each($("input[name='add-mesh-term']:checked"), function() {
-        cond_ids.push($(this).val());
-      });
-      $.getJSON($SCRIPT_ROOT + "_mesh_stage", {
-        cond_ids: JSON.stringify(cond_ids),
-        nct_id: nct_id
-      }, function(data) {
-        if (data.done) {
-          $("#add-mesh-modal .modal-body").html("<p>Your contribution will be reviewed by an administrator.</p>");
-        } else {
-          $("#add-mesh-modal .modal-body").html("<p>There is a problem. Please try again later.</p>");
-        }
-        $("#add-mesh-submit").remove();
-        $("#add-mesh-modal .modal-footer").append('<button id="add-mesh-finish" type="button" class="btn btn-success" data-dismiss="modal">OK</button>');
-        $("#add-mesh-finish").on('click', function(e) {
-          $("#add-mesh-modal").modal('hide');
-        })
-      });
-      return false;
-    });
-  }, "Whoops, you need to log in before you can tag trials with additional conditions.")
-});
-
-
-
-
-
-
-// tool interactions
-$('#create-concept-modal').on('shown.bs.modal', function () {
-    $('#create-concept-modal #input-new-concept').focus();
-})
-
-$('#create-concept-submit').on('click', function(e){
-  function redir(admin) {
-      var initial_term = $("#create-concept-modal #input-new-concept").val();
-      window.open($SCRIPT_ROOT + "active_learning?term=" + initial_term, "_self");
-      return false;
-  }
-  if ($("#create-concept-modal #input-new-concept").val().length > 1) {
-    loginCheck(redir, "Whoops, you need to log in before you can use that tool.");
-    $("#create-concept-modal").modal('hide');
-  } else {
-    clearVals();
-    alert('You must enter a term longer than one character. Please try again.');
-  }
-});
-
-$("#create-concept-modal .form-control").keydown(function(e) {
-  function redir(admin) {
-      var initial_term = $("#create-concept-modal #input-new-concept").val();
-      window.open($SCRIPT_ROOT + "active_learning?term=" + initial_term, "_self");
-      return false;
-  }
-  if (e.keyCode == 13) {
-      if ($("#create-concept-modal #input-new-concept").val().length > 1) {
-        loginCheck(redir, "Whoops, you need to log in before you can use that tool.");
-        $("#create-concept-modal").modal('hide');
-      } else {
-        clearVals();
-        alert('You must enter a term longer than one character. Please try again.');
-      }
-      return false;
-    }
-});
-
-$('#create-concept-cancel').on('click', function(e){clearVals()} );
-
-// admin tools jump
-$("#pick-admin-tool").on("click", function(e) {
-  function redir(admin) {
-      if (admin == 1) {
-        $.getJSON($SCRIPT_ROOT + "_get_admin_counts", {}, function(data) {
-          $("#admin-select-num-concepts").text(data.num_concepts + " concept" + (data.num_concepts > 1 ? "s" : "") + " to review");
-          $("#admin-select-num-mesh").text(data.num_mesh + " assignment" + (data.num_mesh > 1 ? "s" : "") + " to review");
-          $("#admin-select-modal").modal('show');
-        })
-      } else {
-        alert("Sorry, you need to have administrator privileges to use these tools.");
-      }
-      return false;
-  }
-  loginCheck(redir, "Whoops, you need to log in before you can use that tool.");
-});
-
-
-
-
-
-
-
-
-
-// MeSH suggestion interactions
-$("#submit-suggestion-text").on('click', function(e) {
-  var thisdoc = $("#mesh-text").val();
-  console.log(JSON.stringify(thisdoc).length);
-  if (thisdoc.length > 0) {
-    var header = '<h4>Retrieving suggestions...</h4>',
-        spinner = '<i id="top-cond-spinner" class="fa fa-spinner fa-pulse" style="font-size: 5em; margin: .5em;"></i>';
-    $("#results-pane").html(header + spinner);
-    $.getJSON($SCRIPT_ROOT + '_get_suggestions', {doc: thisdoc}, function(data) {
-      $("#results-pane").empty();
-      var write_html = '';
-      if (data.results) {
-        write_html = "<h5>Suggested terms</h5><ul class='nodisc'>";
-        for (i=0; i<data.results.length; i++) {
-          write_html += "<li><a href='http://www.nlm.nih.gov/cgi/mesh/2015/MB_cgi?mode=&term=" + data.results[i] +
-                        "' target='_blank'>" + data.results[i] + "</li>";
-        }
-        write_html += "</ul>"
-      } else {
-        write_html = '<p>Sorry, no results were returned</p>';
-      }
-      $("#results-pane").html(write_html);
-    })
-  }
-
-})
-
-
-
-
-
-
-// Criteria concept approvals
-
-
-
-
-
-
-
 
