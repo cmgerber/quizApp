@@ -61,3 +61,5 @@ target/
 *.csv
 *.xlsx
 *.pkl
+*.png
+*.jpg

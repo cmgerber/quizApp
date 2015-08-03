@@ -5,6 +5,7 @@ from quizApp import app
 import flask, uuid
 from flask import request, url_for
 from random import shuffle
+import os
 
 from sqlalchemy import create_engine, ForeignKey
 from sqlalchemy import Column, Date, Integer, String
@@ -16,7 +17,9 @@ from db_tables import metadata, Questions, Answers, Results, Students, StudentsT
 #initialize db
 
 def initializeDB():
-    engine = create_engine('sqlite:///quizDB.db?check_same_thread=False', echo=True)
+    project_root = os.path.dirname(os.path.realpath('quizApp_Project/'))
+    DATABASE = os.path.join(project_root, 'quizDB.db')
+    engine = create_engine('sqlite:///{0}?check_same_thread=False'.format(DATABASE), echo=True)
     conn = engine.connect()
     metadata.create_all(engine)
     return engine, conn
@@ -110,14 +113,15 @@ def quizStart():
     return flask.jsonify(progress=progress)
 
 def get_question(order):
-    progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id = conn.execute(select([Students.c.progress,
+    progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id = conn.execute(select([Students.c.progress,
                                             StudentsTest.c.graph_id,
                                             Questions.c.question,
                                             Questions.c.question_type,
                                             Answers.c.answer,
                                             StudentsTest.c.complete,
                                             StudentsTest.c.dataset,
-                                            StudentsTest.c.student_test_id]).\
+                                            StudentsTest.c.student_test_id,
+                                            Questions.c.question_id]).\
                                 select_from(StudentsTest.join(Students,
                                             Students.c.student_id == StudentsTest.c.student_id).\
                                 join(Questions,
@@ -125,7 +129,7 @@ def get_question(order):
                             where(and_(StudentsTest.c.student_id == flask.session['userid'],
                                   StudentsTest.c.test == Students.c.progress,
                                   StudentsTest.c.order == order))).fetchone()
-    return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id
+    return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id
 
 #provide first quiz question
 @app.route('/first_question')
@@ -138,7 +142,7 @@ def first_question():
         order = 1
 
     try:
-        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order)
+        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
     except:
         complete = 'yes'
         progress = conn.execute(select([Students.c.progress]).\
@@ -158,7 +162,7 @@ def first_question():
         order_list = sorted(order_list)
 
         if len(order_list) >= 1:
-            progress, graph_id, question, question_type, answers, complete, dataset, student_test_id = get_question(order_list[0][0])
+            progress, graph_id, question, question_type, answers, complete, dataset, student_test_id, question_id = get_question(order_list[0][0])
         else:
             #the section has been completed, update progress and return to home page
             progress_list = ['pre_test', 'training', 'post_test']
@@ -211,7 +215,27 @@ def first_question():
         #three graphs and then survey
     elif progress == 'training':
         #get answers query
-        filler = 1
+        answer_list = conn.execute(select([Answers.c.answer,
+                                          Answers.c.answer_id]).\
+                                    where(Answers.c.question_id == question_id)).fetchall()
+        #get graph location
+        graph_location = conn.execute(select([Graphs.c.graph_location]).\
+                                        where(Graphs.c.graph_id == graph_id)).fetchall()
+
+        #put graph id's in session
+        flask.session['graph1'] = graph_id
+        flask.session['answer1'] = answer_list[0][1]
+        flask.session['answer2'] = answer_list[1][1]
+        flask.session['answer3'] = answer_list[2][1]
+
+        return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + '>',
+                             question=question,
+                             question_type=question_type,
+                             order=order,
+                             progress=progress,
+                             answer1=answer_list[0][0],
+                             answer2=answer_list[1][0],
+                             answer3=answer_list[2][0])
         #multiple choice, one graph
 
 #get answers to question, write to db then get next question
@@ -254,3 +278,56 @@ def pretest_answers():
     # return question_json
     return flask.jsonify(result={"status": 200})
 
+#get answers to question, write to db then get next question
+@app.route('/_training_answers')
+def training_answers():
+    params = request.args
+
+    #update order number
+    flask.session['order'] = flask.session['order'] + 1
+
+    #data
+    order = params['order']
+    graph1 = flask.session['graph1']
+    student_test_id = flask.session['student_test_id']
+    student_id = flask.session['userid']
+    answer_id = flask.session['answer_id']
+
+
+    answer_list = [(answer_id,graph1)]
+
+    #write to db
+    #update complete row in StudentsTest table
+    r = conn.execute(StudentsTest.update().\
+                     where(StudentsTest.c.student_test_id == student_test_id).\
+                     values(complete='yes'))
+
+    conn.execute(Results.insert(), [{
+                      'student_id':student_id,
+                      'student_test_id':student_test_id,
+                      'answer':answer[0],
+                      'graph_id':answer[1],
+                      } for answer in answer_list])
+
+    #get next question
+    # question_json = first_question()
+    # return question_json
+    return flask.jsonify(result={"status": 200})
+
+
+#keep track of multiple choice question answer clicks
+@app.route('/_answer_tracking')
+def answer_tracking():
+    params = request.args
+
+    #put currently selected answer in session
+    answer1 = params['answer1']
+    if answer1 == 'optionA':
+        answer_id = flask.session['answer1']
+    elif answer1 == 'optionB':
+        answer_id = flask.session['answer2']
+    elif answer1 == 'optionC':
+        answer_id = flask.session['answer3']
+    flask.session['answer_id'] = answer_id
+
+    return flask.jsonify(result={"status": 200})

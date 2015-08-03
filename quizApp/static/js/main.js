@@ -209,6 +209,23 @@ $('#pretest-next').on('click', function() {
 //TRAINING
 //**********
 
+//keep track of answer choice
+$('#optionA').on('click',function(){
+  $.getJSON($SCRIPT_ROOT + "_answer_tracking", {
+    answer1:'optionA'
+  });
+});
+$('#optionB').on('click',function(){
+  $.getJSON($SCRIPT_ROOT + "_answer_tracking", {
+    answer1:'optionB'
+  });
+});
+$('#optionC').on('click',function(){
+  $.getJSON($SCRIPT_ROOT + "_answer_tracking", {
+    answer1:'optionC'
+  });
+});
+
 $("#training-start-button").on("click", function(e) {
         replace_html();
   });
@@ -230,14 +247,10 @@ $("body").delegate(".training-rating3-val", "click", function(e) {
 $('#training-next').on('click', function() {
   //get answers and write them to db
   var best1 = getParameterByName('question_type') == 'rating' ? $("#training-rating1 button").text(): $("#training-drop1 button").text(),
-      best2 = getParameterByName('question_type') == 'rating' ? $("#training-rating2 button").text(): $("#training-drop2 button").text(),
-      best3 = getParameterByName('question_type') == 'rating' ? $("#training-rating3 button").text(): $("#training-drop3 button").text(),
       order = getParameterByName('order');
 
   $.getJSON($SCRIPT_ROOT + "_training_answers", {
     best1:best1,
-    best2:best2,
-    best3:best3,
     order:order
   }, function(data) {
     setTimeout(function() {
@@ -371,9 +384,16 @@ function replace_html() {
           }else{
             //add the question
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
-            $('#training-question').append('<br><p>Best Graph</p>'+dropdown1+
-                                          '<br><br><p>Second Best Graph</p>'+dropdown2+
-                                          '<br><br><p>Third Best Graph</p>'+dropdown3);
+            $('#training-question').append('<div id="training-questions" class="btn-group" data-toggle="buttons">');
+            $('#training-question').append('<label class="btn btn-primary">'+
+                                            '<input type="radio" name="options" id="optionA">A</label>'+
+                                            d.answer1+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="options" id="optionB">B</label>'+
+                                          d.answer2+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="options" id="optionC">C</label>'+
+                                          d.answer3+'</div>');
           }
           //add next button
           $('#training-next').empty().append('<button id="training-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');
