@@ -55,7 +55,7 @@
         <h1 class='site-name'><span style="letter-spacing: 3px;">Quiz App</span></h1>
       </div>
       {% if not is_home %}
-        <div class="navbar-search col-xs-12 col-sm-12 col-md-offset-0 col-md-4">
+        <!-- <div class="navbar-search col-xs-12 col-sm-12 col-md-offset-0 col-md-4">
           <div class="input-group">
             <label class="sr-only" for="search-text">Condition and Institution Search</label>
             <div class="input-group-addon">
@@ -66,9 +66,9 @@
               Search
             </div>
           </div>
-        </div>
+        </div> -->
       {% endif %}
-      <div id="login-area" class="navbar-button col-xs-12 col-sm-12 {% if is_home %}col-md-offset-4{% else %}col-md-offset-0{% endif %} col-md-2">
+      <div id="login-area" class="navbar-button col-xs-12 col-sm-12 {% if is_home %}col-md-offset-4{% else %}col-md-offset-4{% endif %} col-md-2">
         <button id="login-button" type="button" class="btn btn-success btn-xs" data-toggle="modal" data-target="#login-modal">
           Login
         </button>

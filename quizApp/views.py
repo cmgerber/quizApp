@@ -17,6 +17,7 @@ from db_tables import metadata, Questions, Answers, Results, Students, StudentsT
 #initialize db
 
 def initializeDB():
+    #project_root = '/projects/oev/quizApp_Project/'
     project_root = os.path.dirname(os.path.realpath('quizApp_Project/'))
     DATABASE = os.path.join(project_root, 'quizDB.db')
     engine = create_engine('sqlite:///{0}?check_same_thread=False'.format(DATABASE), echo=True)
@@ -202,9 +203,9 @@ def first_question():
         flask.session['graph3'] = graph_list[2][1]
 
 
-        return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + '>',
-                             graph2='<img src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + '>',
-                             graph3='<img src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + '>',
+        return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + ' height="500" width="500">',
+                             graph2='<img src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + ' height="500" width="500">',
+                             graph3='<img src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + ' height="500" width="500">',
                              question=question,
                              question_type=question_type,
                              order=order,
@@ -214,29 +215,47 @@ def first_question():
         filler = 1
         #three graphs and then survey
     elif progress == 'training':
-        #get answers query
-        answer_list = conn.execute(select([Answers.c.answer,
-                                          Answers.c.answer_id]).\
-                                    where(Answers.c.question_id == question_id)).fetchall()
         #get graph location
         graph_location = conn.execute(select([Graphs.c.graph_location]).\
                                         where(Graphs.c.graph_id == graph_id)).fetchall()
 
-        #put graph id's in session
-        flask.session['graph1'] = graph_id
-        flask.session['answer1'] = answer_list[0][1]
-        flask.session['answer2'] = answer_list[1][1]
-        flask.session['answer3'] = answer_list[2][1]
-
-        return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + '>',
+        #if it is a rating question jsut return graph
+        if question_type == 'rating':
+            flask.session['graph1'] = graph_id
+            return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
                              question=question,
                              question_type=question_type,
                              order=order,
-                             progress=progress,
-                             answer1=answer_list[0][0],
-                             answer2=answer_list[1][0],
-                             answer3=answer_list[2][0])
-        #multiple choice, one graph
+                             progress=progress)
+        else:
+            #get answers query
+            answer_list = conn.execute(select([Answers.c.answer,
+                                              Answers.c.answer_id]).\
+                                        where(Answers.c.question_id == question_id)).fetchall()
+
+            try:
+                answer_list[0][1]
+            except:
+                if len(answer_list) >1:
+                    longg
+                elif len(answer_list) <= 1:
+                    shortt
+
+            #put graph id's in session
+            flask.session['graph1'] = graph_id
+            flask.session['answer1'] = answer_list[0][1]
+            flask.session['answer2'] = answer_list[1][1]
+            flask.session['answer3'] = answer_list[2][1]
+
+            return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
+                                 question=question,
+                                 question_type=question_type,
+                                 order=order,
+                                 progress=progress,
+                                 answer1=answer_list[0][0],
+                                 answer2=answer_list[1][0],
+                                 answer3=answer_list[2][0])
+            #multiple choice, one graph
 
 #get answers to question, write to db then get next question
 @app.route('/_pretest_answers')
@@ -291,7 +310,18 @@ def training_answers():
     graph1 = flask.session['graph1']
     student_test_id = flask.session['student_test_id']
     student_id = flask.session['userid']
-    answer_id = flask.session['answer_id']
+
+    if flask.session['question_type'] == 'rating':
+        answer_id = params['rating1']
+    else:
+        answer1 = params['best1']
+        #figure out answer
+        if answer1 == 'optionA':
+            answer_id = flask.session['answer1']
+        elif answer1 == 'optionB':
+            answer_id = flask.session['answer2']
+        elif answer1 == 'optionC':
+            answer_id = flask.session['answer3']
 
 
     answer_list = [(answer_id,graph1)]
@@ -316,18 +346,18 @@ def training_answers():
 
 
 #keep track of multiple choice question answer clicks
-@app.route('/_answer_tracking')
-def answer_tracking():
-    params = request.args
+# @app.route('/_answer_tracking')
+# def answer_tracking():
+#     params = request.args
 
-    #put currently selected answer in session
-    answer1 = params['answer1']
-    if answer1 == 'optionA':
-        answer_id = flask.session['answer1']
-    elif answer1 == 'optionB':
-        answer_id = flask.session['answer2']
-    elif answer1 == 'optionC':
-        answer_id = flask.session['answer3']
-    flask.session['answer_id'] = answer_id
+#     #put currently selected answer in session
+#     answer1 = params['answer1']
+#     if answer1 == 'optionA':
+#         answer_id = flask.session['answer1']
+#     elif answer1 == 'optionB':
+#         answer_id = flask.session['answer2']
+#     elif answer1 == 'optionC':
+#         answer_id = flask.session['answer3']
+#     flask.session['answer_id'] = answer_id
 
-    return flask.jsonify(result={"status": 200})
+#     return flask.jsonify(result={"status": 200})

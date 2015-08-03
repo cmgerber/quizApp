@@ -88,6 +88,10 @@ a .btn {
     transform: translateY(-50%);
 }
 
+.btn-group {
+    margin-right: 2em;
+}
+
 .nodec:hover {
     text-decoration: none;
 }
@@ -112,8 +116,8 @@ a .btn {
     padding-bottom: 10px;
 }
 
-.twitter-typeahead{ 
-    float:left; 
+.twitter-typeahead{
+    float:left;
     width:100%;
 }
 
@@ -402,7 +406,7 @@ tspan {
 
 
 /* map */
-#map { 
+#map {
     height: 400px;
 }
 

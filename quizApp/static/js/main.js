@@ -209,23 +209,6 @@ $('#pretest-next').on('click', function() {
 //TRAINING
 //**********
 
-//keep track of answer choice
-$('#optionA').on('click',function(){
-  $.getJSON($SCRIPT_ROOT + "_answer_tracking", {
-    answer1:'optionA'
-  });
-});
-$('#optionB').on('click',function(){
-  $.getJSON($SCRIPT_ROOT + "_answer_tracking", {
-    answer1:'optionB'
-  });
-});
-$('#optionC').on('click',function(){
-  $.getJSON($SCRIPT_ROOT + "_answer_tracking", {
-    answer1:'optionC'
-  });
-});
-
 $("#training-start-button").on("click", function(e) {
         replace_html();
   });
@@ -245,13 +228,23 @@ $("body").delegate(".training-rating3-val", "click", function(e) {
 
 //next button click
 $('#training-next').on('click', function() {
+  console.log($("#training-question-answers input[type='radio']:checked").attr('id'));
+  console.log($("#training-rating1 button").text());
   //get answers and write them to db
-  var best1 = getParameterByName('question_type') == 'rating' ? $("#training-rating1 button").text(): $("#training-drop1 button").text(),
-      order = getParameterByName('order');
+  var rating1 = $("#training-rating1 button").text(),
+      best1 = $("#training-question-answers input[type='radio']:checked").attr('id');
+  //  if (getParameterByName('question_type') == 'rating') {
+  //     best1 = $("#training-rating1 button").text();
+  // }else {
+  //  best1 = $("#training-question-answers input[type='radio']:checked").attr('id');
+  // }
+  var order = getParameterByName('order');
+  console.log(rating1);
 
   $.getJSON($SCRIPT_ROOT + "_training_answers", {
     best1:best1,
-    order:order
+    order:order,
+    rating1:rating1
   }, function(data) {
     setTimeout(function() {
       replace_html();
@@ -378,22 +371,33 @@ function replace_html() {
           if(d.question_type == 'rating') {
             //add the question
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
-            $('#training-question').append('<br><p>Graph 1</p>'+rating1+
-                                          '<br><br><p>Graph 2</p>'+rating2+
-                                          '<br><br><p>Graph 3</p>'+rating3);
-          }else{
+            $('#training-question').append('<br>'+rating1);
+          } else if(d.question_type == 'heuristic'){
+            $('#training-question').empty().append('<h3>'+d.question+'</h3>');
+            $('#training-question').append('<div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="options" id="optionA"> 1 </label>'+ "   "+
+                                            d.answer1+'<br><br>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="options" id="optionB"> 3 </label>'+ "   "+
+                                          d.answer2+'<br><br>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="options" id="optionC"> 5 </label>'+ "   "+
+                                          d.answer3+'<br><br>'+'</div>');
+          } else{
             //add the question
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
-            $('#training-question').append('<div id="training-questions" class="btn-group" data-toggle="buttons">');
-            $('#training-question').append('<label class="btn btn-primary">'+
-                                            '<input type="radio" name="options" id="optionA">A</label>'+
-                                            d.answer1+
+            $('#training-question').append('<div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="options" id="optionA"> A </label>'+ "   "+
+                                            d.answer1+'<br><br>'+
                                           '<label class="btn btn-primary">'+
-                                          '<input type="radio" name="options" id="optionB">B</label>'+
-                                          d.answer2+
+                                          '<input type="radio" name="options" id="optionB"> B </label>'+ "   "+
+                                          d.answer2+'<br><br>'+
                                           '<label class="btn btn-primary">'+
-                                          '<input type="radio" name="options" id="optionC">C</label>'+
-                                          d.answer3+'</div>');
+                                          '<input type="radio" name="options" id="optionC"> C </label>'+ "   "+
+                                          d.answer3+'<br><br>'+'</div>');
+
           }
           //add next button
           $('#training-next').empty().append('<button id="training-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');

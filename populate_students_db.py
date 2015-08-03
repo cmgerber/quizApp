@@ -110,15 +110,15 @@ def create_student_data(sid_list, student_question_list, test, group):
             dataset = graph[0]
             if dataset == 0:
                 #not using 0 precursor for easier use in excel
-                graph_id = graph[1]
+                graph_id = graph[1] + 1
             else:
-                graph_id = int(str(dataset)+str(graph[1]))
+                graph_id = int(str(dataset)+str(graph[1]+1))
             if test == 'pre_test' or test == 'post_test':
                 order += 1
                 if dataset == 0:
-                    question_id = 6
+                    question_id = 5
                 else:
-                    question_id = int(str(dataset)+str(6))
+                    question_id = int(str(dataset)+str(5))
                 #write row to db
                 conn.execute(StudentsTest.insert(), {'student_id':student_id,
                                     'test':test,
@@ -128,19 +128,20 @@ def create_student_data(sid_list, student_question_list, test, group):
                                     'order':order,
                                     'complete':'no'})
             elif group == 'heuristic':
-                order += 1
-                if dataset == 0:
-                    question_id = 4
-                else:
-                    question_id = int(str(dataset)+str(4))
-                #write row to db
-                conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                                    'test':test,
-                                    'graph_id':graph_id,
-                                    'dataset':dataset,
-                                    'question_id':question_id,
-                                    'order':order,
-                                    'complete':'no'})
+              for x in range(6,9):
+                  order += 1
+                  if dataset == 0:
+                      question_id = x + 1
+                  else:
+                      question_id = int(str(dataset)+str(x + 1))
+                  #write row to db
+                  conn.execute(StudentsTest.insert(), {'student_id':student_id,
+                                      'test':test,
+                                      'graph_id':graph_id,
+                                      'dataset':dataset,
+                                      'question_id':question_id,
+                                      'order':order,
+                                      'complete':'no'})
             else:
                 #multiple choice questions
                 for x in range(3):
@@ -161,9 +162,9 @@ def create_student_data(sid_list, student_question_list, test, group):
               #only have rating question for training
               order += 1
               if dataset == 0:
-                  question_id = 5
+                  question_id = 4
               else:
-                  question_id = int(str(dataset)+str(5))
+                  question_id = int(str(dataset)+str(4))
               #write row to db
               conn.execute(StudentsTest.insert(), {'student_id':student_id,
                                   'test':test,
