@@ -170,25 +170,27 @@ $("#pretest-start-button").on("click", function(e) {
 
 //pretest dropdown
 // update distance dropdown text based on selection
-$("body").delegate(".pretest-drop1-val", "click", function(e) {
-  $("#pretest-drop1 button").html($(this).text() + ' <span class="caret"></span>');
-});
+// $("body").delegate(".pretest-drop1-val", "click", function(e) {
+//   $("#pretest-drop1 button").html($(this).text() + ' <span class="caret"></span>');
+// });
 
-$("body").delegate(".pretest-drop2-val", "click", function(e) {
-  $("#pretest-drop2 button").empty().append($(this).text() + ' <span class="caret"></span>');
-});
+// $("body").delegate(".pretest-drop2-val", "click", function(e) {
+//   $("#pretest-drop2 button").empty().append($(this).text() + ' <span class="caret"></span>');
+// });
 
-$("body").delegate(".pretest-drop3-val", "click", function(e) {
-  $("#pretest-drop3 button").empty().append($(this).text() + ' <span class="caret"></span>');
-});
+// $("body").delegate(".pretest-drop3-val", "click", function(e) {
+//   $("#pretest-drop3 button").empty().append($(this).text() + ' <span class="caret"></span>');
+// });
 
 //next button click
 $('#pretest-next').on('click', function() {
   //get answers and write them to db
-  var best1 = $("#pretest-drop1 button").text(),
-      best2 = $("#pretest-drop2 button").text(),
-      best3 = $("#pretest-drop3 button").text(),
+  var best1 = $("input[type='radio'][name='Q1']:checked").attr('id'),
+      best2 = $("input[type='radio'][name='Q2']:checked").attr('id'),
+      best3 = $("input[type='radio'][name='Q3']:checked").attr('id'),
       order = getParameterByName('order');
+
+      console.log(best1, best2, best3);
 
   $.getJSON($SCRIPT_ROOT + "_pretest_answers", {
     best1:best1,
@@ -214,25 +216,25 @@ $("#training-start-button").on("click", function(e) {
   });
 
 //for rating drop downs
-$("body").delegate(".training-rating1-val", "click", function(e) {
-  $("#training-rating1 button").html($(this).text() + ' <span class="caret"></span>');
-});
+// $("body").delegate(".training-rating1-val", "click", function(e) {
+//   $("#training-rating1 button").html($(this).text() + ' <span class="caret"></span>');
+// });
 
-$("body").delegate(".training-rating2-val", "click", function(e) {
-  $("#training-rating2 button").empty().append($(this).text() + ' <span class="caret"></span>');
-});
+// $("body").delegate(".training-rating2-val", "click", function(e) {
+//   $("#training-rating2 button").empty().append($(this).text() + ' <span class="caret"></span>');
+// });
 
-$("body").delegate(".training-rating3-val", "click", function(e) {
-  $("#training-rating3 button").empty().append($(this).text() + ' <span class="caret"></span>');
-});
+// $("body").delegate(".training-rating3-val", "click", function(e) {
+//   $("#training-rating3 button").empty().append($(this).text() + ' <span class="caret"></span>');
+// });
 
 //next button click
 $('#training-next').on('click', function() {
   console.log($("#training-question-answers input[type='radio']:checked").attr('id'));
-  console.log($("#training-rating1 button").text());
+  console.log($("#training-rating1 input[type='radio']:checked").attr('id'));
   //get answers and write them to db
-  var rating1 = $("#training-rating1 button").text(),
-      best1 = $("#training-question-answers input[type='radio']:checked").attr('id');
+  var rating1 = $("input[type='radio'][name='training-rating1']:checked").attr('id'),
+      best1 = $("input[type='radio'][name='training-question-answers']:checked").attr('id');
   //  if (getParameterByName('question_type') == 'rating') {
   //     best1 = $("#training-rating1 button").text();
   // }else {
@@ -356,9 +358,30 @@ function replace_html() {
                             '<p>Graph 3</p>');
             //add the question
             $('#pretest-question').empty().append('<h3>'+d.question+'</h3>');
-            $('#pretest-question').append('<br><p>Best Graph</p>'+dropdown1+
-                                          '<br><br><p>Second Best Graph</p>'+dropdown2+
-                                          '<br><br><p>Third Best Graph</p>'+dropdown3);
+            $('#pretest-question').append('<br><p>Best Graph</p>'+
+                                          '<br><div id="pretest-drop1" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="Q1" id="Graph 1"> Graph 1 </label>'+
+                                            '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q1" id="Graph 2"> Graph 2 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q1" id="Graph 3"> Graph 3 </label></div>'+
+                                          '<br><br><p>Second Best Graph</p>'+
+                                          '<br><div id="pretest-drop2" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="Q2" id="Graph 1"> Graph 1 </label>'+
+                                            '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q2" id="Graph 2"> Graph 2 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q2" id="Graph 3"> Graph 3 </label></div>'+
+                                          '<br><br><p>Third Best Graph</p>'+
+                                          '<br><div id="pretest-drop3" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="Q3" id="Graph 1"> Graph 1 </label>'+
+                                            '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q3" id="Graph 2"> Graph 2 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q3" id="Graph 3"> Graph 3 </label></div>');
 
           //add next button
           $('#pretest-next').empty().append('<button id="pretest-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');
@@ -371,31 +394,41 @@ function replace_html() {
           if(d.question_type == 'rating') {
             //add the question
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
-            $('#training-question').append('<br>'+rating1);
+            $('#training-question').append('<br><div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="training-rating1" id="1"> 1 </label>'+
+                                            '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="training-rating1" id="2"> 2 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="training-rating1" id="3"> 3 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="training-rating1" id="4"> 4 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="training-rating1" id="5"> 5 </label>'+'</div>');
           } else if(d.question_type == 'heuristic'){
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
             $('#training-question').append('<div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
                                             '<label class="btn btn-primary">'+
-                                            '<input type="radio" name="options" id="optionA"> 1 </label>'+ "   "+
+                                            '<input type="radio" name="training-question-answers" id="optionA"> 1 </label>'+
                                             d.answer1+'<br><br>'+
                                           '<label class="btn btn-primary">'+
-                                          '<input type="radio" name="options" id="optionB"> 3 </label>'+ "   "+
+                                          '<input type="radio" name="training-question-answers" id="optionB"> 3 </label>'+
                                           d.answer2+'<br><br>'+
                                           '<label class="btn btn-primary">'+
-                                          '<input type="radio" name="options" id="optionC"> 5 </label>'+ "   "+
+                                          '<input type="radio" name="training-question-answers" id="optionC"> 5 </label>'+
                                           d.answer3+'<br><br>'+'</div>');
           } else{
             //add the question
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
             $('#training-question').append('<div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
                                             '<label class="btn btn-primary">'+
-                                            '<input type="radio" name="options" id="optionA"> A </label>'+ "   "+
+                                            '<input type="radio" name="training-question-answers" id="optionA"> A </label>'+
                                             d.answer1+'<br><br>'+
                                           '<label class="btn btn-primary">'+
-                                          '<input type="radio" name="options" id="optionB"> B </label>'+ "   "+
+                                          '<input type="radio" name="training-question-answers" id="optionB"> B </label>'+
                                           d.answer2+'<br><br>'+
                                           '<label class="btn btn-primary">'+
-                                          '<input type="radio" name="options" id="optionC"> C </label>'+ "   "+
+                                          '<input type="radio" name="training-question-answers" id="optionC"> C </label>'+
                                           d.answer3+'<br><br>'+'</div>');
 
           }

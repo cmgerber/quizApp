@@ -166,6 +166,8 @@ def first_question():
             progress, graph_id, question, question_type, answers, complete, dataset, student_test_id, question_id = get_question(order_list[0][0])
         else:
             #the section has been completed, update progress and return to home page
+            #update order back to start
+            flask.session['order'] = 1
             progress_list = ['pre_test', 'training', 'post_test']
             ix = progress_list.index(progress) + 1
             if ix == len(progress_list):

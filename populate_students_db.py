@@ -131,9 +131,9 @@ def create_student_data(sid_list, student_question_list, test, group):
               for x in range(6,9):
                   order += 1
                   if dataset == 0:
-                      question_id = x + 1
+                      question_id = x
                   else:
-                      question_id = int(str(dataset)+str(x + 1))
+                      question_id = int(str(dataset)+str(x))
                   #write row to db
                   conn.execute(StudentsTest.insert(), {'student_id':student_id,
                                       'test':test,

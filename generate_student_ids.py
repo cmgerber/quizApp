@@ -10,4 +10,4 @@ while len(student_id_list) != 60:
 with open('student_id_list.csv', 'wb') as csvfile:
     spamwriter = csv.writer(csvfile, delimiter=',',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    spamwriter.writerow(student_id_list)
+    [spamwriter.writerow(s) for s in student_id_list]
