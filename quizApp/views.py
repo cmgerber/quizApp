@@ -172,6 +172,9 @@ def first_question():
             ix = progress_list.index(progress) + 1
             if ix == len(progress_list):
                 new_progress = 'complete'
+            #temp have posttest go to complete
+            elif progress_list[ix] == 'post_test':
+                new_progress = 'complete'
             else:
                 new_progress = progress_list[ix]
             r = conn.execute(Students.update().\
@@ -205,9 +208,9 @@ def first_question():
         flask.session['graph3'] = graph_list[2][1]
 
 
-        return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + ' height="500" width="500">',
-                             graph2='<img src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + ' height="500" width="500">',
-                             graph3='<img src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + ' height="500" width="500">',
+        return flask.jsonify(graph1='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + '>',
+                             graph2='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + '>',
+                             graph3='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + '>',
                              question=question,
                              question_type=question_type,
                              order=order,
@@ -224,7 +227,7 @@ def first_question():
         #if it is a rating question jsut return graph
         if question_type == 'rating':
             flask.session['graph1'] = graph_id
-            return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
+            return flask.jsonify(graph1='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + '>',
                              question=question,
                              question_type=question_type,
                              order=order,
