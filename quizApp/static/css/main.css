@@ -196,6 +196,10 @@ a .btn {
     color:#333;
 }
 
+#training-next , #pretest-next{
+    margin-bottom: 1em;
+}
+
 .graph {
     width: 70%;
     height: 70%;
@@ -260,14 +264,19 @@ a .btn {
     display: block;
 }
 
+.navbar {
+    min-height: 30px;
+    margin-bottom: 15px;
+}
+
 
 @media (min-width: 992px) {
     header, .trial-pane-header {
         margin-top: 100px;
-        margin-bottom: 15px;
+        margin-bottom: 5px;
     }
     .container-fluid {
-        height: 70px;
+        height: 30px;
     }
     .navbar-button, .navbar-search {
         position: relative;
@@ -293,7 +302,7 @@ a .btn {
 
 nav .site-name{
     padding-left: 2%;
-    margin-top: 16px;
+    margin-top: 8px;
     font-weight: 300;
 }
 

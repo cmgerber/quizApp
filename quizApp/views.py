@@ -224,7 +224,7 @@ def first_question():
         graph_location = conn.execute(select([Graphs.c.graph_location]).\
                                         where(Graphs.c.graph_id == graph_id)).fetchall()
 
-        #if it is a rating question jsut return graph
+        #if it is a rating question just return graph
         if question_type == 'rating':
             flask.session['graph1'] = graph_id
             return flask.jsonify(graph1='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + '>',
@@ -246,21 +246,42 @@ def first_question():
                 elif len(answer_list) <= 1:
                     shortt
 
-            #put graph id's in session
-            flask.session['graph1'] = graph_id
-            flask.session['answer1'] = answer_list[0][1]
-            flask.session['answer2'] = answer_list[1][1]
-            flask.session['answer3'] = answer_list[2][1]
+            if question_type == 'heuristic':
+                #put graph id's in session
+                flask.session['graph1'] = graph_id
+                flask.session['answer1'] = answer_list[0][1]
+                flask.session['answer2'] = answer_list[1][1]
+                flask.session['answer3'] = answer_list[2][1]
+                flask.session['answer4'] = answer_list[3][1]
+                flask.session['answer5'] = answer_list[4][1]
 
-            return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
-                                 question=question,
-                                 question_type=question_type,
-                                 order=order,
-                                 progress=progress,
-                                 answer1=answer_list[0][0],
-                                 answer2=answer_list[1][0],
-                                 answer3=answer_list[2][0])
-            #multiple choice, one graph
+                return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
+                                     question=question,
+                                     question_type=question_type,
+                                     order=order,
+                                     progress=progress,
+                                     answer1=answer_list[0][0],
+                                     answer2=answer_list[1][0],
+                                     answer3=answer_list[2][0],
+                                     answer4=answer_list[3][0],
+                                     answer5=answer_list[4][0])
+
+            else:
+                #put graph id's in session
+                flask.session['graph1'] = graph_id
+                flask.session['answer1'] = answer_list[0][1]
+                flask.session['answer2'] = answer_list[1][1]
+                flask.session['answer3'] = answer_list[2][1]
+
+                return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
+                                     question=question,
+                                     question_type=question_type,
+                                     order=order,
+                                     progress=progress,
+                                     answer1=answer_list[0][0],
+                                     answer2=answer_list[1][0],
+                                     answer3=answer_list[2][0])
+
 
 #get answers to question, write to db then get next question
 @app.route('/_pretest_answers')
@@ -327,6 +348,10 @@ def training_answers():
             answer_id = flask.session['answer2']
         elif answer1 == 'optionC':
             answer_id = flask.session['answer3']
+        elif answer1 == 'optionD':
+            answer_id = flask.session['answer4']
+        elif answer1 == 'optionE':
+            answer_id = flask.session['answer5']
 
 
     answer_list = [(answer_id,graph1)]

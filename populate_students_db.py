@@ -93,8 +93,13 @@ student_question_list = [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
 [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
 #temp created student id list
-question_student_id_list = [x + 1 for x in range(30)]
-heuristic_student_id_list = [x + 1 for x in range(30,60)]
+# question_student_id_list = [x + 1 for x in range(30)]
+# heuristic_student_id_list = [x + 1 for x in range(30,60)]
+
+#read in student lists
+df_sid = pd.read_csv('student_id_list.csv')
+question_student_id_list = list(df_sid.Questions)
+heuristic_student_id_list = list(df_sid.Heuristics)
 
 def create_student_data(sid_list, student_question_list, test, group):
     if test == 'pre_test' or test == 'post_test':
