@@ -30,7 +30,8 @@ engine, conn = initializeDB()
 #global variables
 student_id_list = [x+1 for x in range(60)]
 
-app.secret_key = str(uuid.uuid4())
+#app.secret_key = str(uuid.uuid4())
+app.secret_key = '}D\x04\x184\x14\xa7\xd7\xda\x93\xaa|\xa6\xed\xc4\x85\xf2W\xa3\x93\xda\x08\x80X'
 
 # homepage
 @app.route('/')
@@ -43,7 +44,10 @@ def login():
     #flask.session.clear()
     username = int(request.args['username'])
 
-    if username in student_id_list:
+    username_check = conn.execute(select([Students.c.student_id]).\
+                            where(Students.c.student_id == username)).fetchone()
+
+    if username == username_check[0]:
         flask.session['userid'] = username
         return flask.jsonify(result='ok',
                              username=username)

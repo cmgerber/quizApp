@@ -51,15 +51,6 @@ conn.execute(Graphs.insert(), [{'graph_id':data.graph_id,
                                   'graph_location':data.graph_location}
                                   for ix, data in df_graphs.iterrows()])
 
-#check for table and if it is there clear before writing to
-if engine.dialect.has_table(engine.connect(), "students"):
-    conn.execute(Students.delete())
-
-conn.execute(Students.insert(), [{'student_id':sid,
-                                  'progress':'pre_test',
-                                  'opt_in':'na'}
-                                  for sid in [x + 1 for x in range(60)]])
-
 
 student_question_list = [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
 [(1, 2), (0, 2), (5, 1), (2, 0), (3, 0), (4, 1)],
@@ -98,8 +89,20 @@ student_question_list = [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
 
 #read in student lists
 df_sid = pd.read_csv('student_id_list.csv')
-question_student_id_list = list(df_sid.Questions)
-heuristic_student_id_list = list(df_sid.Heuristics)
+df_sid.Questions = df_sid.Questions.apply(lambda x: int(x))
+df_sid.Heuristics = df_sid.Heuristics.apply(lambda x: int(x))
+question_student_id_list = [int(x) for x in list(df_sid.Questions)]
+heuristic_student_id_list = [int(x) for x in list(df_sid.Heuristics)]
+combined_id_list = question_student_id_list + heuristic_student_id_list
+
+#check for table and if it is there clear before writing to
+if engine.dialect.has_table(engine.connect(), "students"):
+    conn.execute(Students.delete())
+
+conn.execute(Students.insert(), [{'student_id':sid,
+                                  'progress':'pre_test',
+                                  'opt_in':'na'}
+                                  for sid in combined_id_list])
 
 def create_student_data(sid_list, student_question_list, test, group):
     if test == 'pre_test' or test == 'post_test':

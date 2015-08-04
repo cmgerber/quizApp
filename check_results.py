@@ -14,7 +14,7 @@ conn = engine.connect()
 metadata.create_all(engine)
 
 students = conn.execute(select([Students])).fetchall()
-
+print (students)
 results = conn.execute(select([Results])).fetchall()
 
 with open('student_table_list.csv', 'wb') as csvfile:
