@@ -168,20 +168,6 @@ $("#pretest-start-button").on("click", function(e) {
         replace_html();
   });
 
-//pretest dropdown
-// update distance dropdown text based on selection
-// $("body").delegate(".pretest-drop1-val", "click", function(e) {
-//   $("#pretest-drop1 button").html($(this).text() + ' <span class="caret"></span>');
-// });
-
-// $("body").delegate(".pretest-drop2-val", "click", function(e) {
-//   $("#pretest-drop2 button").empty().append($(this).text() + ' <span class="caret"></span>');
-// });
-
-// $("body").delegate(".pretest-drop3-val", "click", function(e) {
-//   $("#pretest-drop3 button").empty().append($(this).text() + ' <span class="caret"></span>');
-// });
-
 //next button click
 $('#pretest-next').on('click', function() {
   //get answers and write them to db
@@ -215,19 +201,6 @@ $("#training-start-button").on("click", function(e) {
         replace_html();
   });
 
-//for rating drop downs
-// $("body").delegate(".training-rating1-val", "click", function(e) {
-//   $("#training-rating1 button").html($(this).text() + ' <span class="caret"></span>');
-// });
-
-// $("body").delegate(".training-rating2-val", "click", function(e) {
-//   $("#training-rating2 button").empty().append($(this).text() + ' <span class="caret"></span>');
-// });
-
-// $("body").delegate(".training-rating3-val", "click", function(e) {
-//   $("#training-rating3 button").empty().append($(this).text() + ' <span class="caret"></span>');
-// });
-
 //next button click
 $('#training-next').on('click', function() {
   console.log($("#training-question-answers input[type='radio']:checked").attr('id'));
@@ -256,6 +229,59 @@ $('#training-next').on('click', function() {
 
 });
 
+
+//**********
+//POSTTEST
+//**********
+
+$("#post-start-button").on("click", function(e) {
+        replace_html();
+  });
+
+//next button click
+$('#post-next').on('click', function() {
+  //get answers and write them to db
+  var best1 = $("input[type='radio'][name='Q1']:checked").attr('id'),
+      best2 = $("input[type='radio'][name='Q2']:checked").attr('id'),
+      best3 = $("input[type='radio'][name='Q3']:checked").attr('id'),
+      best4 = $("#posttest-comment-text").val(),
+      order = getParameterByName('order');
+
+      console.log(best1, best2, best3, best4);
+
+  $.getJSON($SCRIPT_ROOT + "_pretest_answers", {
+    best1:best1,
+    best2:best2,
+    best3:best3,
+    best4:best4,
+    order:order
+  }, function(data) {
+    setTimeout(function() {
+      replace_html();
+    }, 1000);
+  }
+  );
+
+});
+
+//next button click
+$('#posttest-next').on('click', function() {
+  //get answers and write them to db
+  var best1 = $("input[type='radio'][name='posttest-question-answers']:checked").attr('id'),
+      best2 = $("input[type='radio'][name='posttest2-question-answers']:checked").attr('id');
+
+  var order = getParameterByName('order');
+
+  $.getJSON($SCRIPT_ROOT + "_posttest_answers", {
+    best1:best1,
+    best2:best2,
+    order:order
+  }, function(data) {
+    window.open($SCRIPT_ROOT + "donedone", "_self");
+  }
+  );
+
+});
 
 //**********
 //QUESTION CREATION
@@ -346,7 +372,7 @@ function replace_html() {
         if(d.progress == 'done') {
           window.open($SCRIPT_ROOT + "done", "_self");
         }
-        if(d.progress == 'pre_test' || d.progress == 'post_test'){
+        if(d.progress == 'pre_test'){
           //remove start button
           $('#pretest-start-area').remove();
           //add the three graphs
@@ -385,6 +411,49 @@ function replace_html() {
 
           //add next button
           $('#pretest-next').empty().append('<button id="pretest-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');
+        } else if(d.progress == 'post_test'){
+          //remove start button
+          $('#post-start-area').remove();
+          //add the three graphs
+          $('#graph1').empty().append(d.graph1+
+                            '<p>Graph 1</p>');
+          $('#graph2').empty().append(d.graph2+
+                            '<p>Graph 2</p>');
+          $('#graph3').empty().append(d.graph3+
+                            '<p>Graph 3</p>');
+            //add the question
+            $('#post-question').empty().append('<h3>'+d.question+'</h3>');
+            $('#post-question').append('<br><p>Best Graph</p>'+
+                                          '<br><div id="post-drop1" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="Q1" id="Graph 1"> Graph 1 </label>'+
+                                            '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q1" id="Graph 2"> Graph 2 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q1" id="Graph 3"> Graph 3 </label></div>'+
+                                          '<br><br><p>Second Best Graph</p>'+
+                                          '<br><div id="post-drop2" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="Q2" id="Graph 1"> Graph 1 </label>'+
+                                            '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q2" id="Graph 2"> Graph 2 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q2" id="Graph 3"> Graph 3 </label></div>'+
+                                          '<br><br><p>Third Best Graph</p>'+
+                                          '<br><div id="post-drop3" class="btn-group" data-toggle="buttons">'+
+                                            '<label class="btn btn-primary">'+
+                                            '<input type="radio" name="Q3" id="Graph 1"> Graph 1 </label>'+
+                                            '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q3" id="Graph 2"> Graph 2 </label>'+
+                                          '<label class="btn btn-primary">'+
+                                          '<input type="radio" name="Q3" id="Graph 3"> Graph 3 </label></div><br><br>');
+            $('#post-question').append('<div id="post-comment1" class="form-group">'+
+                                            '<label for="comment">Briefly describe your reasoning for this ranking:</label>'+
+                                            '<textarea class="form-control" rows="5" id="posttest-comment-text"></textarea>'+
+                                          '</div>');
+
+          //add next button
+          $('#post-next').empty().append('<button id="post-next" type="button" class="btn btn-primary" data-dismiss="modal">Next</button>');
         }else{
           //remove start button
           $('#training-start-area').remove();
