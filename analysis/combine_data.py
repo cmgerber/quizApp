@@ -24,10 +24,11 @@ results = conn.execute(select([Results.c.student_id,
                                Questions.c.question_id,
                                Questions.c.question,
                                Questions.c.question_type,
-                               StudentsTest.c.dataset]).\
+                               StudentsTest.c.dataset,
+                               StudentsTest.c.test]).\
                        select_from(Results.join(Students,
                                     Students.c.student_id == Results.c.student_id).\
-                       join(StudentsTest,
+                       outerjoin(StudentsTest,
                                  StudentsTest.c.student_test_id == Results.c.student_test_id).\
                        outerjoin(Questions,
                                  Questions.c.question_id == StudentsTest.c.question_id).\
@@ -36,9 +37,10 @@ results = conn.execute(select([Results.c.student_id,
                        where(Students.c.opt_in == 'yes')).fetchall()
 
 results = [[x.replace(',', '') if type(x) == type('s') else x for x in t] for t in results]
+results = [[' '.join(x.splitlines()) if type(x) == type('s') else x for x in t] for t in results]
 results = [['Student_id', 'Student_Test_id', 'Result_id',
             'answer', 'graph_id', 'answer_text', 'question_id',
-            'question', 'Question_type', 'dataset']] + results
+            'question', 'Question_type', 'dataset', 'test']] + results
 
 with open('student_table_list.csv', 'w', newline='') as csvfile:
     spamwriter = csv.writer(csvfile, delimiter=',',
