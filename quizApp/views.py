@@ -41,12 +41,14 @@ def home():
 
 @app.route('/_login')
 def login():
+    #TODO: careful casting to int
     #flask.session.clear()
     username = int(request.args['username'])
 
     username_check = conn.execute(select([Students.c.student_id]).\
                             where(Students.c.student_id == username)).fetchone()
 
+    #TODO: very shaky validation here
     if username == username_check[0]:
         flask.session['userid'] = username
         return flask.jsonify(result='ok',
@@ -104,6 +106,8 @@ def training():
 def next():
     return flask.render_template('lobby.html')
 
+#TODO: done vs donedone
+
 #Complete page
 @app.route('/donedone')
 def donedone():
@@ -151,6 +155,7 @@ def get_question(order):
     return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id
 
 #provide first quiz question
+#TODO: looks like this returns any quiz question
 @app.route('/first_question')
 def first_question():
     userid = flask.session['userid']
@@ -254,7 +259,7 @@ def first_question():
                 answer_list[0][1]
             except:
                 if len(answer_list) >1:
-                    longg
+                    longg #TODO: baad
                 elif len(answer_list) <= 1:
                     shortt
 
@@ -277,9 +282,10 @@ def first_question():
                                      answer3=answer_list[2][0],
                                      answer4=answer_list[3][0],
                                      answer5=answer_list[4][0])
-
+                #TODO: can we just return an array of answers?
             else:
                 #put graph id's in session
+                #TODO: factor out
                 flask.session['graph1'] = graph_id
                 flask.session['answer1'] = answer_list[0][1]
                 flask.session['answer2'] = answer_list[1][1]
@@ -424,5 +430,3 @@ def training_answers():
     # question_json = first_question()
     # return question_json
     return flask.jsonify(result={"status": 200})
-
-
