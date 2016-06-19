@@ -1,3 +1,7 @@
+"""
+Generate 60 random student ID's, save them into student_id_list.csv.
+"""
+
 from random import randint
 import csv
 

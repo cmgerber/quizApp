@@ -88,7 +88,7 @@ student_question_list = [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
 # heuristic_student_id_list = [x + 1 for x in range(30,60)]
 
 #read in student lists
-df_sid = pd.read_csv('student_id_list.csv')
+df_sid = pd.read_csv('quizApp/data/student_id_list.csv')
 df_sid.Questions = df_sid.Questions.apply(lambda x: int(x))
 df_sid.Heuristics = df_sid.Heuristics.apply(lambda x: int(x))
 question_student_id_list = [int(x) for x in list(df_sid.Questions)]
@@ -191,8 +191,3 @@ if engine.dialect.has_table(engine.connect(), "students_test"):
 for test in ['pre_test', 'training', 'post_test']:
     create_student_data(question_student_id_list, student_question_list, test, 'question')
     create_student_data(heuristic_student_id_list, student_question_list, test, 'heuristic')
-
-
-
-
-
