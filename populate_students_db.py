@@ -4,9 +4,11 @@ from db_tables import metadata, Questions, Answers, Results, Students, StudentsT
 
 import pandas as pd
 
+#TODO: don't hardcode
 engine = create_engine('sqlite:///quizDB.db?check_same_thread=False', echo=True)
 conn = engine.connect()
 metadata.create_all(engine)
+session = sessionmaker(bind=engine)()
 
 #CLEAR RESULTS TABLE
 if engine.dialect.has_table(engine.connect(), "results"):
@@ -17,6 +19,9 @@ df_questions = pd.read_excel('quizApp/data/question_table.xlsx', 'Sheet1')
 #check for table and if it is there clear before writing to
 if engine.dialect.has_table(engine.connect(), "questions"):
     conn.execute(Questions.delete())
+
+for ix, data in df_questions.iterrows():
+
 
 conn.execute(Questions.insert(), [{'question_id':data.question_id,
                                   'dataset':data.dataset,
@@ -52,36 +57,37 @@ conn.execute(Graphs.insert(), [{'graph_id':data.graph_id,
                                   for ix, data in df_graphs.iterrows()])
 
 
-student_question_list = [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
-[(1, 2), (0, 2), (5, 1), (2, 0), (3, 0), (4, 1)],
-[(3, 0), (2, 1), (4, 0), (5, 1), (0, 0), (1, 2)],
-[(5, 2), (2, 2), (0, 1), (1, 0), (3, 1), (4, 0)],
-[(2, 2), (0, 1), (3, 1), (4, 0), (1, 1), (5, 1)],
-[(0, 0), (3, 0), (1, 0), (2, 2), (5, 2), (4, 2)],
-[(4, 2), (1, 1), (5, 2), (0, 0), (3, 1), (2, 1)],
-[(4, 2), (3, 0), (1, 2), (0, 1), (5, 2), (2, 1)],
-[(3, 1), (2, 0), (4, 2), (1, 1), (0, 1), (5, 2)],
-[(0, 2), (4, 1), (3, 0), (5, 0), (1, 1), (2, 0)],
-[(5, 1), (4, 1), (0, 2), (3, 2), (1, 2), (2, 0)],
-[(2, 1), (5, 0), (0, 2), (3, 2), (4, 2), (1, 1)],
-[(3, 1), (5, 2), (4, 1), (0, 2), (2, 0), (1, 0)],
-[(1, 1), (5, 1), (2, 2), (4, 0), (3, 1), (0, 2)],
-[(2, 0), (1, 0), (5, 0), (4, 1), (0, 2), (3, 2)],
-[(1, 1), (5, 1), (0, 2), (4, 2), (2, 1), (3, 1)],
-[(5, 1), (4, 2), (2, 0), (1, 2), (3, 2), (0, 1)],
-[(0, 0), (2, 2), (1, 0), (4, 1), (5, 2), (3, 2)],
-[(0, 1), (1, 2), (5, 2), (2, 0), (4, 2), (3, 0)],
-[(1, 0), (3, 2), (0, 0), (2, 2), (4, 0), (5, 0)],
-[(3, 2), (2, 1), (4, 1), (1, 0), (5, 1), (0, 0)],
-[(1, 0), (3, 2), (5, 0), (0, 1), (4, 1), (2, 2)],
-[(5, 2), (3, 1), (1, 1), (0, 0), (4, 0), (2, 2)],
-[(4, 1), (0, 0), (3, 1), (2, 1), (5, 1), (1, 0)],
-[(5, 0), (2, 0), (0, 1), (3, 0), (1, 1), (4, 2)],
-[(0, 2), (4, 0), (1, 1), (3, 1), (2, 2), (5, 0)],
-[(2, 0), (0, 0), (3, 0), (1, 2), (5, 0), (4, 1)],
-[(0, 1), (4, 2), (2, 1), (5, 2), (1, 0), (3, 0)],
-[(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
-[(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
+student_question_list = \
+[[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
+ [(1, 2), (0, 2), (5, 1), (2, 0), (3, 0), (4, 1)],
+ [(3, 0), (2, 1), (4, 0), (5, 1), (0, 0), (1, 2)],
+ [(5, 2), (2, 2), (0, 1), (1, 0), (3, 1), (4, 0)],
+ [(2, 2), (0, 1), (3, 1), (4, 0), (1, 1), (5, 1)],
+ [(0, 0), (3, 0), (1, 0), (2, 2), (5, 2), (4, 2)],
+ [(4, 2), (1, 1), (5, 2), (0, 0), (3, 1), (2, 1)],
+ [(4, 2), (3, 0), (1, 2), (0, 1), (5, 2), (2, 1)],
+ [(3, 1), (2, 0), (4, 2), (1, 1), (0, 1), (5, 2)],
+ [(0, 2), (4, 1), (3, 0), (5, 0), (1, 1), (2, 0)],
+ [(5, 1), (4, 1), (0, 2), (3, 2), (1, 2), (2, 0)],
+ [(2, 1), (5, 0), (0, 2), (3, 2), (4, 2), (1, 1)],
+ [(3, 1), (5, 2), (4, 1), (0, 2), (2, 0), (1, 0)],
+ [(1, 1), (5, 1), (2, 2), (4, 0), (3, 1), (0, 2)],
+ [(2, 0), (1, 0), (5, 0), (4, 1), (0, 2), (3, 2)],
+ [(1, 1), (5, 1), (0, 2), (4, 2), (2, 1), (3, 1)],
+ [(5, 1), (4, 2), (2, 0), (1, 2), (3, 2), (0, 1)],
+ [(0, 0), (2, 2), (1, 0), (4, 1), (5, 2), (3, 2)],
+ [(0, 1), (1, 2), (5, 2), (2, 0), (4, 2), (3, 0)],
+ [(1, 0), (3, 2), (0, 0), (2, 2), (4, 0), (5, 0)],
+ [(3, 2), (2, 1), (4, 1), (1, 0), (5, 1), (0, 0)],
+ [(1, 0), (3, 2), (5, 0), (0, 1), (4, 1), (2, 2)],
+ [(5, 2), (3, 1), (1, 1), (0, 0), (4, 0), (2, 2)],
+ [(4, 1), (0, 0), (3, 1), (2, 1), (5, 1), (1, 0)],
+ [(5, 0), (2, 0), (0, 1), (3, 0), (1, 1), (4, 2)],
+ [(0, 2), (4, 0), (1, 1), (3, 1), (2, 2), (5, 0)],
+ [(2, 0), (0, 0), (3, 0), (1, 2), (5, 0), (4, 1)],
+ [(0, 1), (4, 2), (2, 1), (5, 2), (1, 0), (3, 0)],
+ [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
+ [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
 #temp created student id list
 # question_student_id_list = [x + 1 for x in range(30)]
@@ -105,11 +111,19 @@ conn.execute(Students.insert(), [{'student_id':sid,
                                   for sid in combined_id_list])
 
 def create_student_data(sid_list, student_question_list, test, group):
+    """
+    sid_list: list of student id's
+    student_question_list:
+    test: pre_test or training or post_test
+    group: question or heuristic
+    """
     if test == 'pre_test' or test == 'post_test':
-      question_list = [x[:3] for x in student_question_list]
+        question_list = [x[:3] for x in student_question_list]
     else:
-      question_list = [x[3:] for x in student_question_list]
+        #pick last three
+        question_list = [x[3:] for x in student_question_list]
     for n, student in enumerate(question_list):
+        #n is the nth student
         student_id = sid_list[n]
         #count the order for each student per test
         order = 0
@@ -129,27 +143,27 @@ def create_student_data(sid_list, student_question_list, test, group):
                     question_id = int(str(dataset)+str(5))
                 #write row to db
                 conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                                    'test':test,
-                                    'graph_id':graph_id,
-                                    'dataset':dataset,
-                                    'question_id':question_id,
-                                    'order':order,
-                                    'complete':'no'})
+                    'test':test,
+                    'graph_id':graph_id,
+                    'dataset':dataset,
+                    'question_id':question_id,
+                    'order':order,
+                    'complete':'no'})
             elif group == 'heuristic':
-              for x in range(6,9):
-                  order += 1
+                for x in range(6,9):
+                    order += 1
                   if dataset == 0:
                       question_id = x
                   else:
                       question_id = int(str(dataset)+str(x))
                   #write row to db
                   conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                                      'test':test,
-                                      'graph_id':graph_id,
-                                      'dataset':dataset,
-                                      'question_id':question_id,
-                                      'order':order,
-                                      'complete':'no'})
+                      'test':test,
+                      'graph_id':graph_id,
+                      'dataset':dataset,
+                      'question_id':question_id,
+                      'order':order,
+                      'complete':'no'})
             else:
                 #multiple choice questions
                 for x in range(3):
@@ -160,14 +174,14 @@ def create_student_data(sid_list, student_question_list, test, group):
                         question_id = int(str(dataset)+str(x + 1))
                     #write row to db
                     conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                                    'test':test,
-                                    'graph_id':graph_id,
-                                    'dataset':dataset,
-                                    'question_id':question_id,
-                                    'order':order,
-                                    'complete':'no'})
-            if test == 'training':
-              #only have rating question for training
+                        'test':test,
+                        'graph_id':graph_id,
+                        'dataset':dataset,
+                        'question_id':question_id,
+                        'order':order,
+                        'complete':'no'})
+                    if test == 'training':
+                        #only have rating question for training
               order += 1
               if dataset == 0:
                   question_id = 4
@@ -175,12 +189,12 @@ def create_student_data(sid_list, student_question_list, test, group):
                   question_id = int(str(dataset)+str(4))
               #write row to db
               conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                                  'test':test,
-                                  'graph_id':graph_id,
-                                  'dataset':dataset,
-                                  'question_id':question_id,
-                                  'order':order,
-                                  'complete':'no'})
+                  'test':test,
+                  'graph_id':graph_id,
+                  'dataset':dataset,
+                  'question_id':question_id,
+                  'order':order,
+                  'complete':'no'})
 
 
 #check for table and if it is there clear before writing to

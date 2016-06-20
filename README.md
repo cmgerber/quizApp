@@ -3,6 +3,7 @@ Platform for asking questions based on visualizations.
 ## Installation
 
     pip install -r requirements.txt
+    python populate_students_db.py
 
 ## Running
 
