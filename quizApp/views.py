@@ -7,31 +7,10 @@ from flask import request, url_for
 from random import shuffle
 import os
 
-from sqlalchemy import create_engine, ForeignKey
-from sqlalchemy import Column, Date, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
+from sqlalchemy.orm.exc import NoResultFound
 
-from db_tables import metadata, Questions, Answers, Results, Students, StudentsTest, Graphs
-
-#initialize db
-
-def initializeDB():
-    #project_root = '/projects/oev/quizApp_Project/'
-    project_root = os.path.dirname(os.path.realpath('quizApp_Project/'))
-    DATABASE = os.path.join(project_root, 'quizDB.db')
-    engine = create_engine('sqlite:///{0}?check_same_thread=False'.format(DATABASE), echo=True)
-    conn = engine.connect()
-    metadata.create_all(engine)
-    return engine, conn
-
-engine, conn = initializeDB()
-
-#global variables
-student_id_list = [x+1 for x in range(60)]
-
-#app.secret_key = str(uuid.uuid4())
-app.secret_key = '}D\x04\x184\x14\xa7\xd7\xda\x93\xaa|\xa6\xed\xc4\x85\xf2W\xa3\x93\xda\x08\x80X'
+from models import Question, Answer, Result, Student, StudentsTest, Graph
 
 # homepage
 @app.route('/')
@@ -42,32 +21,30 @@ def home():
 @app.route('/_login')
 def login():
     #TODO: careful casting to int
-    #flask.session.clear()
+    #TODO: we should just use flask-login
     username = int(request.args['username'])
 
-    username_check = conn.execute(select([Students.c.student_id]).\
-                            where(Students.c.student_id == username)).fetchone()
-
-    #TODO: very shaky validation here
-    if username == username_check[0]:
-        flask.session['userid'] = username
-        return flask.jsonify(result='ok',
-                             username=username)
-    else:
+    try:
+        user = Student.query.filter_by(id=username).one()
+    except NoResultFound:
         return flask.jsonify(result='bad')
+
+    flask.session['userid'] = username
+    return flask.jsonify(result='ok',
+                         username=username)
 
 @app.route('/_logout')
 def logout():
-    #flask.session.clear()
     flask.session.pop('userid',None)
     return flask.jsonify(result='ok')
 
 @app.route('/_check_login')
 def check_login():
     userid = flask.session['userid'] if 'userid' in flask.session else None
-    if 'userid' in flask.session:
-        username, progress = conn.execute(select([Students.c.student_id, Students.c.progress]).\
-                                            where(Students.c.student_id == flask.session['userid'])).fetchone()
+    if userid:
+        student = Student.query.filter_by(id=userid).fetchone()
+        username = student.id
+        progress = student.progress
     else:
         username = None
         progress = None
@@ -116,77 +93,111 @@ def donedone():
 #Complete page
 @app.route('/done')
 def done():
+    questions = Question.query.join(StudenTest).\
+            filter(StudentTest.student_id == flask.session['userid']).\
+            all()
+
+    question_types = [q.question_type for q in questions]
+
+    """
     question_type = [x[0] for x in conn.execute(select([Questions.c.question_type]).\
             select_from(StudentsTest.join(Questions,
                  Questions.c.question_id == StudentsTest.c.question_id)).\
         where(StudentsTest.c.student_id == flask.session['userid'])).fetchall()]
-    if 'multiple_choice' in question_type:
+    """
+
+    #TODO: enum
+    if 'multiple_choice' in question_types:
         return flask.render_template('doneA.html')
-    elif 'heuristic' in question_type:
+    elif 'heuristic' in question_types:
         return flask.render_template('doneB.html')
     else:
-        asdf
+        #TODO: proper logging
+        print "Unknown question types"
 
 #quiz start button
 @app.route('/_quizStart')
 def quizStart():
-    username, progress = conn.execute(select([Students.c.student_id, Students.c.progress]).\
-                                            where(Students.c.student_id == flask.session['userid'])).fetchone()
+    student = Student.query.filter_by(id=flask.session["userid"]).one()
 
-    return flask.jsonify(progress=progress)
+    return flask.jsonify(progress=student.progress)
 
 def get_question(order):
-    progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id = conn.execute(select([Students.c.progress,
-                                            StudentsTest.c.graph_id,
-                                            Questions.c.question,
-                                            Questions.c.question_type,
-                                            Answers.c.answer,
-                                            StudentsTest.c.complete,
-                                            StudentsTest.c.dataset,
-                                            StudentsTest.c.student_test_id,
-                                            Questions.c.question_id]).\
-                                select_from(StudentsTest.join(Students,
-                                            Students.c.student_id == StudentsTest.c.student_id).\
-                                join(Questions,
-                                     Questions.c.question_id == StudentsTest.c.question_id)).\
-                            where(and_(StudentsTest.c.student_id == flask.session['userid'],
-                                  StudentsTest.c.test == Students.c.progress,
-                                  StudentsTest.c.order == order))).fetchone()
-    return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id
+    test = StudentTest.query.\
+            join(Student).\
+            join(Question).\
+            add_columns(Student.progress,
+                        Question.question,
+                        Question.question_type,
+                        Question.id).\
+            filter(and_(
+                StudentTest.student_id == flask.session["userid"],
+                StudentTest.test == Student.progress
+                StudentTest.order == order)).\
+            first()
+    """
+    progress, graph_id, questions, question_type, answers,\
+            complete, dataset, student_test_id, \
+            question_id = conn.execute(
+                select([Students.c.progress,
+                        StudentsTest.c.graph_id,
+                        Questions.c.question,
+                        Questions.c.question_type,
+                        Answers.c.answer,
+                        StudentsTest.c.complete,
+                        StudentsTest.c.dataset,
+                        StudentsTest.c.student_test_id,
+                        Questions.c.question_id]).\
+                select_from(StudentsTest.join(Students,
+                                              Students.c.student_id == StudentsTest.c.student_id).\
+                            join(Questions,
+                                 Questions.c.question_id == StudentsTest.c.question_id)).\
+                where(and_(StudentsTest.c.student_id == flask.session['userid'],
+                           StudentsTest.c.test == Students.c.progress,
+                           StudentsTest.c.order == order))).fetchone()
+    """
+    return test
+    #return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id
 
 #provide first quiz question
-#TODO: looks like this returns any quiz question
 @app.route('/first_question')
 def first_question():
     userid = flask.session['userid']
+    student = Student.query.get(flask.session["userid"])
 
     try:
         order = flask.session['order']
-    except:
+    except: #TODO: bad except
         order = 1
 
     try:
-        progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
-    except:
+        #progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
+        test = get_question(order)
+    except: #TODO: bad except
         complete = 'yes'
-        progress = conn.execute(select([Students.c.progress]).\
-                                where(Students.c.student_id == flask.session['userid'])).fetchone()
-        progress = progress[0]
+        progress = student.progress
 
     #check to make sure they have not done the question before
     if complete == 'yes':
         #this means the question has already been completed
+        order_list = StudentTest.query.join(Student).\
+                filter(and_(StudentTest.student_id == flask.session["userid"],
+                            StudentTest.complete == "no",
+                            StudentTest.test == Student.progress)).\
+                all()
+        """
         order_list = conn.execute(select([StudentsTest.c.order]).\
                              select_from(StudentsTest.join(Students,
                                          Students.c.student_id == StudentsTest.c.student_id)).\
                              where(and_(StudentsTest.c.student_id == flask.session['userid'],
                                    StudentsTest.c.complete == 'no',
                                    StudentsTest.c.test == Students.c.progress))).fetchall()
-
+        """
+        #TODO: how is this sorting?
         order_list = sorted(order_list)
 
         if len(order_list) >= 1:
-            progress, graph_id, question, question_type, answers, complete, dataset, student_test_id, question_id = get_question(order_list[0][0])
+            test = get_question(order_list[0].order)
         else:
             #the section has been completed, update progress and return to home page
             #update order back to start
@@ -197,9 +208,9 @@ def first_question():
                 new_progress = 'complete'
             else:
                 new_progress = progress_list[ix]
-            r = conn.execute(Students.update().\
-                             where(Students.c.student_id == flask.session['userid']).\
-                             values(progress=new_progress))
+            student.progress = new_progress
+            db.session.add(student)
+            db.session.commit()
             #return to homepage
             if new_progress == 'complete':
                 return flask.jsonify(progress='done')
@@ -207,18 +218,19 @@ def first_question():
                 return flask.jsonify(progress='next')
 
     #put the student_test_id in session
-    flask.session['student_test_id'] = student_test_id
-    flask.session['order'] = order
-    flask.session['question_type'] = question_type
+    flask.session['student_test_id'] = test.id
+    flask.session['order'] = test.order
+    flask.session['question_type'] = test.question_type
 
     #check which test
     if progress == 'pre_test' or progress == 'post_test':
         # query three graphs
-
+        graph_list = Graph.query.filter_by(dataset=dataset).all()
+        """
         graph_list = conn.execute(select([Graphs.c.graph_location,
                                             Graphs.c.graph_id]).\
                                         where(Graphs.c.dataset == dataset)).fetchall()
-
+        """
         #randomly shuffle order of graphs
         shuffle(graph_list)
 
@@ -227,20 +239,22 @@ def first_question():
         flask.session['graph2'] = graph_list[1][1]
         flask.session['graph3'] = graph_list[2][1]
 
-
+        # TODO: can't we just pass the url
         return flask.jsonify(graph1='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + '>',
                              graph2='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + '>',
                              graph3='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + '>',
-                             question=question,
-                             question_type=question_type,
-                             order=order,
-                             progress=progress)
+                             question=test.question,
+                             question_type=test.question_type,
+                             order=test.order,
+                             progress=test.progress)
 
     elif progress == 'training':
         #get graph location
+        graph = Graph.query.get(graph_id)
+        """
         graph_location = conn.execute(select([Graphs.c.graph_location]).\
                                         where(Graphs.c.graph_id == graph_id)).fetchall()
-
+        """
         #if it is a rating question just return graph
         if question_type == 'rating':
             flask.session['graph1'] = graph_id
@@ -251,26 +265,21 @@ def first_question():
                              progress=progress)
         else:
             #get answers query
+            answer_list = Answer.query.filter(question_id=question_id).all()
+            """
             answer_list = conn.execute(select([Answers.c.answer,
                                               Answers.c.answer_id]).\
                                         where(Answers.c.question_id == question_id)).fetchall()
-
-            try:
-                answer_list[0][1]
-            except:
-                if len(answer_list) >1:
-                    longg #TODO: baad
-                elif len(answer_list) <= 1:
-                    shortt
+            """
 
             if question_type == 'heuristic':
                 #put graph id's in session
                 flask.session['graph1'] = graph_id
-                flask.session['answer1'] = answer_list[0][1]
-                flask.session['answer2'] = answer_list[1][1]
-                flask.session['answer3'] = answer_list[2][1]
-                flask.session['answer4'] = answer_list[3][1]
-                flask.session['answer5'] = answer_list[4][1]
+                flask.session['answer1'] = answer_list[0].answer
+                flask.session['answer2'] = answer_list[1].answer
+                flask.session['answer3'] = answer_list[2].answer
+                flask.session['answer4'] = answer_list[3].answer
+                flask.session['answer5'] = answer_list[4].answer
 
                 return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
                                      question=question,
@@ -287,18 +296,18 @@ def first_question():
                 #put graph id's in session
                 #TODO: factor out
                 flask.session['graph1'] = graph_id
-                flask.session['answer1'] = answer_list[0][1]
-                flask.session['answer2'] = answer_list[1][1]
-                flask.session['answer3'] = answer_list[2][1]
+                flask.session['answer1'] = answer_list[0].answer
+                flask.session['answer2'] = answer_list[1].answer
+                flask.session['answer3'] = answer_list[2].answer
 
                 return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
                                      question=question,
                                      question_type=question_type,
                                      order=order,
                                      progress=progress,
-                                     answer1=answer_list[0][0],
-                                     answer2=answer_list[1][0],
-                                     answer3=answer_list[2][0])
+                                     answer1=answer_list[0].answer,
+                                     answer2=answer_list[1].answer,
+                                     answer3=answer_list[2].answer)
 
 
 #get answers to question, write to db then get next question
@@ -328,17 +337,32 @@ def pretest_answers():
 
     #write to db
     #update complete row in StudentsTest table
+    test = StudentTest.query.get(student_test_id)
+    test.complete = "yes"
+    db.session.add(test)
+    db.session.commit()
+    """
     r = conn.execute(StudentsTest.update().\
                      where(StudentsTest.c.student_test_id == student_test_id).\
                      values(complete='yes'))
+"""
+    for answer in answer_list:
+        result = Result(
+            student_id=student_id,
+            student_test_id=student_test_id,
+            answer=answer[0]
+            graph_id=answer[1])
+        session.add(result)
 
+    session.commit()
+    """
     conn.execute(Results.insert(), [{
                       'student_id':student_id,
                       'student_test_id':student_test_id,
                       'answer':answer[0],
                       'graph_id':answer[1],
                       } for answer in answer_list])
-
+    """
     #get next question
     # question_json = first_question()
     # return question_json
@@ -368,12 +392,21 @@ def posttest_answers():
     #                  where(StudentsTest.c.student_test_id == student_test_id).\
     #                  values(complete='yes'))
 
+    for answer in answer_list:
+        result = Result(
+            student_id=student_id,
+            student_test_id=int(str(student_id) + str(answer[1])),
+            answer=answer[0]
+            graph_id="na"
+        )
+    """
     conn.execute(Results.insert(), [{
                       'student_id':student_id,
                       'student_test_id':int(str(student_id) + str(answer[1])),
                       'answer':answer[0],
                       'graph_id':'na',
                       } for answer in answer_list])
+    """
 
     #get next question
     # question_json = first_question()
@@ -415,6 +448,21 @@ def training_answers():
 
     #write to db
     #update complete row in StudentsTest table
+    student_test = StudentTest.query.get(student_test_id)
+    student_test.complete = "yes"
+    db.session.add(student_test)
+
+    for answer in answer_list:
+        result = Result(
+            student_id=student_id,
+            student_test_id=student_test_id,
+            answer=answer[0],
+            graph_id=answer[1])
+        db.session.add(result)
+    db.session.commit()
+
+
+"""
     r = conn.execute(StudentsTest.update().\
                      where(StudentsTest.c.student_test_id == student_test_id).\
                      values(complete='yes'))
@@ -425,7 +473,7 @@ def training_answers():
                       'answer':answer[0],
                       'graph_id':answer[1],
                       } for answer in answer_list])
-
+"""
     #get next question
     # question_json = first_question()
     # return question_json
