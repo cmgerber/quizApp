@@ -12,20 +12,24 @@
         <div class='col-sm-12 col-md-12'>
         <table>
             <thead>
-                <td>Name</td>
-                <td>Start time</td>
-                <td>End time</td>
-                <td>Modify</td>
-                <td>Delete</td>
+                <tr>
+                    <td>Name</td>
+                    <td>Start time</td>
+                    <td>End time</td>
+                    <td>Modify</td>
+                    <td>Delete</td>
+                </tr>
             </thead>
             <tbody>
-                <tr>blah blah</tr>
+            {% for exp in experiments %}
                 <tr>
-                    <td>textbox</td>
-                    <td>datetime widget</td>
-                    <td>datetime widget</td>
-                    <td>save button</td>
+                    <td>{{exp.name}}</td>
+                    <td>{{exp.start|datetime_format}}</td>                     
+                    <td>{{exp.end|datetime_format}}</td>                     
+                    <td></td>                     
+                    <td></td>
                 </tr>
+            {% endfor %}                     
             </tbody>
         </div>
       </div> <!-- end .row -->

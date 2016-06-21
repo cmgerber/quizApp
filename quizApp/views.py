@@ -20,13 +20,13 @@ from models import Question, Answer, Result, Student, StudentsTest, Graph,\
 def home():
     return flask.render_template('index.html',
                                  is_home=True)
-
+@app.route('/experiments')
 def read_experiments():
     """List experiments.
     """
     exps = Experiment.query.all()
 
-    return exps
+    return render_template("experiments.html", experiments=exps)
 
 def create_experiment():
     """Create an experiment and save it to the database.
