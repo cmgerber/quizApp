@@ -5,26 +5,7 @@ import pandas as pd
 db.drop_all()
 db.create_all()
 
-#TODO: don't hardcode
-#engine = create_engine('sqlite:///quizDB.db?check_same_thread=False', echo=True)
-#conn = engine.connect()
-#metadata.drop_all(engine)
-#metadata.create_all(engine)
-#db.session = sessionmaker(bind=engine)()
-
-#CLEAR RESULTS TABLE
-"""
-if engine.dialect.has_table(engine.connect(), "results"):
-    conn.execute(Results.delete())
-"""
-
 df_questions = pd.read_excel('quizApp/data/question_table.xlsx', 'Sheet1')
-
-#check for table and if it is there clear before writing to
-"""
-if engine.dialect.has_table(engine.connect(), "questions"):
-    conn.execute(Questions.delete())
-"""
 
 for _, data in df_questions.iterrows():
     question = Question(
@@ -35,22 +16,7 @@ for _, data in df_questions.iterrows():
 
     db.session.add(question)
 
-db.session.commit()
-"""
-conn.execute(Questions.insert(), [{'question_id':data.question_id,
-                                  'dataset':data.dataset,
-                                  'question':data.question,
-                                  'question_type':data.question_type}
-                                  for ix, data in df_questions.iterrows()])
-"""
-
 df_answers = pd.read_excel('quizApp/data/answer_table.xlsx', 'Sheet1')
-
-"""
-#check for table and if it is there clear before writing to
-if engine.dialect.has_table(engine.connect(), "answers"):
-    conn.execute(Answers.delete())
-"""
 
 for _, data in df_answers.iterrows():
     answer = Answer(
@@ -60,23 +26,7 @@ for _, data in df_answers.iterrows():
             correct=data.correct)
     db.session.add(answer)
 
-db.session.commit()
-
-"""
-conn.execute(Answers.insert(), [{'answer_id':data.answer_id,
-                                  'question_id':data.question_id,
-                                  'answer':data.answer,
-                                  'correct':data.correct}
-                                  for ix, data in df_answers.iterrows()])
-"""
-
 df_graphs = pd.read_excel('quizApp/data/graph_table.xlsx', 'Sheet1')
-
-"""
-#check for table and if it is there clear before writing to
-if engine.dialect.has_table(engine.connect(), "graphs"):
-    conn.execute(Graphs.delete())
-"""
 
 for _, data in df_graphs.iterrows():
     graph = Graph(
@@ -87,12 +37,6 @@ for _, data in df_graphs.iterrows():
 
 db.session.commit()
 
-"""
-conn.execute(Graphs.insert(), [{'graph_id':data.graph_id,
-                                  'dataset':data.dataset,
-                                  'graph_location':data.graph_location}
-                                  for ix, data in df_graphs.iterrows()])
-"""
 
 # In this list, each list is associated with a student (one to one).
 # The first three tuples in each list are associated with training questions.
@@ -148,12 +92,6 @@ question_student_id_list = [int(x) for x in list(df_sid.Questions)]
 heuristic_student_id_list = [int(x) for x in list(df_sid.Heuristics)]
 combined_id_list = question_student_id_list + heuristic_student_id_list
 
-#check for table and if it is there clear before writing to
-"""
-if engine.dialect.has_table(engine.connect(), "students"):
-    conn.execute(Students.delete())
-"""
-
 for sid in combined_id_list:
     student = Student(
             id=sid,
@@ -164,12 +102,6 @@ for sid in combined_id_list:
 
 db.session.commit()
 
-"""
-conn.execute(Students.insert(), [{'student_id':sid,
-                                  'progress':'pre_test',
-                                  'opt_in':'na'}
-                                  for sid in combined_id_list])
-"""
 def create_student_data(sid_list, student_question_list, test, group):
     """
     sid_list: list of student id's
@@ -209,70 +141,42 @@ def create_student_data(sid_list, student_question_list, test, group):
 
                 db.session.add(student_test)
 
-                """
-                conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                    'test':test,
-                    'graph_id':graph_id,
-                    'dataset':dataset,
-                    'question_id':question_id,
-                    'order':order,
-                    'complete':'no'})
-                """
+            else: #training
+                if group == 'heuristic':
+                    #three questions per dataset, three datasets, so 9 questions
+                    # for the training part
+                    for x in range(6,9):
+                        order += 1
+                        question_id = int(str(dataset)+str(x))
 
-            elif group == 'heuristic':
-                #three questions per dataset, three datasets, so 9 questions
-                # for the training part
-                for x in range(6,9):
-                    order += 1
-                    question_id = int(str(dataset)+str(x))
+                        #write row to db
+                        student_test = StudentTest(
+                                student_id=student_id,
+                                test=test,
+                                graph_id=graph_id,
+                                dataset=dataset,
+                                question_id=question_id,
+                                order=order,
+                                complete="no")
 
-                    #write row to db
-                    student_test = StudentTest(
-                            student_id=student_id,
-                            test=test,
-                            graph_id=graph_id,
-                            dataset=dataset,
-                            question_id=question_id,
-                            order=order,
-                            complete="no")
+                        db.session.add(student_test)
+                else:
+                    #multiple choice questions
+                    for x in range(3):
+                        order += 1
+                        question_id = int(str(dataset)+str(x + 1))
+                        #write row to db
+                        student_test = StudentTest(
+                                student_id=student_id,
+                                test=test,
+                                graph_id=graph_id,
+                                dataset=dataset,
+                                question_id=question_id,
+                                order=order,
+                                complete="no")
 
-                    db.session.add(student_test)
-                    """
-                    conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                        'test':test,
-                        'graph_id':graph_id,
-                        'dataset':dataset,
-                        'question_id':question_id,
-                        'order':order,
-                        'complete':'no'})
-                    """
-            else:
-                #multiple choice questions
-                for x in range(3):
-                    order += 1
-                    question_id = int(str(dataset)+str(x + 1))
-                    #write row to db
-                    student_test = StudentTest(
-                            student_id=student_id,
-                            test=test,
-                            graph_id=graph_id,
-                            dataset=dataset,
-                            question_id=question_id,
-                            order=order,
-                            complete="no")
+                        db.session.add(student_test)
 
-                    db.session.add(student_test)
-                    """
-                    conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                        'test':test,
-                        'graph_id':graph_id,
-                        'dataset':dataset,
-                        'question_id':question_id,
-                        'order':order,
-                        'complete':'no'})
-                    """
-
-            if test == 'training':
                 #only have rating question for training
                 order += 1
                 question_id = int(str(dataset)+str(4))
@@ -287,22 +191,8 @@ def create_student_data(sid_list, student_question_list, test, group):
                         complete="no")
 
                 db.session.add(student_test)
-                """
-                conn.execute(StudentsTest.insert(), {'student_id':student_id,
-                    'test':test,
-                    'graph_id':graph_id,
-                    'dataset':dataset,
-                    'question_id':question_id,
-                    'order':order,
-                    'complete':'no'})
-                """
-    db.session.commit()
 
-"""
-#check for table and if it is there clear before writing to
-if engine.dialect.has_table(engine.connect(), "students_test"):
-    conn.execute(StudentsTest.delete())
-"""
+    db.session.commit()
 
 #create all the student_test table data
 for test in ['pre_test', 'training', 'post_test']:

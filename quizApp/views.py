@@ -35,7 +35,7 @@ def login():
 
 @app.route('/_logout')
 def logout():
-    flask.session.pop('userid',None)
+    flask.session.pop('userid', None)
     return flask.jsonify(result='ok')
 
 @app.route('/_check_login')
@@ -132,7 +132,7 @@ def get_question(order):
                         Question.id).\
             filter(and_(
                 StudentTest.student_id == flask.session["userid"],
-                StudentTest.test == Student.progress
+                StudentTest.test == Student.progress,
                 StudentTest.order == order)).\
             first()
     """
@@ -350,7 +350,7 @@ def pretest_answers():
         result = Result(
             student_id=student_id,
             student_test_id=student_test_id,
-            answer=answer[0]
+            answer=answer[0],
             graph_id=answer[1])
         session.add(result)
 
@@ -396,7 +396,7 @@ def posttest_answers():
         result = Result(
             student_id=student_id,
             student_test_id=int(str(student_id) + str(answer[1])),
-            answer=answer[0]
+            answer=answer[0],
             graph_id="na"
         )
     """
@@ -462,18 +462,18 @@ def training_answers():
     db.session.commit()
 
 
-"""
+    """
     r = conn.execute(StudentsTest.update().\
-                     where(StudentsTest.c.student_test_id == student_test_id).\
-                     values(complete='yes'))
+            where(StudentsTest.c.student_test_id == student_test_id).\
+            values(complete='yes'))
 
     conn.execute(Results.insert(), [{
-                      'student_id':student_id,
-                      'student_test_id':student_test_id,
-                      'answer':answer[0],
-                      'graph_id':answer[1],
-                      } for answer in answer_list])
-"""
+    'student_id':student_id,
+    'student_test_id':student_test_id,
+    'answer':answer[0],
+    'graph_id':answer[1],
+    } for answer in answer_list])
+    """
     #get next question
     # question_json = first_question()
     # return question_json
