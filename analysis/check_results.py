@@ -1,35 +1,36 @@
 import os
 import csv
-from sqlalchemy import create_engine, ForeignKey
-from sqlalchemy import Column, Date, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
+from quizApp.models import Student, Result
+from quizApp.app import db
+from sqlalchemy import inspect
 
-from db_tables import metadata, Questions, Answers, Results, Students, StudentsTest, Graphs
+def write_row(writer, mapper, obj):
+    row = []
+    for column in mapper.c.keys():
+        row.append(getattr(obj, column))
 
-project_root = os.path.dirname(os.path.realpath('quizApp_Project/'))
-DATABASE = os.path.join(project_root, 'quizDB.db')
-engine = create_engine('sqlite:///{0}?check_same_thread=False'.format(DATABASE), echo=True)
-conn = engine.connect()
-metadata.create_all(engine)
+    writer.writerow(row)
 
-students = conn.execute(select([Students])).fetchall()
 
-results = conn.execute(select([Results])).fetchall()
+def main():
+    student_mapper = inspect(Student)
+    result_mapper = inspect(Result)
 
-with open('student_table_list.csv', 'wb') as csvfile:
-    spamwriter = csv.writer(csvfile, delimiter=',',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    [spamwriter.writerow(s) for s in students]
+    students = Student.query.all()
+    results = Result.query.all()
 
-with open('results_table_list.csv', 'wb') as csvfile:
-    spamwriter = csv.writer(csvfile, delimiter=',',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    [spamwriter.writerow(r) for r in results]
+    with open('student_table_list.csv', 'wb') as csvfile:
 
-# st = conn.execute(select([StudentsTest])).fetchall()
+        student_writer = csv.writer(csvfile, delimiter=',',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for student in students:
+            write_row(student_writer, student_mapper, student)
 
-# with open('studenttest_table_list.csv', 'wb') as csvfile:
-#     spamwriter = csv.writer(csvfile, delimiter=',',
-#                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
-#     [spamwriter.writerow(r) for r in st]
+    with open('results_table_list.csv', 'wb') as csvfile:
+        result_writer = csv.writer(csvfile, delimiter=',',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for result in results:
+            write_row(result_writer, result_mapper, result)
+
+if __name__ == "__main__":
+    main()
