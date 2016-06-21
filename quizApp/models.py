@@ -10,6 +10,39 @@ class Base(db.Model):
     __abstract__ = True
     id = db.Column(db.Integer, primary_key=True)
 
+    def save(self, commit=True):
+        """Save this model to the database.
+        
+        If commit is True, then the session will be comitted as well.
+        """
+        db.session.add(self)
+        
+        if commit:
+            db.session.commit()
+
+class Experiment(Base):
+    """An experiment contains a set of Questions.
+    
+    name: The name of this experiment.
+    created: A datetime representing when this experiment was created.
+    start: A datetime representing when this experiment begins accepting
+        responses.
+    stop: A datetime representing when this experiment stops accepting
+        responses.
+
+    Relationships:
+    
+    OtM wth Question
+    OtM with Graph
+    """
+    
+    #TODO: how do we associate graphs here? Should graphs be a part of
+    # question? For now we will not create the relationships.
+    name = db.Column(db.String, index=True)
+    created = db.Column(db.Datetime)
+    start = db.Column(db.Datetime)
+    stop = db.Column(db.Datetime)
+
 class Question(Base):
     """A Question appears on a StudentTest and has an Answer.
 

@@ -1,6 +1,8 @@
 #!env/bin/python
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 from quizApp import app
 import flask, uuid
 from flask import request, url_for
@@ -10,13 +12,87 @@ import os
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
 from sqlalchemy.orm.exc import NoResultFound
 
-from models import Question, Answer, Result, Student, StudentsTest, Graph
+from models import Question, Answer, Result, Student, StudentsTest, Graph,\
+    Experiment
 
 # homepage
 @app.route('/')
 def home():
     return flask.render_template('index.html',
                                  is_home=True)
+
+def read_experiments():
+    """List experiments.
+    """
+    exps = Experiment.query.all()
+
+    return exps
+
+def create_experiment():
+    """Create an experiment and save it to the database.
+    """
+    #TODO: auth
+    try:
+        #TODO: namespacing?
+        name = request.args["name"]
+        start = request.args["start"]
+        stop = request.args["stop"]
+    except KeyError:
+        return 000; #TODO: what's the right error code? 
+    
+    exp = Experiment(
+        name=name,
+        start=start,
+        stop=stop,
+        created=datetime.now())
+
+    exp.save()
+
+    return 200
+
+def delete_experiment():
+    """Delete an experiment.
+    """
+    #TODO: auth
+    try:
+        name = request.args["name"]
+    except KeyError:
+        return 000
+
+    try:
+        exp = Experiment.query.filter_by(name=name).one()
+    except NoResultFound:
+        return 000
+
+    #TODO: how to delete?
+
+    return 200
+
+def update_experiment():
+    """Modify an experiment's properties.
+
+    Arguments should be None unless they should be updated.
+    """
+    try:
+        name = request.args["name"]
+        start = request.args["start"]
+        stop = request.args["stop"]
+    except KeyError:
+        return 000;
+
+    try:
+        exp = Experiment.query.filter_by(name=name).one()
+    except NoResultFoiund:
+        return 000
+
+    if name:
+        exp.name = name
+    if start:
+        exp.start = start
+    if stop:
+        exp.stop = stop
+
+    exp.save()
 
 @app.route('/_login')
 def login():
