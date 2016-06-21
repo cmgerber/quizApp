@@ -10,6 +10,25 @@ class Base(db.Model):
     __abstract__ = True
     id = db.Column(db.Integer, primary_key=True)
 
+class User(Base):
+    """A User is used for authentication.
+    
+    Each User may be associated with a Student, in this case the User is
+    considered to have the permissions of a Student.
+
+    Otherwise, the User is considered to be an admin.
+    
+    Students log in using their ID's and do not have passwords. For students,
+    the user's name is their ID. For others, they log in using their name
+    and their password.
+
+    Relationships:
+    
+    OtO with Student
+    """
+
+    name = db.Column(db.String)
+
 class Question(Base):
     """A Question appears on a StudentTest and has an Answer.
 
