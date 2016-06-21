@@ -126,7 +126,7 @@ def get_question(order):
     test = StudentTest.query.\
             join(Student).\
             join(Question).\
-            add_columns(Student.progress,
+            add_columns(Student.progress, #TODO: do we need all these columns
                         Question.question,
                         Question.question_type,
                         Question.id).\
@@ -194,21 +194,25 @@ def first_question():
                                    StudentsTest.c.test == Students.c.progress))).fetchall()
         """
         #TODO: how is this sorting?
-        order_list = sorted(order_list)
+        #TODO: verify lambda
+        #TODO: maybe just sort by order on the query?
+        order_list = sorted(order_list, lambda x: x.order)
 
         if len(order_list) >= 1:
             test = get_question(order_list[0].order)
         else:
             #the section has been completed, update progress and return to home page
             #update order back to start
+            #TODO: what does order mean?
             flask.session['order'] = 1
+            #TODO: enum
             progress_list = ['pre_test', 'training', 'post_test']
-            ix = progress_list.index(progress) + 1
-            if ix == len(progress_list):
-                new_progress = 'complete'
-            else:
-                new_progress = progress_list[ix]
-            student.progress = new_progress
+
+            try:
+                student.progress = progress_list[progress_list.index(progress) + 1]
+            except IndexError:
+                student.progress = "complete"
+            
             db.session.add(student)
             db.session.commit()
             #return to homepage
@@ -238,11 +242,25 @@ def first_question():
         flask.session['graph1'] = graph_list[0][1]
         flask.session['graph2'] = graph_list[1][1]
         flask.session['graph3'] = graph_list[2][1]
+        
+        # Find urls of each graph
+        graph_urls = [url_for('static',
+            filename='graphs/'+str(graph.graph_location)) for graph in graphs_list]
 
         # TODO: can't we just pass the url
-        return flask.jsonify(graph1='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + '>',
+        """
+        return flask.jsonify(
+        graph1='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[0][0])) + '>',
                              graph2='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[1][0])) + '>',
                              graph3='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_list[2][0])) + '>',
+                             question=test.question,
+                             question_type=test.question_type,
+                             order=test.order,
+                             progress=test.progress)
+        """
+
+        return flask.jsonify(
+                             graphs=graph_list,
                              question=test.question,
                              question_type=test.question_type,
                              order=test.order,
@@ -251,21 +269,35 @@ def first_question():
     elif progress == 'training':
         #get graph location
         graph = Graph.query.get(graph_id)
+        graph_list = [url_for('static',
+            filename='graphs/' + graph.graph_location)]
+        flask.session['graph1'] = graph_id
         """
         graph_location = conn.execute(select([Graphs.c.graph_location]).\
                                         where(Graphs.c.graph_id == graph_id)).fetchall()
         """
         #if it is a rating question just return graph
         if question_type == 'rating':
-            flask.session['graph1'] = graph_id
+            """
             return flask.jsonify(graph1='<img class=graph src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + '>',
-                             question=question,
-                             question_type=question_type,
-                             order=order,
-                             progress=progress)
+                             question=test.question,
+                             question_type=test.question_type,
+                             order=test.order,
+                             progress=test.progress)
+            """
+            return flask.jsonify(graphs=graph_list,
+                             question=test.question,
+                             question_type=test.question_type,
+                             order=test.order,
+                             progress=test.progress)
         else:
             #get answers query
             answer_list = Answer.query.filter(question_id=question_id).all()
+            answer_strings = [a.answer for a in answer_list]
+
+            for i, answer in answer_strings:
+                #TODO: zero index
+                flask.session['answer' + str(i + 1)] = answer
             """
             answer_list = conn.execute(select([Answers.c.answer,
                                               Answers.c.answer_id]).\
@@ -274,7 +306,8 @@ def first_question():
 
             if question_type == 'heuristic':
                 #put graph id's in session
-                flask.session['graph1'] = graph_id
+                
+                """
                 flask.session['answer1'] = answer_list[0].answer
                 flask.session['answer2'] = answer_list[1].answer
                 flask.session['answer3'] = answer_list[2].answer
@@ -291,15 +324,21 @@ def first_question():
                                      answer3=answer_list[2][0],
                                      answer4=answer_list[3][0],
                                      answer5=answer_list[4][0])
-                #TODO: can we just return an array of answers?
+                """
+                return flask.jsonify(graphs=graph_list,
+                                     question=test.question,
+                                     question_type=test.question_type,
+                                     order=test.order,
+                                     progress=test.progress,
+                                     answers=answer_strings)
+
             else:
                 #put graph id's in session
-                #TODO: factor out
-                flask.session['graph1'] = graph_id
+                """
                 flask.session['answer1'] = answer_list[0].answer
                 flask.session['answer2'] = answer_list[1].answer
                 flask.session['answer3'] = answer_list[2].answer
-
+                
                 return flask.jsonify(graph1='<img src=' + url_for('static',filename='graphs/'+str(graph_location[0][0])) + ' height="500" width="500">',
                                      question=question,
                                      question_type=question_type,
@@ -308,7 +347,13 @@ def first_question():
                                      answer1=answer_list[0].answer,
                                      answer2=answer_list[1].answer,
                                      answer3=answer_list[2].answer)
-
+                """
+                return flask.jsonify(graphs=graph_list,
+                                     question=test.question,
+                                     question_type=test.question_type,
+                                     order=test.order,
+                                     progress=test.progress,
+                                     answers=answer_strings)
 
 #get answers to question, write to db then get next question
 @app.route('/_pretest_answers')
@@ -319,6 +364,7 @@ def pretest_answers():
     flask.session['order'] = flask.session['order'] + 1
 
     #data
+    #TODO: would it make sense to just grab best* and graph*?
     best1 = params['best1']
     best2 = params['best2']
     best3 = params['best3']
@@ -332,7 +378,7 @@ def pretest_answers():
     try:
         best4 = params['best4']
         answer_list = [(best1,graph1),(best2,graph2),(best3,graph3),(best4,'na')]
-    except:
+    except KeyError:
         answer_list = [(best1,graph1),(best2,graph2),(best3,graph3)]
 
     #write to db
@@ -427,6 +473,7 @@ def training_answers():
     student_test_id = flask.session['student_test_id']
     student_id = flask.session['userid']
 
+    #TODO: not very well thought out
     if flask.session['question_type'] == 'rating':
         answer_id = params['rating1']
     else:
