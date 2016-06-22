@@ -3,14 +3,10 @@
 <div id='index' class='index wrapper container'>
     <header id='main-search' class='container'>
       <div class='page-header row'>
-        <div class='col-xs-12 col-sm-12 col-md-12'>
-          <h3>Experiment List</h3>
-      </div>
     </header>
     <section class='container'>
-      <div class='row'>
-        <div class='col-sm-12 col-md-12'>
-        <table>
+          <h3>Experiment List</h3>
+        <table class="table table-striped">
             <thead>
                 <tr>
                     <td>Name</td>
@@ -24,17 +20,16 @@
             {% for exp in experiments %}
                 <tr>
                     <td>{{exp.name}}</td>
-                    <td>{{exp.start|datetime_format}}</td>                     
-                    <td>{{exp.end|datetime_format}}</td>                     
-                    <td></td>                     
-                    <td></td>
+                    <td>{{exp.start|datetime_format}}</td>
+                    <td>{{exp.stop|datetime_format}}</td>
+                    <td><button type="button" class="btn
+                        btn-primary">Modify</button></td>
+                    <td><button type="button" class="btn
+                        btn-danger">Delete</button></td>
                 </tr>
-            {% endfor %}                     
+            {% endfor %}
             </tbody>
-        </div>
-      </div> <!-- end .row -->
     </section>
-    <div id='quiz-start-area' class="navbar-button col-xs-12 col-sm-12">
     </div>
 
 {% include 'footer.html' %}

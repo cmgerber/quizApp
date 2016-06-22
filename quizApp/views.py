@@ -6,7 +6,7 @@ from flask import request, url_for
 from random import shuffle
 import os
 import pdb
-
+from flask import render_template
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -167,7 +167,7 @@ def donedone():
 #Complete page
 @app.route('/done')
 def done():
-    questions = Question.query.join(StudenTest).\
+    questions = Question.query.join(StudentTest).\
             filter(StudentTest.student_id == flask.session['userid']).\
             all()
 
@@ -227,17 +227,15 @@ def first_question():
         complete = 'yes'
         progress = student.progress
 
-    order_list = StudentTest.query.join(Student).\
-            filter(and_(StudentTest.student_id == flask.session["userid"],
-                        StudentTest.complete == "no",
-                        StudentTest.test == Student.progress)).\
-                all()
     #check to make sure they have not done the question before
     if complete == 'yes':
         #this means the question has already been completed
-        #TODO: how is this sorting?
-        #TODO: verify lambda
         #TODO: maybe just sort by order on the query?
+        order_list = StudentTest.query.join(Student).\
+                filter(and_(StudentTest.student_id == flask.session["userid"],
+                            StudentTest.complete == "no",
+                            StudentTest.test == Student.progress)).\
+                    all()
         order_list = sorted(order_list, key=lambda x: x.order)
 
         if len(order_list) >= 1:
@@ -292,6 +290,7 @@ def first_question():
                              progress=test.progress)
 
     elif progress == 'training':
+        pdb.set_trace()
         graph_id = test[0].graph_id
         #get graph location
         graph = Graph.query.get(graph_id)
