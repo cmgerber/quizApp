@@ -376,11 +376,13 @@ function replace_html() {
           //remove start button
           $('#pretest-start-area').remove();
           //add the three graphs
-          $('#graph1').empty().append(d.graph1+
+          var img_pre = "<img src='"
+          var img_post = "'/>"
+          $('#graph1').empty().append(img_pre + d.graphs[0] + img_post +
                             '<p>Graph 1</p>');
-          $('#graph2').empty().append(d.graph2+
+          $('#graph2').empty().append(img_pre + d.graphs[1] + img_post +
                             '<p>Graph 2</p>');
-          $('#graph3').empty().append(d.graph3+
+          $('#graph3').empty().append(img_pre + d.graphs[2] + img_post +
                             '<p>Graph 3</p>');
             //add the question
             $('#pretest-question').empty().append('<h3>'+d.question+'</h3>');
