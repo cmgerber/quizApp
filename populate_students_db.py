@@ -1,5 +1,5 @@
 from quizApp.models import Question, Answer, Result, Student, StudentTest, Graph
-from quizApp.app import db
+from quizApp import db
 import pandas as pd
 
 db.drop_all()

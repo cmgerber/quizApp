@@ -1,7 +1,7 @@
 """Models for the quizApp.
 """
 
-from app import db
+from quizApp import db
 from enum import Enum
 
 class Base(db.Model):
@@ -39,9 +39,9 @@ class Experiment(Base):
     #TODO: how do we associate graphs here? Should graphs be a part of
     # question? For now we will not create the relationships.
     name = db.Column(db.String, index=True)
-    created = db.Column(db.Datetime)
-    start = db.Column(db.Datetime)
-    stop = db.Column(db.Datetime)
+    created = db.Column(db.DateTime)
+    start = db.Column(db.DateTime)
+    stop = db.Column(db.DateTime)
 
 class Question(Base):
     """A Question appears on a StudentTest and has an Answer.

@@ -1,19 +1,17 @@
-#!env/bin/python
-# -*- coding: utf-8 -*-
-
 from datetime import datetime
 
-from quizApp import app
+from quizApp import app,db
 import flask, uuid
 from flask import request, url_for
 from random import shuffle
 import os
+import pdb
 
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
 from sqlalchemy.orm.exc import NoResultFound
 
-from models import Question, Answer, Result, Student, StudentsTest, Graph,\
-    Experiment
+from quizApp.models import Question, Answer, Result, Student,\
+    StudentTest, Graph, Experiment
 
 # homepage
 @app.route('/')
@@ -118,7 +116,7 @@ def logout():
 def check_login():
     userid = flask.session['userid'] if 'userid' in flask.session else None
     if userid:
-        student = Student.query.filter_by(id=userid).fetchone()
+        student = Student.query.filter_by(id=userid).one()
         username = student.id
         progress = student.progress
     else:
@@ -198,6 +196,8 @@ def get_question(order):
             add_columns(Student.progress, #TODO: do we need all these columns
                         Question.question,
                         Question.question_type,
+                        StudentTest.complete,
+                        StudentTest.dataset,
                         Question.id).\
             filter(and_(
                 StudentTest.student_id == flask.session["userid"],
@@ -226,7 +226,7 @@ def first_question():
         progress = student.progress
 
     #check to make sure they have not done the question before
-    if complete == 'yes':
+    if test.complete == 'yes':
         #this means the question has already been completed
         order_list = StudentTest.query.join(Student).\
                 filter(and_(StudentTest.student_id == flask.session["userid"],
@@ -236,6 +236,7 @@ def first_question():
         #TODO: how is this sorting?
         #TODO: verify lambda
         #TODO: maybe just sort by order on the query?
+        pdb.set_trace()
         order_list = sorted(order_list, lambda x: x.order)
 
         if len(order_list) >= 1:
@@ -263,30 +264,30 @@ def first_question():
 
     #put the student_test_id in session
     flask.session['student_test_id'] = test.id
-    flask.session['order'] = test.order
+    flask.session['order'] = test[0].order
     flask.session['question_type'] = test.question_type
 
     #check which test
-    if progress == 'pre_test' or progress == 'post_test':
+    if test.progress == 'pre_test' or test.progress == 'post_test':
         # query three graphs
-        graph_list = Graph.query.filter_by(dataset=dataset).all()
+        graph_list = Graph.query.filter_by(dataset=test.dataset).all()
         #randomly shuffle order of graphs
         shuffle(graph_list)
 
         #put graph id's in session
-        flask.session['graph1'] = graph_list[0][1]
-        flask.session['graph2'] = graph_list[1][1]
-        flask.session['graph3'] = graph_list[2][1]
+        flask.session['graph1'] = graph_list[0].id
+        flask.session['graph2'] = graph_list[1].id
+        flask.session['graph3'] = graph_list[2].id
         
         # Find urls of each graph
         graph_urls = [url_for('static',
-            filename='graphs/'+str(graph.graph_location)) for graph in graphs_list]
+            filename='graphs/'+str(graph.graph_location)) for graph in graph_list]
 
         return flask.jsonify(
                              graphs=graph_urls,
                              question=test.question,
                              question_type=test.question_type,
-                             order=test.order,
+                             order=test[0].order,
                              progress=test.progress)
 
     elif progress == 'training':
@@ -368,9 +369,9 @@ def pretest_answers():
             student_test_id=student_test_id,
             answer=answer[0],
             graph_id=answer[1])
-        session.add(result)
+        db.session.add(result)
 
-    session.commit()
+    db.session.commit()
     #get next question
     # question_json = first_question()
     # return question_json
