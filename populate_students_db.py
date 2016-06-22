@@ -1,6 +1,8 @@
 from quizApp.models import Question, Answer, Result, Student, StudentTest, Graph
 from quizApp import db
+from sqlalchemy import and_
 import pandas as pd
+import pdb
 
 db.drop_all()
 db.create_all()
@@ -198,3 +200,17 @@ def create_student_data(sid_list, student_question_list, test, group):
 for test in ['pre_test', 'training', 'post_test']:
     create_student_data(question_student_id_list, student_question_list, test, 'question')
     create_student_data(heuristic_student_id_list, student_question_list, test, 'heuristic')
+
+
+#Verify
+
+for sid in question_student_id_list + heuristic_student_id_list:
+    for progress in ["pre_test", "training", "post_test"]:
+        tests = StudentTest.query.join(Student).\
+                filter(and_(StudentTest.student_id == sid,
+                            StudentTest.test == progress)).all()
+        order = set()
+        for test in tests:
+            if test.order in order:
+                pdb.set_trace()
+            order.add(test.order)

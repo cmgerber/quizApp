@@ -190,7 +190,6 @@ def quizStart():
     return flask.jsonify(progress=student.progress)
 
 def get_question(order):
-    pdb.set_trace()
     test = StudentTest.query.\
             join(Student).\
             join(Question).\
@@ -199,7 +198,7 @@ def get_question(order):
                         Question.question_type,
                         StudentTest.complete,
                         StudentTest.dataset,
-                        Question.id).\
+                        Question.id.label("question_id")).\
             filter(and_(
                 StudentTest.student_id == flask.session["userid"],
                 StudentTest.test == Student.progress,
@@ -223,6 +222,7 @@ def first_question():
     test = get_question(order)
     if test:
         complete = test.complete
+        progress = test.progress
     else:
         complete = 'yes'
         progress = student.progress
@@ -232,7 +232,6 @@ def first_question():
                         StudentTest.complete == "no",
                         StudentTest.test == Student.progress)).\
                 all()
-    pdb.set_trace()
     #check to make sure they have not done the question before
     if complete == 'yes':
         #this means the question has already been completed
@@ -242,12 +241,12 @@ def first_question():
         order_list = sorted(order_list, key=lambda x: x.order)
 
         if len(order_list) >= 1:
+            #TODO: log error, this should not happen...
             test = get_question(order_list[0].order)
         else:
             #the section has been completed, update progress and return to home page
             #update order back to start
             #TODO: what does order mean?
-            pdb.set_trace()
             flask.session['order'] = 1
             #TODO: enum
             progress_list = ['pre_test', 'training', 'post_test']
@@ -259,14 +258,13 @@ def first_question():
 
             db.session.commit()
             #return to homepage
-            if new_progress == 'complete':
+            if student.progress == 'complete':
                 return flask.jsonify(progress='done')
             else:
                 return flask.jsonify(progress='next')
 
     #put the student_test_id in session
-    flask.session['student_test_id'] = test.id
-    pdb.set_trace()
+    flask.session['student_test_id'] = test[0].id
     flask.session['order'] = test[0].order
     flask.session['question_type'] = test.question_type
 
@@ -294,13 +292,14 @@ def first_question():
                              progress=test.progress)
 
     elif progress == 'training':
+        graph_id = test[0].graph_id
         #get graph location
         graph = Graph.query.get(graph_id)
         graph_urls = [url_for('static',
             filename='graphs/' + graph.graph_location)]
         flask.session['graph1'] = graph_id
         #if it is a rating question just return graph
-        if question_type == 'rating':
+        if test.question_type == 'rating':
             return flask.jsonify(graphs=graph_urls,
                              question=test.question,
                              question_type=test.question_type,
@@ -308,20 +307,20 @@ def first_question():
                              progress=test.progress)
         else:
             #get answers query
-            answer_list = Answer.query.filter(question_id=question_id).all()
+            answer_list = Answer.query.filter_by(question_id=test.question_id).all()
             answer_strings = [a.answer for a in answer_list]
 
-            for i, answer in answer_strings:
+            for i, answer in enumerate(answer_strings):
                 #TODO: zero index
                 flask.session['answer' + str(i + 1)] = answer
 
-            if question_type == 'heuristic':
+            if test.question_type == 'heuristic':
                 #put graph id's in session
 
                 return flask.jsonify(graphs=graph_urls,
                                      question=test.question,
                                      question_type=test.question_type,
-                                     order=test.order,
+                                     order=test[0].order,
                                      progress=test.progress,
                                      answers=answer_strings)
 
@@ -330,7 +329,7 @@ def first_question():
                 return flask.jsonify(graphs=graph_urls,
                                      question=test.question,
                                      question_type=test.question_type,
-                                     order=test.order,
+                                     order=test[0].order,
                                      progress=test.progress,
                                      answers=answer_strings)
 
@@ -340,7 +339,6 @@ def pretest_answers():
     params = request.args
 
     #update order number
-    pdb.set_trace()
     flask.session['order'] = flask.session['order'] + 1
 
     #data
