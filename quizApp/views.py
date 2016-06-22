@@ -36,8 +36,8 @@ def create_experiment():
         start = request.args["start"]
         stop = request.args["stop"]
     except KeyError:
-        return 000; #TODO: what's the right error code? 
-    
+        return 000; #TODO: what's the right error code?
+
     exp = Experiment(
         name=name,
         start=start,
@@ -190,6 +190,7 @@ def quizStart():
     return flask.jsonify(progress=student.progress)
 
 def get_question(order):
+    pdb.set_trace()
     test = StudentTest.query.\
             join(Student).\
             join(Question).\
@@ -202,9 +203,9 @@ def get_question(order):
             filter(and_(
                 StudentTest.student_id == flask.session["userid"],
                 StudentTest.test == Student.progress,
-                StudentTest.order == order)).\
-            first()
-    return test
+                StudentTest.order == order))
+
+    return test.first()
     #return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id
 
 #provide first quiz question
@@ -218,26 +219,27 @@ def first_question():
     except: #TODO: bad except
         order = 1
 
-    try:
-        #progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
-        test = get_question(order)
-    except: #TODO: bad except
+    #progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
+    test = get_question(order)
+    if test:
+        complete = test.complete
+    else:
         complete = 'yes'
         progress = student.progress
 
-    #check to make sure they have not done the question before
-    if test.complete == 'yes':
-        #this means the question has already been completed
-        order_list = StudentTest.query.join(Student).\
-                filter(and_(StudentTest.student_id == flask.session["userid"],
-                            StudentTest.complete == "no",
-                            StudentTest.test == Student.progress)).\
+    order_list = StudentTest.query.join(Student).\
+            filter(and_(StudentTest.student_id == flask.session["userid"],
+                        StudentTest.complete == "no",
+                        StudentTest.test == Student.progress)).\
                 all()
+    pdb.set_trace()
+    #check to make sure they have not done the question before
+    if complete == 'yes':
+        #this means the question has already been completed
         #TODO: how is this sorting?
         #TODO: verify lambda
         #TODO: maybe just sort by order on the query?
-        pdb.set_trace()
-        order_list = sorted(order_list, lambda x: x.order)
+        order_list = sorted(order_list, key=lambda x: x.order)
 
         if len(order_list) >= 1:
             test = get_question(order_list[0].order)
@@ -245,6 +247,7 @@ def first_question():
             #the section has been completed, update progress and return to home page
             #update order back to start
             #TODO: what does order mean?
+            pdb.set_trace()
             flask.session['order'] = 1
             #TODO: enum
             progress_list = ['pre_test', 'training', 'post_test']
@@ -253,8 +256,7 @@ def first_question():
                 student.progress = progress_list[progress_list.index(progress) + 1]
             except IndexError:
                 student.progress = "complete"
-            
-            db.session.add(student)
+
             db.session.commit()
             #return to homepage
             if new_progress == 'complete':
@@ -264,6 +266,7 @@ def first_question():
 
     #put the student_test_id in session
     flask.session['student_test_id'] = test.id
+    pdb.set_trace()
     flask.session['order'] = test[0].order
     flask.session['question_type'] = test.question_type
 
@@ -278,7 +281,7 @@ def first_question():
         flask.session['graph1'] = graph_list[0].id
         flask.session['graph2'] = graph_list[1].id
         flask.session['graph3'] = graph_list[2].id
-        
+
         # Find urls of each graph
         graph_urls = [url_for('static',
             filename='graphs/'+str(graph.graph_location)) for graph in graph_list]
@@ -314,7 +317,7 @@ def first_question():
 
             if question_type == 'heuristic':
                 #put graph id's in session
-                
+
                 return flask.jsonify(graphs=graph_urls,
                                      question=test.question,
                                      question_type=test.question_type,
@@ -337,6 +340,7 @@ def pretest_answers():
     params = request.args
 
     #update order number
+    pdb.set_trace()
     flask.session['order'] = flask.session['order'] + 1
 
     #data
@@ -361,7 +365,6 @@ def pretest_answers():
     #update complete row in StudentsTest table
     test = StudentTest.query.get(student_test_id)
     test.complete = "yes"
-    db.session.add(test)
     db.session.commit()
     for answer in answer_list:
         result = Result(
@@ -452,7 +455,6 @@ def training_answers():
     #update complete row in StudentsTest table
     student_test = StudentTest.query.get(student_test_id)
     student_test.complete = "yes"
-    db.session.add(student_test)
 
     for answer in answer_list:
         result = Result(
