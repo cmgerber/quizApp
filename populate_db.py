@@ -1,11 +1,27 @@
-from quizApp.models import Question, Answer, Result, Student, StudentTest, Graph
+#!/bin/env python2
+
+from quizApp.models import Question, Answer, Result, Student, StudentTest, \
+        Graph, Experiment
 from quizApp import db
 from sqlalchemy import and_
 import pandas as pd
 import pdb
+from datetime import datetime, timedelta
 
 db.drop_all()
 db.create_all()
+
+exp1 = Experiment(name="experiment1",
+                 start=datetime.now(),
+                 stop=datetime.now() + timedelta(days=3))
+
+exp2 = Experiment(name="experiment2",
+                 start=datetime.now() + timedelta(days=-3),
+                 stop=datetime.now())
+
+db.session.add(exp1)
+db.session.add(exp2)
+
 
 df_questions = pd.read_excel('quizApp/data/question_table.xlsx', 'Sheet1')
 

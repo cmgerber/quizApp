@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from quizApp import app,db
+from quizApp import forms
 import flask, uuid
+from quizApp import csrf
 from flask import request, url_for
 from random import shuffle
 import os
@@ -23,13 +25,21 @@ def read_experiments():
     """List experiments.
     """
     exps = Experiment.query.all()
+    create_form = forms.CreateExperimentForm()
 
-    return render_template("experiments.html", experiments=exps)
+    return render_template("experiments.html", experiments=exps,
+                          create_form=create_form)
 
+@app.route("/experiments/create", methods=["POST"])
 def create_experiment():
     """Create an experiment and save it to the database.
     """
+    pdb.set_trace()
+    form = forms.CreateExperimentForm()
+    if form.validate_on_submit():
+        print "Success"
     #TODO: auth
+    return
     try:
         #TODO: namespacing?
         name = request.args["name"]
