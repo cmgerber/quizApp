@@ -56,8 +56,6 @@ def delete_experiment():
     form = forms.DeleteExperimentForm()
     #TODO: auth
 
-    pdb.set_trace()
-
     if not form.validate_on_submit():
         return flask.jsonify({"success": 0})
 
@@ -295,7 +293,6 @@ def first_question():
                              progress=test.progress)
 
     elif progress == 'training':
-        pdb.set_trace()
         graph_id = test[0].graph_id
         #get graph location
         graph = Graph.query.get(graph_id)
