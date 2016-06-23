@@ -3,6 +3,7 @@ Platform for asking questions based on visualizations.
 ## Installation
 
     pip install -r requirements.txt
+    mysql -u root -p < setup_db.sql
     python populate_students_db.py
 
 ## Running

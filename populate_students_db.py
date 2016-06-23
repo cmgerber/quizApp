@@ -35,8 +35,6 @@ for _, data in df_graphs.iterrows():
             graph_location=data.graph_location)
     db.session.add(graph)
 
-db.session.commit()
-
 
 # In this list, each list is associated with a student (one to one).
 # The first three tuples in each list are associated with training questions.

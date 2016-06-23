@@ -14,4 +14,4 @@ class Config(object):
     CSRF_ENABLED = True
     SECRET_KEY = "---"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = "sqlite:///quizDB.db"
+    SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"

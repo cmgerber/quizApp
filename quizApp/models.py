@@ -28,10 +28,10 @@ class Question(Base):
 
     # id is combo of dataset number and question order
 
-    dataset = db.Column(db.String)
-    question = db.Column(db.String)
+    dataset = db.Column(db.String(10))
+    question = db.Column(db.String(200))
     #question, heuristic, rating, best_worst
-    question_type = db.Column(db.String)
+    question_type = db.Column(db.String(50))
 
     answers = db.relationship("Answer")
     tests = db.relationship("StudentTest")
@@ -47,8 +47,8 @@ class Answer(Base):
     """
     __tablename__ = "answers"
 
-    answer = db.Column(db.String)
-    correct = db.Column(db.String) # TODO: should be bool
+    answer = db.Column(db.String(200))
+    correct = db.Column(db.String(5)) # TODO: should be bool
 
     question_id = db.Column(db.Integer, db.ForeignKey("questions.id"))
 
@@ -63,7 +63,7 @@ class Result(Base):
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"))
     student_test_id = db.Column(db.Integer, db.ForeignKey("students_test.id"))
     graph_id = db.Column(db.Integer, db.ForeignKey("graphs.id"))
-    answer = db.Column(db.String)
+    answer = db.Column(db.String(200))
 
 class Progress(Enum):
     pre_test = 0
@@ -83,8 +83,8 @@ class Student(Base):
     __tablename__ = "students"
 
     #progress: pre_test, training, post_test, complete
-    progress = db.Column(db.String)
-    opt_in = db.Column(db.String)
+    progress = db.Column(db.String(50))
+    opt_in = db.Column(db.String(10))
 
     tests = db.relationship("StudentTest")
     results = db.relationship("Result")
@@ -107,11 +107,11 @@ class StudentTest(Base):
 
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"))
     #pre_test, training, post_test
-    test = db.Column(db.String) #TODO: enum
+    test = db.Column(db.String(50)) #TODO: enum
 
     dataset = db.Column(db.Integer)
     order = db.Column(db.Integer) #TODO: what is this?
-    complete = db.Column(db.String) #TODO: bool
+    complete = db.Column(db.String(5)) #TODO: bool
 
     graph_id = db.Column(db.Integer, db.ForeignKey('graphs.id'))
     graph = db.relationship("Graph")
@@ -133,6 +133,6 @@ class Graph(Base):
     __tablename__ = "graphs"
 
     dataset = db.Column(db.Integer)
-    graph_location = db.Column(db.String)
+    graph_location = db.Column(db.String(100))
 
     results = db.relationship("Result")
