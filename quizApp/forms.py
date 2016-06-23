@@ -1,5 +1,5 @@
 from flask_wtf import Form
-from wtforms import StringField, DateTimeField, SubmitField
+from wtforms import StringField, DateTimeField, SubmitField, HiddenField
 from wtforms.validators import DataRequired
 
 class DateTimeWidget(object):
@@ -14,7 +14,9 @@ class DateTimeWidget(object):
                   '</div>'
                   '<script type="text/javascript">'
                   '    $(function () {{'
-                  '        $("#{}").datetimepicker();'
+                  '        $("#{}").datetimepicker({{'
+                  '             format: "YYYY-MM-DD HH:mm:ss"'
+                  '         }});'
                   '    }});'
                   '</script>').format(field.id,
                                       kwargs.pop("class_", ""),
@@ -28,4 +30,8 @@ class CreateExperimentForm(Form):
                           validators=[DataRequired()])
     stop = DateTimeField("Stop time", widget=DateTimeWidget(),
                         validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class DeleteExperimentForm(Form):
+    exp_id = HiddenField()
     submit = SubmitField("Submit")

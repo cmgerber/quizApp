@@ -10,7 +10,7 @@ $.ajaxSetup({
 })
 
 $(document).ready(function() {
-    $('form').submit(function(event) {
+    $('#create-form').submit(function(event) {
         var formData = {
             'name' : $('input[name=name]').val(),
             'start': $('input[name=start]').val(),
@@ -28,6 +28,38 @@ $(document).ready(function() {
 
             .done(function(data) {
                 console.log(data);
+                if(data.success) {
+                    $('#exp_table tr:last') //ugh, hardcoding
+                        .before("<tr><td>" + formData.name + "</td>" +
+                                "<td>" + formData.start + "</td>" +
+                                "<td>" + formData.stop + "</td>" +
+                                "<td></td>" +
+                                "<td></td></tr>")
+                }
+            });
+
+        event.preventDefault();
+    });
+
+    $('.delete-form').submit(function(event) {
+        var formData = {
+            'id' : $(this).find("input[name=exp_id]").val(),
+        };
+
+        $.ajax({
+            type: 'POST',
+            contentType: "application/json",
+            url: this.getAttribute("action"),
+            data: JSON.stringify(formData),
+            dataType: 'json',
+            encode: true
+        })
+
+            .done(function(data) {
+                console.log(data);
+                if(data.success) {
+                    $("#row-" + data.id).remove()
+                }
             });
 
         event.preventDefault();

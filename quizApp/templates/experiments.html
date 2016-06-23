@@ -7,7 +7,7 @@
     <section class='container'>
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <h3>Experiment List</h3>
-        <table class="table table-striped">
+        <table class="table table-striped" id="exp_table">
             <thead>
                 <tr>
                     <td>Name</td>
@@ -19,14 +19,19 @@
             </thead>
             <tbody>
                 {% for exp in experiments %}
-                <tr>
+                <tr id="row-{{ exp.id }}">
                     <td>{{exp.name}}</td>
                     <td>{{exp.start|datetime_format}}</td>
                     <td>{{exp.stop|datetime_format}}</td>
                     <td><button type="button" class="btn
                     btn-primary">Modify</button></td>
-                    <td><button type="button" class="btn
-                    btn-danger">Delete</button></td>
+                    <td><form action="{{ url_for('delete_experiment') }}"
+                              id="delete-form-{{ exp.id }}" class="delete-form">
+                            {{ delete_form.exp_id(value=exp.id, class_="exp_id") }}
+                            {{ delete_form.submit(class_="btn btn-danger",
+                            value="Delete") }}
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %})
                 <tr>
@@ -35,7 +40,8 @@
                         <td>{{ create_form.name(class_='form-control') }}</td>
                         <td>{{ create_form.start }}</td>
                         <td>{{ create_form.stop }}</td>
-                        <td>{{ create_form.submit(class_="btn btn-success") }}</td>
+                        <td>{{ create_form.submit(class_="btn btn-success",
+                            value="Create") }}</td>
                         <td></td>
                     <!--
                         <td>

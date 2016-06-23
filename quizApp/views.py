@@ -26,55 +26,50 @@ def read_experiments():
     """
     exps = Experiment.query.all()
     create_form = forms.CreateExperimentForm()
+    delete_form = forms.DeleteExperimentForm()
 
     return render_template("experiments.html", experiments=exps,
-                          create_form=create_form)
+                          create_form=create_form, delete_form=delete_form)
 
 @app.route("/experiments/create", methods=["POST"])
 def create_experiment():
     """Create an experiment and save it to the database.
     """
-    pdb.set_trace()
     form = forms.CreateExperimentForm()
-    if form.validate_on_submit():
-        print "Success"
-    #TODO: auth
-    return
-    try:
-        #TODO: namespacing?
-        name = request.args["name"]
-        start = request.args["start"]
-        stop = request.args["stop"]
-    except KeyError:
-        return 000; #TODO: what's the right error code?
+    if not form.validate_on_submit():
+        return flask.jsonify({"success": 0})
 
     exp = Experiment(
-        name=name,
-        start=start,
-        stop=stop,
+        name=form.name.data,
+        start=form.start.data,
+        stop=form.stop.data,
         created=datetime.now())
 
     exp.save()
 
-    return 200
+    return flask.jsonify({"success": 1})
 
+@app.route("/experiments/delete", methods=["POST"])
 def delete_experiment():
     """Delete an experiment.
     """
+    form = forms.DeleteExperimentForm()
     #TODO: auth
-    try:
-        name = request.args["name"]
-    except KeyError:
-        return 000
 
-    try:
-        exp = Experiment.query.filter_by(name=name).one()
-    except NoResultFound:
-        return 000
+    pdb.set_trace()
 
-    #TODO: how to delete?
+    if not form.validate_on_submit():
+        return flask.jsonify({"success": 0})
 
-    return 200
+    exp = Experiment.query.get(request.json["id"])
+
+    if not exp:
+        return flask.jsonify({"success": 0})
+
+    db.session.delete(exp)
+    db.session.commit()
+
+    return flask.jsonify({"success": 1, "id": request.json["id"]})
 
 def update_experiment():
     """Modify an experiment's properties.
