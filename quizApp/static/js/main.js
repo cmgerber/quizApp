@@ -289,6 +289,9 @@ $('#posttest-next').on('click', function() {
 
 function replace_html() {
 
+  var img_pre = "<img src='";
+  var img_post = "'/>";
+
   var dropdown1 ='<div id="pretest-drop1" class="btn-group form-inline">'+
                 '<button type="button" class="btn btn-primary">Graph</button>'+
                 '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'+
@@ -376,11 +379,11 @@ function replace_html() {
           //remove start button
           $('#pretest-start-area').remove();
           //add the three graphs
-          $('#graph1').empty().append(d.graph1+
+          $('#graph1').empty().append(img_pre + d.graphs[0] + img_post +
                             '<p>Graph 1</p>');
-          $('#graph2').empty().append(d.graph2+
+          $('#graph2').empty().append(img_pre + d.graphs[1] + img_post +
                             '<p>Graph 2</p>');
-          $('#graph3').empty().append(d.graph3+
+          $('#graph3').empty().append(img_pre + d.graphs[2] + img_post +
                             '<p>Graph 3</p>');
             //add the question
             $('#pretest-question').empty().append('<h3>'+d.question+'</h3>');
@@ -415,11 +418,11 @@ function replace_html() {
           //remove start button
           $('#post-start-area').remove();
           //add the three graphs
-          $('#graph1').empty().append(d.graph1+
+          $('#graph1').empty().append(img_pre + d.graphs[0] + img_post +
                             '<p>Graph 1</p>');
-          $('#graph2').empty().append(d.graph2+
+          $('#graph2').empty().append(img_pre + d.graphs[1]+ img_post +
                             '<p>Graph 2</p>');
-          $('#graph3').empty().append(d.graph3+
+          $('#graph3').empty().append(img_pre + d.graphs[2] + img_post +
                             '<p>Graph 3</p>');
             //add the question
             $('#post-question').empty().append('<h3>'+d.question+'</h3>');
@@ -458,7 +461,7 @@ function replace_html() {
           //remove start button
           $('#training-start-area').remove();
           //add the three graphs
-          $('#graph1').empty().append(d.graph1+
+          $('#graph1').empty().append(img_pre + d.graphs[0] + img_post +
                             '<p>Graph 1</p>');
           if(d.question_type == 'rating') {
             //add the question
@@ -479,32 +482,32 @@ function replace_html() {
             $('#training-question').append('<div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
                                             '<label class="btn btn-primary">'+
                                             '<input type="radio" name="training-question-answers" id="optionA"> 1 </label>'+
-                                            d.answer1+'<br><br>'+
+                                            '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionB"> 2 </label>'+
-                                          d.answer2+'<br><br>'+
+                                          '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionC"> 3 </label>'+
-                                          d.answer3+'<br><br>'+
+                                          '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionD"> 4 </label>'+
-                                          d.answer4+'<br><br>'+
+                                          '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionE"> 5 </label>'+
-                                          d.answer5+'<br><br>'+'</div>');
+                                          '<br><br>'+'</div>');
           } else{
             //add the question
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
             $('#training-question').append('<div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
                                             '<label class="btn btn-primary">'+
                                             '<input type="radio" name="training-question-answers" id="optionA"> A </label>'+
-                                            d.answer1+'<br><br>'+
+                                            d.answers[0]+'<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionB"> B </label>'+
-                                          d.answer2+'<br><br>'+
+                                          d.answers[1]+'<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionC"> C </label>'+
-                                          d.answer3+'<br><br>'+'</div>');
+                                          d.answers[2]+'<br><br>'+'</div>');
 
           }
           //add next button
@@ -529,4 +532,3 @@ function loginCheck(ok_fcn, warn_msg) {
     }
   });
 }
-

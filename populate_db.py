@@ -1,10 +1,26 @@
-from quizApp.models import Question, Answer, Result, Student, StudentTest, Graph
-from quizApp.app import db
+#!/bin/env python2
+
+from quizApp.models import Question, Answer, Result, Student, StudentTest, \
+        Graph, Experiment
+from quizApp import db
+from sqlalchemy import and_
 import pandas as pd
+from datetime import datetime, timedelta
 import os
 
 db.drop_all()
 db.create_all()
+
+exp1 = Experiment(name="experiment1",
+                 start=datetime.now(),
+                 stop=datetime.now() + timedelta(days=3))
+
+exp2 = Experiment(name="experiment2",
+                 start=datetime.now() + timedelta(days=-3),
+                 stop=datetime.now())
+
+db.session.add(exp1)
+db.session.add(exp2)
 
 DATA_ROOT = "quizApp/data/"
 
@@ -201,3 +217,17 @@ def create_student_data(sid_list, student_question_list, test, group):
 for test in ['pre_test', 'training', 'post_test']:
     create_student_data(question_student_id_list, student_question_list, test, 'question')
     create_student_data(heuristic_student_id_list, student_question_list, test, 'heuristic')
+
+
+#Verify
+
+for sid in question_student_id_list + heuristic_student_id_list:
+    for progress in ["pre_test", "training", "post_test"]:
+        tests = StudentTest.query.join(Student).\
+                filter(and_(StudentTest.student_id == sid,
+                            StudentTest.test == progress)).all()
+        order = set()
+        for test in tests:
+            if test.order in order:
+                pdb.set_trace()
+            order.add(test.order)
