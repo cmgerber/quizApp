@@ -482,19 +482,19 @@ function replace_html() {
             $('#training-question').append('<div id="training-question-answers" class="btn-group" data-toggle="buttons">'+
                                             '<label class="btn btn-primary">'+
                                             '<input type="radio" name="training-question-answers" id="optionA"> 1 </label>'+
-                                            d.answers[0]+'<br><br>'+
+                                            '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionB"> 2 </label>'+
-                                          d.answers[1]+'<br><br>'+
+                                          '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionC"> 3 </label>'+
-                                          d.answers[2]+'<br><br>'+
+                                          '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionD"> 4 </label>'+
-                                          d.answers[3]+'<br><br>'+
+                                          '<br><br>'+
                                           '<label class="btn btn-primary">'+
                                           '<input type="radio" name="training-question-answers" id="optionE"> 5 </label>'+
-                                          d.answers[4]+'<br><br>'+'</div>');
+                                          '<br><br>'+'</div>');
           } else{
             //add the question
             $('#training-question').empty().append('<h3>'+d.question+'</h3>');
