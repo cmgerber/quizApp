@@ -6,9 +6,9 @@ import os
 db.drop_all()
 db.create_all()
 
-SHEET_ROOT = "quizApp/data/"
+DATA_ROOT = "quizApp/data/"
 
-questions = pd.read_excel(os.path.join(SHEET_ROOT,
+questions = pd.read_excel(os.path.join(DATA_ROOT,
                                        'DatasetsAndQuestions.xlsx'),
                           'Questions')
 
@@ -20,7 +20,7 @@ for _, data in questions.iterrows():
         question_type=data.question_type)
     db.session.add(question)
 
-answers = pd.read_excel(os.path.join(SHEET_ROOT, 'DatasetsAndQuestions.xlsx'),
+answers = pd.read_excel(os.path.join(DATA_ROOT, 'DatasetsAndQuestions.xlsx'),
                           'Answers')
 for _, data in answers.iterrows():
     answer = Answer(
@@ -30,7 +30,8 @@ for _, data in answers.iterrows():
         correct=data.correct)
     db.session.add(answer)
 
-df_graphs = pd.read_excel('quizApp/data/graph_table.xlsx', 'Sheet1')
+df_graphs = pd.read_excel(os.path.join(DATA_ROOT, 'graph_table.xlsx'),
+                          'Sheet1')
 
 for _, data in df_graphs.iterrows():
     graph = Graph(
@@ -89,7 +90,7 @@ student_question_list = \
 # heuristic_student_id_list = [x + 1 for x in range(30,60)]
 
 #read in student lists
-df_sid = pd.read_csv('quizApp/data/student_id_list.csv')
+df_sid = pd.read_csv(os.path.join(DATA_ROOT, 'student_id_list.csv'))
 df_sid.Questions = df_sid.Questions.apply(lambda x: int(x))
 df_sid.Heuristics = df_sid.Heuristics.apply(lambda x: int(x))
 question_student_id_list = [int(x) for x in list(df_sid.Questions)]
