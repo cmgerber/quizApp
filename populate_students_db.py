@@ -1,32 +1,37 @@
 from quizApp.models import Question, Answer, Result, Student, StudentTest, Graph
 from quizApp.app import db
 import pandas as pd
+import os
 
 db.drop_all()
 db.create_all()
 
-df_questions = pd.read_excel('quizApp/data/question_table.xlsx', 'Sheet1')
+DATA_ROOT = "quizApp/data/"
 
-for _, data in df_questions.iterrows():
+questions = pd.read_excel(os.path.join(DATA_ROOT,
+                                       'DatasetsAndQuestions.xlsx'),
+                          'Questions')
+
+for _, data in questions.iterrows():
     question = Question(
-            id=data.question_id,
-            dataset=data.dataset,
-            question=data.question,
-            question_type=data.question_type)
-
+        id = data.question_id,
+        dataset = data.dataset_id,
+        question = data.question_text,
+        question_type=data.question_type)
     db.session.add(question)
 
-df_answers = pd.read_excel('quizApp/data/answer_table.xlsx', 'Sheet1')
-
-for _, data in df_answers.iterrows():
+answers = pd.read_excel(os.path.join(DATA_ROOT, 'DatasetsAndQuestions.xlsx'),
+                          'Answers')
+for _, data in answers.iterrows():
     answer = Answer(
-            id=data.answer_id,
-            question_id=data.question_id,
-            answer=data.answer,
-            correct=data.correct)
+        id=data.answer_id,
+        question_id=data.question_id,
+        answer=data.answer_text,
+        correct=data.correct)
     db.session.add(answer)
 
-df_graphs = pd.read_excel('quizApp/data/graph_table.xlsx', 'Sheet1')
+df_graphs = pd.read_excel(os.path.join(DATA_ROOT, 'graph_table.xlsx'),
+                          'Sheet1')
 
 for _, data in df_graphs.iterrows():
     graph = Graph(
@@ -85,7 +90,7 @@ student_question_list = \
 # heuristic_student_id_list = [x + 1 for x in range(30,60)]
 
 #read in student lists
-df_sid = pd.read_csv('quizApp/data/student_id_list.csv')
+df_sid = pd.read_csv(os.path.join(DATA_ROOT, 'student_id_list.csv'))
 df_sid.Questions = df_sid.Questions.apply(lambda x: int(x))
 df_sid.Heuristics = df_sid.Heuristics.apply(lambda x: int(x))
 question_student_id_list = [int(x) for x in list(df_sid.Questions)]
