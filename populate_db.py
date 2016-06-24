@@ -128,6 +128,7 @@ def create_student_data(sid_list, student_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
+    missing_qs = set()
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in student_question_list]
     else:
@@ -147,6 +148,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                 order += 1
                 #TODO: why +5
                 question_id = int(str(dataset)+str(5))
+
+                if not Question.query.get(question_id):
+                    missing_qs.add(question_id)
+                    continue
 
                 #write row to db
                 student_test = StudentTest(
@@ -168,6 +173,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x))
 
+                        if not Question.query.get(question_id):
+                            missing_qs.add(question_id)
+                            continue
+
                         #write row to db
                         student_test = StudentTest(
                                 student_id=student_id,
@@ -185,6 +194,9 @@ def create_student_data(sid_list, student_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x + 1))
                         #write row to db
+                        if not Question.query.get(question_id):
+                            missing_qs.add(question_id)
+                            continue
                         student_test = StudentTest(
                                 student_id=student_id,
                                 test=test,
@@ -200,6 +212,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                 order += 1
                 question_id = int(str(dataset)+str(4))
                 #write row to db
+                if not Question.query.get(question_id):
+                    missing_qs.add(question_id)
+                    continue
+
                 student_test = StudentTest(
                         student_id=student_id,
                         test=test,
@@ -212,6 +228,9 @@ def create_student_data(sid_list, student_question_list, test, group):
                 db.session.add(student_test)
 
     db.session.commit()
+    print "Completed storing {} {} tests".format(test, group)
+    print "Failed to find the following questions:"
+    print missing_qs
 
 #create all the student_test table data
 for test in ['pre_test', 'training', 'post_test']:
