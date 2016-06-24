@@ -1,29 +1,33 @@
 from quizApp.models import Question, Answer, Result, Student, StudentTest, Graph
 from quizApp.app import db
 import pandas as pd
+import os
 
 db.drop_all()
 db.create_all()
 
-df_questions = pd.read_excel('quizApp/data/question_table.xlsx', 'Sheet1')
+SHEET_ROOT = "quizApp/data/"
 
-for _, data in df_questions.iterrows():
+questions = pd.read_excel(os.path.join(SHEET_ROOT,
+                                       'DatasetsAndQuestions.xlsx'),
+                          'Questions')
+
+for _, data in questions.iterrows():
     question = Question(
-            id=data.question_id,
-            dataset=data.dataset,
-            question=data.question,
-            question_type=data.question_type)
-
+        id = data.question_id,
+        dataset = data.dataset_id,
+        question = data.question_text,
+        question_type=data.question_type)
     db.session.add(question)
 
-df_answers = pd.read_excel('quizApp/data/answer_table.xlsx', 'Sheet1')
-
-for _, data in df_answers.iterrows():
+answers = pd.read_excel(os.path.join(SHEET_ROOT, 'DatasetsAndQuestions.xlsx'),
+                          'Answers')
+for _, data in answers.iterrows():
     answer = Answer(
-            id=data.answer_id,
-            question_id=data.question_id,
-            answer=data.answer,
-            correct=data.correct)
+        id=data.answer_id,
+        question_id=data.question_id,
+        answer=data.answer_text,
+        correct=data.correct)
     db.session.add(answer)
 
 df_graphs = pd.read_excel('quizApp/data/graph_table.xlsx', 'Sheet1')
