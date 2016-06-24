@@ -1,19 +1,19 @@
 from datetime import datetime
-
-from quizApp import app,db
-from quizApp import forms
-import flask, uuid
-from quizApp import csrf
-from flask import request, url_for
 from random import shuffle
 import os
 import pdb
-from flask import render_template
-from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
-from sqlalchemy.orm.exc import NoResultFound
+import uuid
 
-from quizApp.models import Question, Answer, Result, Student,\
-    StudentTest, Graph, Experiment
+import flask
+from flask import render_template, request, url_for, abort
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
+
+from quizApp import app,db
+from quizApp import csrf
+from quizApp import forms
+from quizApp.models import Question, Answer, Result, Student, StudentTest, \
+        Graph, Experiment
 
 # homepage
 @app.route('/')
@@ -30,6 +30,17 @@ def read_experiments():
 
     return render_template("experiments.html", experiments=exps,
                           create_form=create_form, delete_form=delete_form)
+
+@app.route('/experiments/<int:exp_id>')
+def view_experiment(exp_id):
+    """View the landing page of an experiment, along with the ability to start.
+    """
+    exp = Experiment.query.get(exp_id)
+
+    if not exp:
+        abort(404)
+
+    return render_template("view_experiment.html", experiment=exp)
 
 @app.route("/experiments/create", methods=["POST"])
 def create_experiment():

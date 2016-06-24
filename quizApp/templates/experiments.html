@@ -9,22 +9,26 @@
         <h3>Experiment List</h3>
         <table class="table table-striped" id="exp_table">
             <thead>
-                <tr>
-                    <td>Name</td>
-                    <td>Start time</td>
-                    <td>End time</td>
-                    <td>Modify</td>
-                    <td>Delete</td>
-                </tr>
+            <tr>
+            <th class="col-md-3">Name</th>
+            <th class="col-md-2">Start time</th>
+            <th class="col-md-2">End time</th>
+            <th class="col-md-1">Modify</th>
+            <th class="col-md=1">Delete</th>
+            </tr>
             </thead>
             <tbody>
                 {% for exp in experiments %}
                 <tr id="row-{{ exp.id }}">
-                    <td>{{exp.name}}</td>
+                    <td class="name"><a href="{{ url_for('view_experiment', exp_id=exp.id) }}">{{exp.name}}</a></td>
                     <td>{{exp.start|datetime_format}}</td>
                     <td>{{exp.stop|datetime_format}}</td>
-                    <td><button type="button" class="btn
-                    btn-primary">Modify</button></td>
+                    <td>
+                        <button type="button" class="btn
+                        btn-primary btn-modify" id="btn-modify-{{ exp.id }}" >
+                        Modify
+                        </button>
+                    </td>
                     <td><form action="{{ url_for('delete_experiment') }}"
                               id="delete-form-{{ exp.id }}" class="delete-form">
                             {{ delete_form.exp_id(value=exp.id, class_="exp_id") }}
