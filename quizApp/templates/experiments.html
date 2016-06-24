@@ -33,7 +33,7 @@
                         </form>
                     </td>
                 </tr>
-                {% endfor %})
+                {% endfor %}
                 <tr>
                     <form action="{{ url_for('create_experiment') }}"
                     id="create-form">
@@ -43,37 +43,9 @@
                         <td>{{ create_form.submit(class_="btn btn-success",
                             value="Create") }}</td>
                         <td></td>
-                    <!--
-                        <td>
-                            <input type="text" name='name' class="form-control"
-                                               placeholder="name">
-                        </td>
-                        <td>
-                        </td>
-                        <td>
-                            <div class="input-group date" id="end_time">
-                                <input type="text" class="form-control"
-                                    name="start"/>
-                                <span class="input-group-addon">
-                                    <span class="glyphicon
-                                    glyphicon-calendar"></span>
-                                </span>
-                            </div>
-                        </td>
-                        <td>
-                            <input type="submit" class="btn btn-success"
-                                                 value="Create">
-                        </td>
-                    -->
-                    </form>
+                                        </form>
             </tbody>
-            <script type="text/javascript">
-$(function () {
-    $("#start_time").datetimepicker();
-    $("#end_time").datetimepicker();
-});
-            </script>
+</table>
     </section>
         </div>
-
-        {% include 'footer.html' %}
+{% include 'footer.html' %}
