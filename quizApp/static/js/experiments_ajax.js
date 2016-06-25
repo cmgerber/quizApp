@@ -1,26 +1,26 @@
-$.ajaxSetup({
-  beforeSend: function(xhr, settings) {
-    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-      var csrftoken = $('meta[name=csrf-token]').attr('content')
-        xhr.setRequestHeader("X-CSRFToken", csrftoken)
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+      if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+        var csrftoken = $('meta[name=csrf-token]').attr('content')
+          xhr.setRequestHeader("X-CSRFToken", csrftoken)
+      }
     }
+  })
+
+  function replaceIdAndValue(id, val, obj) {
+    obj.setAttribute("value", val);
+    obj.setAttribute("id", id);
   }
-})
 
-function replaceIdAndValue(id, val, obj) {
-  obj.setAttribute("value", val);
-  obj.setAttribute("id", id);
-}
+  $(document).ready(function() {
+    $(".btn-modify").click(function() {
+      var row = this.parentElement.parentElement;
+      var id = row.getAttribute("data-id");
+      var name = $(row).find(".name > a").text();
+      var start = $(row).find(".start").text();
+      var stop = $(row).find(".stop").text();
 
-$(document).ready(function() {
-  $(".btn-modify").click(function() {
-    var row = this.parentElement.parentElement;
-    var id = row.getAttribute("data-id");
-    var name = $(row).find(".name > a").text();
-    var start = $(row).find(".start").text();
-    var stop = $(row).find(".stop").text();
-
-    mod_form = $("#exp_table tr:last").clone();
+      mod_form = $("#exp_table tr:last").clone();
     mod_form.find("form")[0].setAttribute("id", "modify-form-" + id);
 
     replaceIdAndValue("modify-name", name, mod_form.find("#name")[0]);
