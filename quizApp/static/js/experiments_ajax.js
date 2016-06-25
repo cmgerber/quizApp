@@ -7,13 +7,29 @@ $.ajaxSetup({
   }
 })
 
+function replaceIdAndValue(id, val, obj) {
+  obj.setAttribute("value", val);
+  obj.setAttribute("id", id);
+}
+
 $(document).ready(function() {
   $(".btn-modify").click(function() {
-    row = this.parentElement.parentElement;
-    id = row.getAttribute("data-id")
-    $(row).find(".name").children()
-        .replaceWith("<input class='form-control' type='text' id='update-name' name='update-name' value=" + $(row).find(".name > a").text() + ">");
-    $(this).replaceWith("<input class='btn btn-success' id='update-submit' type='submit' value='Save'>");
+    var row = this.parentElement.parentElement;
+    var id = row.getAttribute("data-id");
+    var name = $(row).find(".name > a").text();
+    var start = $(row).find(".start").text();
+    var stop = $(row).find(".stop").text();
+
+    mod_form = $("#exp_table tr:last").clone();
+    mod_form.find("form")[0].setAttribute("id", "modify-form-" + id);
+
+    replaceIdAndValue("modify-name", name, mod_form.find("#name")[0]);
+    replaceIdAndValue("modify-start", start, mod_form.find("#start")[0]);
+    replaceIdAndValue("modify-stop", stop, mod_form.find("#stop")[0]);
+    replaceIdAndValue("modify-submit", "Save", mod_form.find("#submit")[0]);
+
+    $(this.parentElement.parentElement).replaceWith(mod_form)
+
   });
 
   $('#create-form').submit(function(event) {
@@ -22,26 +38,19 @@ $(document).ready(function() {
       'start': $('input[name=start]').val(),
       'stop': $('input[name=stop]').val(),
     };
-
+    var form = $('form[id=create-form]')
     $.ajax({
-      type: 'POST',
+      type: form.attr("method"),
       contentType: "application/json",
-      url: $('form[id=create-form]').attr("action"),
+      url: form.attr("action"),
       data: JSON.stringify(formData),
-      dataType: 'json',
+      dataType: 'html',
       encode: true
     })
 
     .done(function(data) {
       console.log(data);
-      if(data.success) {
-        $('#exp_table tr:last') //ugh, hardcoding
-          .before("<tr><td>" + formData.name + "</td>" +
-              "<td>" + formData.start + "</td>" +
-              "<td>" + formData.stop + "</td>" +
-              "<td></td>" +
-              "<td></td></tr>")
-      }
+      $('#exp_table tr:last').before(data);
     });
 
     event.preventDefault();
@@ -53,7 +62,7 @@ $(document).ready(function() {
     };
 
     $.ajax({
-      type: 'POST',
+      type: this.getAttribute("method"),
       contentType: "application/json",
       url: this.getAttribute("action"),
       data: JSON.stringify(formData),
@@ -64,7 +73,7 @@ $(document).ready(function() {
     .done(function(data) {
       console.log(data);
       if(data.success) {
-        $("#row-" + data.id).remove()
+        $("*[data-id=" + data.id + "]").remove()
       }
     });
 

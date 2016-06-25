@@ -1,4 +1,5 @@
 {% include 'header.html' %}
+{% import "experiment_macros.html" as exp_macros %}
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 <div id='index' class='index wrapper container'>
   <header id='main-search' class='container'>
@@ -19,58 +20,12 @@
       </thead>
       <tbody>
         {% for exp in experiments %}
-        <tr data-id="{{ exp.id }}">
-          <td class="name"><a href="{{ url_for('view_experiment', exp_id=exp.id) }}">{{exp.name}}</a></td>
-          <td class="start">{{exp.start|datetime_format}}</td>
-          <td class="stop">{{exp.stop|datetime_format}}</td>
-          <td>
-            <button type="button" class="btn
-            btn-primary btn-modify" id="btn-modify-{{ exp.id }}" >
-            Modify
-            </button>
-          </td>
-          <td>
-            <form action="{{ url_for('delete_experiment') }}"
-                  id="delete-form-{{ exp.id }}" class="delete-form">
-              {{ delete_form.exp_id(value=exp.id, class_="exp_id") }}
-              {{ delete_form.submit(class_="btn btn-danger",
-              value="Delete") }}
-            </form>
-          </td>
-        </tr>
+        {{ exp_macros.experiment_row(exp, delete_form) }}
         {% endfor %})
         <tr>
-          <form action="{{ url_for('create_experiment') }}"
-                id="create-form">
-            <td>{{ create_form.name(class_='form-control') }}</td>
-            <td>{{ create_form.start }}</td>
-            <td>{{ create_form.stop }}</td>
-            <td>{{ create_form.submit(class_="btn btn-success",
-              value="Create") }}</td>
-            <td></td>
-            <!--
-              <td>
-              <input type="text" name='name' class="form-control"
-              placeholder="name">
-              </td>
-              <td>
-              </td>
-              <td>
-              <div class="input-group date" id="end_time">
-              <input type="text" class="form-control"
-              name="start"/>
-              <span class="input-group-addon">
-              <span class="glyphicon
-              glyphicon-calendar"></span>
-              </span>
-              </div>
-              </td>
-              <td>
-              <input type="submit" class="btn btn-success"
-              value="Create">
-              </td>
-            -->
-          </form>
+          {{ exp_macros.create_row(create_form, url_for('create_experiment'),
+            "create-form") }}
+        </tr>
       </tbody>
       <script type="text/javascript">
 $(function () {

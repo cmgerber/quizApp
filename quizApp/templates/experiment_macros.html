@@ -1,0 +1,35 @@
+
+{% macro experiment_row(exp, delete_form) -%}
+<tr data-id="{{ exp.id }}">
+  <td class="name">
+    <a href="{{ url_for('view_experiment', exp_id=exp.id) }}">{{exp.name}}</a>
+  </td>
+  <td class="start">{{exp.start|datetime_format}}</td>
+  <td class="stop">{{exp.stop|datetime_format}}</td>
+  <td>
+    <button type="button" class="btn
+    btn-primary btn-modify" id="btn-modify-{{ exp.id }}" >
+    Modify
+    </button>
+  </td>
+  <td>
+    <form action="{{ url_for('delete_experiment', exp_id=exp.id) }}"
+          method="delete" id="delete-form-{{ exp.id }}"
+                          class="delete-form">
+      {{ delete_form.exp_id(value=exp.id, class_="exp_id") }}
+      {{ delete_form.submit(class_="btn btn-danger",
+      value="Delete") }}
+    </form>
+  </td>
+</tr>
+{%- endmacro %}
+
+{% macro create_row(form, action, id, name="", start="", stop="", submit=) -%}
+<form action="{{ action }}" id="{{ id }}", method="post">
+  <td>{{ form.name(class_='form-control') }}</td>
+  <td>{{ form.start }}</td>
+  <td>{{ form.stop }}</td>
+  <td>{{ form.submit(class_="btn btn-success", value="Create") }}</td>
+  <td></td>
+</form>
+{%- endmacro %}
