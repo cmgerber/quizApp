@@ -21,19 +21,13 @@
       <tbody>
         {% for exp in experiments %}
         {{ exp_macros.experiment_row(exp, delete_form) }}
-        {% endfor %})
+        {% endfor %}
         <tr>
           {{ exp_macros.create_row(create_form, url_for('create_experiment'),
-            "create-form") }}
+          "create-form") }}
         </tr>
       </tbody>
-      <script type="text/javascript">
-$(function () {
-  $("#start_time").datetimepicker();
-  $("#end_time").datetimepicker();
-});
-      </script>
+    </table>
   </section>
-    </div>
 
     {% include 'footer.html' %}

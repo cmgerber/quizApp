@@ -24,7 +24,7 @@
 </tr>
 {%- endmacro %}
 
-{% macro create_row(form, action, id, name="", start="", stop="", submit=) -%}
+{% macro create_row(form, action, id, name="", start="", stop="", submit="") -%}
 <form action="{{ action }}" id="{{ id }}", method="post">
   <td>{{ form.name(class_='form-control') }}</td>
   <td>{{ form.start }}</td>
