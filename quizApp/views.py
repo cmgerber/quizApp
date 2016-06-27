@@ -121,11 +121,13 @@ def experiment_modification_form_html(exp_id):
     minimizes repitition of code. I am open to suggestions...
     """
     exp = Experiment.query.get(exp_id)
+    modify_form = forms.CreateExperimentForm()
 
     if not exp:
         abort(404)
 
-    render_template("experiment_modification_form.html", exp=exp)
+    return render_template("experiment_modification_form.html", exp=exp,
+                   modify_form=modify_form)
 
 @app.route('/_login')
 def login():

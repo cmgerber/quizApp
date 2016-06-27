@@ -1,12 +1,14 @@
 from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, HiddenField
 from wtforms.validators import DataRequired
+from wtforms.widgets.core import HTMLString
+import pdb
 
 class DateTimeWidget(object):
     def __call__(self, field, **kwargs):
         output = ('<div class="input-group date" id="{}">'
                   '<input type="text" class="form-control {}"'
-                  '    name="{}"/>'
+                  '    name="{}", value="{}"/>'
                   '<span class="input-group-addon">'
                   '    <span class="glyphicon'
                   '    glyphicon-calendar"></span>'
@@ -21,8 +23,9 @@ class DateTimeWidget(object):
                   '</script>').format(field.id,
                                       kwargs.pop("class_", ""),
                                       field.name,
+                                      kwargs.pop("value", ""),
                                       field.id)
-        return u'' + output
+        return HTMLString(output)
 
 class CreateExperimentForm(Form):
     name = StringField("Name", validators=[DataRequired()])
