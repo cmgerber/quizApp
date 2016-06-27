@@ -1,11 +1,10 @@
-{% include 'header.html' %}
+{% extends 'header.html' %}
+{% block title %}
+Training and Quiz</h3>
+{% endblock %}
 
-<header id='main-search' class='container'>
-  <div class='page-header row'>
-    <div class='col-xs-12 col-sm-12 col-md-12'>
-      <h3>Training and Quiz</h3>
-    </div>
-</header>
+{% block content %}
+
 
 <div id='training-start-area' class="navbar-button col-xs-12 col-sm-12">
   <button id="training-start-button" type="button" class="btn btn-primary">Start</button>
@@ -26,4 +25,4 @@
 
 </div>
 
-{% include 'footer.html' %}
+{% endblock %}

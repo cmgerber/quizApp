@@ -1,11 +1,10 @@
-{% include 'header.html' %}
+{% extends 'header.html' %}
+{% block title %}
+{{ experiment.name }}
+{% endblock %}
 
-<header id='main-search' class='container'>
-  <div class='page-header row'>
-    <div class='col-xs-12 col-sm-12 col-md-12'>
-      <h3>{{ experiment.name }}</h3>
-    </div>
-</header>
+{% block content %}
+
 <section class='container'>
   <div class='row'>
     <div class='col-sm-12 col-md-12'>
@@ -18,4 +17,4 @@
 <div id='quiz-start-area' class="navbar-button col-xs-12 col-sm-12">
 </div>
 
-{% include 'footer.html' %}
+{% endblock %}

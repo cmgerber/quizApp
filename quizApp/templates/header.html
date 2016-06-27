@@ -12,7 +12,6 @@
     <link href="{{ url_for('static', filename='css/bootstrap-switch.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}" type='text/css'>
 
     <!-- INDEX -->
@@ -27,7 +26,6 @@
 
     <!-- All -->
     <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/moment.js')}}"></script>
     <script src="{{ url_for('static', filename='js/jquery-ui/jquery-ui.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap_components.js') }}"></script>
@@ -37,7 +35,6 @@
     <script src="{{ url_for('static', filename='js/jquery.waypoints.min.js') }}"></script>
     <script src="http://www.bitstorm.org/jquery/shadow-animation/jquery.animate-shadow-min.js"></script>
     <script src="{{ url_for('static', filename='js/jquery.pulse.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.js') }}"></script>
     <script type=text/javascript>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }} + "/";</script>
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -47,36 +44,38 @@
     <![endif]-->
     <!--favicon-->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon_green.png') }}">
+    {% block head %}{% endblock %}
   </head>
   <body>
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
       <div class="container-fluid wrapper">
         <div class="row col-xs-12 col-sm-12 col-md-6">
-          <!-- <a class="navbar-brand" href="{{ url_for('home') }}">
-            <img alt="Brand" src="{{ url_for('static', filename='assets/health-care-symbol-png.png') }}">
-            </a> -->
             <h1 class='site-name'><span style="letter-spacing: 3px;">Quiz App</span></h1>
         </div>
         {% if not is_home %}
-        <!-- <div class="navbar-search col-xs-12 col-sm-12 col-md-offset-0 col-md-4">
-          <div class="input-group">
-          <label class="sr-only" for="search-text">Condition and Institution Search</label>
-          <div class="input-group-addon">
-          <span class='glyphicon glyphicon-search'></span>
-          </div>
-          <input type="typeahead" class="form-control" id="search-text" placeholder="Search for a condition or institution">
-          <div id="search-button" class="btn btn-primary input-group-addon">
-          Search
-          </div>
-          </div>
-          </div> -->
           {% endif %}
           <div id="login-area" class="navbar-button col-xs-12 col-sm-12 {% if is_home %}col-md-offset-4{% else %}col-md-offset-4{% endif %} col-md-2">
             <button id="login-button" type="button" class="btn btn-success btn-xs" data-toggle="modal" data-target="#login-modal">
               Login
             </button>
           </div>
+      </div>
     </nav>
     <div id='index' class='index wrapper container'>
 
-{% include 'modals.html' %}
+      <header id='main-search' class='container'>
+        <div class='page-header row'>
+          <div class='col-xs-12 col-sm-12 col-md-12'>
+            <h3>{% block title %}{% endblock %}</h3>
+          </div>
+        </div>
+      </header>
+      {% include 'modals.html' %}
+
+      {% block content %}{% endblock %}
+
+    </div> <!-- end .wrapper.container -->
+
+  </body>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</html>

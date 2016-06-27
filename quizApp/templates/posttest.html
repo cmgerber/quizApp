@@ -1,11 +1,10 @@
-{% include 'header.html' %}
+{% extends 'header.html' %}
+{% block title %}
+Training and Quiz
+{% endblock %}
 
-<header id='main-search' class='container'>
-  <div class='page-header row'>
-    <div class='col-xs-12 col-sm-12 col-md-12'>
-      <h3>Training and Quiz</h3>
-    </div>
-</header>
+{% block content %}
+
 
 <div id='post-start-area' class="navbar-button col-xs-12 col-sm-12">
   <button id="post-start-button" type="button" class="btn btn-primary">Start</button>
@@ -33,4 +32,4 @@
 <div id='post-next' class='col-xs-12 col-sm-12 col-md-offset-10 col-md-12'>
 </div>
 
-{% include 'footer.html' %}
+{% endblock %}
