@@ -48,7 +48,6 @@ def create_experiment():
     """Create an experiment and save it to the database.
     """
     form = forms.CreateExperimentForm()
-    pdb.set_trace()
     if not form.validate_on_submit():
         abort(400)
 
@@ -68,7 +67,6 @@ def create_experiment():
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
-    pdb.set_trace()
     form = forms.DeleteExperimentForm()
     #TODO: auth
 

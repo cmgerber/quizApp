@@ -73,7 +73,7 @@ $(document).ready(function() {
         .done(function(data) {
             console.log(data);
             if(data.success) {
-                $("*[data-id=" + data.id + "]").remove()
+                $("*[data-exp-id=" + data.id + "]").remove()
             }
         });
 
