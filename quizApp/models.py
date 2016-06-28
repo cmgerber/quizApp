@@ -20,6 +20,117 @@ class Base(db.Model):
         if commit:
             db.session.commit()
 
+class User(Base):
+    """A User of the system.
+    """
+
+    name = db.Column(db.String(50))
+    password = db.Column(db.String(50))
+    authenticated = db.Column(db.Boolean)
+    type = db.Column(db.String(50))
+
+    __mapper_args__ = {
+        'polymorphic_identity':'user',
+        'polymorphic_on': type
+    }
+
+class Experimenter(User):
+    """A User with permissions to modify Experiments.
+    """
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'experimenter',
+    }
+
+participant_dataset_table = Table(
+    "participant_dataset", db.metadata,
+    db.Column('participant_id', db.Integer, db.ForeignKey('participant.id')),
+    db.Column('dataset_id', db.Integer, db.ForeignKey('dataset.id'))
+)
+
+class Participant(User):
+    """A User that takes Experiments.
+
+    Attributes:
+        opt_in (bool): Has this user opted in to data collection?
+        designed_datasets: Datasets this user has made visualizations for
+
+    Relationships:
+        M2M with Dataset
+        O2M with Result
+        O2M with ParticipantExperiment
+        O2M with ParticipantQuestion
+    """
+
+    opt_in = db.Column(db.Boolean)
+
+    designed_datasets = relationship("Dataset",
+                                     secondary=participant_dataset_table)
+    results = db.relationship("Result")
+    experiments = db.relationship("ParticipantExperiment")
+    questions = db.relationship("ParticipantQuestion")
+
+participant_activity_table = Table(
+    "participant_activity", db.metadata,
+    db.Column("participant_id", db.Integer, db.ForeignKey('participant.id')),
+    db.Column('activity_id', db.Integer, db.ForeignKey('experiment.id'))
+)
+
+class ParticipantExperiment(Base):
+    """An Association Object that relates a User to an Experiment and also
+    stores the progress of the User in this Experiment as well as the order of
+    Questions that this user does.
+    Essentially, this tracks the progress of each User in each Experiment.
+
+    Attributes:
+        activities - set: Order of activities for this user in this experiment
+        progress - int: Which question the user is currently working on.
+
+    Relationships:
+        M2O with User
+        M2O with Experiment
+        M2M with Activity
+    """
+
+    progress = db.Column(db.Integer)
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
+    activities = db.relationship("Activity",
+                                 secondary=participant_activity_table)
+
+activity_experiment_table = Table(
+    "activity_experiment", db.metadata,
+    db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
+    db.Column('experiment_id', db.Integer, db.ForeignKey('experiment.id'))
+
+class Activity(Base):
+    """An Activity is essentially a screen that a User sees while doing an
+    Experiment. It may be an instructional screen or show a Question, or do
+    something else.
+
+    This class allows us to use Inheritance to easily have a variety of
+    Activities in an Experiment, since we have a M2M between Experiment
+    and Activity, while a specific Activity may actually be a Question thanks
+    to SQLAlchemy's support for polymorphism.
+
+    Attributes:
+        activity_type - string: Discriminator column that determines what kind
+        of Activity this is.
+
+    Relationships:
+        M2M with Experiment
+    """
+
+    activity_type = db.Column(db.String(20))
+    experiments = db.relationship("Experiment",
+                                  secondary=activity_experiment_table)
+
+
+
+
+
+
 class Experiment(Base):
     """An experiment contains a set of Questions.
 
