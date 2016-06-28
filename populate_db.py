@@ -229,8 +229,9 @@ def create_student_data(sid_list, student_question_list, test, group):
 
     db.session.commit()
     print "Completed storing {} {} tests".format(test, group)
-    print "Failed to find the following questions:"
-    print missing_qs
+    if missing_qs:
+        print "Failed to find the following questions:"
+        print missing_qs
 
 #create all the student_test table data
 for test in ['pre_test', 'training', 'post_test']:
@@ -238,15 +239,3 @@ for test in ['pre_test', 'training', 'post_test']:
     create_student_data(heuristic_student_id_list, student_question_list, test, 'heuristic')
 
 
-#Verify
-
-for sid in question_student_id_list + heuristic_student_id_list:
-    for progress in ["pre_test", "training", "post_test"]:
-        tests = StudentTest.query.join(Student).\
-                filter(and_(StudentTest.student_id == sid,
-                            StudentTest.test == progress)).all()
-        order = set()
-        for test in tests:
-            if test.order in order:
-                pdb.set_trace()
-            order.add(test.order)
