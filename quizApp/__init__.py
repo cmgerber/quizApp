@@ -6,7 +6,7 @@ import config
 
 app = Flask(__name__)
 csrf = CsrfProtect(app)
-app.config.from_object(config.Config)
+app.config.from_object(config.Production)
 db = SQLAlchemy(app)
 
 # These imports depend on app, above
