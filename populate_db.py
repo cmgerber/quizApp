@@ -56,8 +56,6 @@ for _, data in df_graphs.iterrows():
             graph_location=data.graph_location)
     db.session.add(graph)
 
-db.session.commit()
-
 
 # In this list, each list is associated with a student (one to one).
 # The first three tuples in each list are associated with training questions.
@@ -130,6 +128,7 @@ def create_student_data(sid_list, student_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
+    missing_qs = set()
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in student_question_list]
     else:
@@ -149,6 +148,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                 order += 1
                 #TODO: why +5
                 question_id = int(str(dataset)+str(5))
+
+                if not Question.query.get(question_id):
+                    missing_qs.add(question_id)
+                    continue
 
                 #write row to db
                 student_test = StudentTest(
@@ -170,6 +173,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x))
 
+                        if not Question.query.get(question_id):
+                            missing_qs.add(question_id)
+                            continue
+
                         #write row to db
                         student_test = StudentTest(
                                 student_id=student_id,
@@ -187,6 +194,9 @@ def create_student_data(sid_list, student_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x + 1))
                         #write row to db
+                        if not Question.query.get(question_id):
+                            missing_qs.add(question_id)
+                            continue
                         student_test = StudentTest(
                                 student_id=student_id,
                                 test=test,
@@ -202,6 +212,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                 order += 1
                 question_id = int(str(dataset)+str(4))
                 #write row to db
+                if not Question.query.get(question_id):
+                    missing_qs.add(question_id)
+                    continue
+
                 student_test = StudentTest(
                         student_id=student_id,
                         test=test,
@@ -214,6 +228,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                 db.session.add(student_test)
 
     db.session.commit()
+    print "Completed storing {} {} tests".format(test, group)
+    if missing_qs:
+        print "Failed to find the following questions:"
+        print missing_qs
 
 #create all the student_test table data
 for test in ['pre_test', 'training', 'post_test']:
@@ -221,15 +239,3 @@ for test in ['pre_test', 'training', 'post_test']:
     create_student_data(heuristic_student_id_list, student_question_list, test, 'heuristic')
 
 
-#Verify
-
-for sid in question_student_id_list + heuristic_student_id_list:
-    for progress in ["pre_test", "training", "post_test"]:
-        tests = StudentTest.query.join(Student).\
-                filter(and_(StudentTest.student_id == sid,
-                            StudentTest.test == progress)).all()
-        order = set()
-        for test in tests:
-            if test.order in order:
-                pdb.set_trace()
-            order.add(test.order)
