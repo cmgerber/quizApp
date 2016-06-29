@@ -10,7 +10,6 @@ class Config(object):
     """
 
     CSRF_ENABLED = True
-    SECRET_KEY = "---"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class Production(Config):
@@ -18,7 +17,14 @@ class Production(Config):
     """
     DEBUG = False
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"
+
+class Development(Config):
+    """Configuration for development environments.
+    """
+    DEBUG = True
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp_test"
+    SECRET_KEY = "Foobar"
 
 class Testing(Config):
     """Config used for testing.
@@ -26,3 +32,10 @@ class Testing(Config):
     DEBUG = True
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp_test"
+    SECRET_KEY = "Foobar"
+
+configs = {
+    "production": Production,
+    "development": Development,
+    "testing": Testing,
+}

@@ -1,4 +1,6 @@
-import quizApp.models
+from quizApp import db
+from quizApp import models
 
-def testfoo():
-    assert 1
+def test_environment():
+    models.Question.query.all()
+    assert 0
