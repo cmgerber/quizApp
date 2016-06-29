@@ -1,5 +1,7 @@
+#!/usr/bin/env python
 import pytest
 import os
+
 
 def runtests():
     os.environ["APP_CONFIG"] = "testing"
