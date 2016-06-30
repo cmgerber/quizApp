@@ -12,8 +12,7 @@ from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
 from quizApp import app,db
 from quizApp import csrf
 from quizApp import forms
-from quizApp.models import Question, Answer, Result, Student, StudentTest, \
-        Graph, Experiment
+from quizApp.models import Question, Choice, Participant, Graph, Experiment
 
 # homepage
 @app.route('/')
