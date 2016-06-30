@@ -11,6 +11,7 @@ class Config(object):
 
     DEBUG = False
     TESTING = False
+    SQLALCHEMY_ECHO = True
     CSRF_ENABLED = True
     SECRET_KEY = "---"
     SQLALCHEMY_TRACK_MODIFICATIONS = False

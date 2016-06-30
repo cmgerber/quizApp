@@ -12,7 +12,8 @@ from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
 from quizApp import app,db
 from quizApp import csrf
 from quizApp import forms
-from quizApp.models import Question, Choice, Participant, Graph, Experiment
+from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
+        User
 
 # homepage
 @app.route('/')
@@ -112,7 +113,7 @@ def login():
     username = int(request.args['username'])
 
     try:
-        user = Student.query.filter_by(id=username).one()
+        user = Participant.query.filter_by(id=username).one()
     except NoResultFound:
         return flask.jsonify(result='bad')
 
@@ -129,9 +130,9 @@ def logout():
 def check_login():
     userid = flask.session['userid'] if 'userid' in flask.session else None
     if userid:
-        student = Student.query.filter_by(id=userid).one()
-        username = student.id
-        progress = student.progress
+        user = Participant.query.filter_by(id=userid).one()
+        username = user.id
+        progress = user.progress
     else:
         username = None
         progress = None
@@ -198,11 +199,16 @@ def done():
 #quiz start button
 @app.route('/_quizStart')
 def quizStart():
-    student = Student.query.filter_by(id=flask.session["userid"]).one()
+    student = Participant.query.filter_by(id=flask.session["userid"]).one()
 
     return flask.jsonify(progress=student.progress)
 
-def get_question(order):
+def get_question(order, experiment):
+    part_exp = ParticipantExperiment.query.\
+            filter(participant_id == flask.session["userid"]).\
+            filter(experiment_id = experiment.id).all()
+    pdb.set_trace()
+
     test = StudentTest.query.\
             join(Student).\
             join(Question).\
@@ -224,7 +230,7 @@ def get_question(order):
 @app.route('/first_question')
 def first_question():
     userid = flask.session['userid']
-    student = Student.query.get(flask.session["userid"])
+    student = Participant.query.get(flask.session["userid"])
 
     try:
         order = flask.session['order']
@@ -408,7 +414,7 @@ def posttest_answers():
     answer_list = [(best1,1000), (best2,1001)]
 
     #write to db
-    #update complete row in StudentsTest table
+    #update complete row in ParticipantsTest table
     # r = conn.execute(StudentsTest.update().\
     #                  where(StudentsTest.c.student_test_id == student_test_id).\
     #                  values(complete='yes'))

@@ -44,7 +44,7 @@ class Experimenter(User):
 
 participant_dataset_table = db.Table(
     "participant_dataset", db.metadata,
-    db.Column('participant_id', db.Integer, db.ForeignKey('participant.id')),
+    db.Column('participant_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('dataset_id', db.Integer, db.ForeignKey('dataset.id'))
 )
 
@@ -62,11 +62,16 @@ class Participant(User):
     """
 
     opt_in = db.Column(db.Boolean)
+    progress = db.Column(db.String(50)) #TODO: remove this, just transitional
 
     designed_datasets = db.relationship("Dataset",
                                         secondary=participant_dataset_table)
     assignments = db.relationship("Assignment")
     experiments = db.relationship("ParticipantExperiment")
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'participant',
+    }
 
 class ParticipantExperiment(Base):
     """An Association Object that relates a User to an Experiment and also
@@ -86,7 +91,7 @@ class ParticipantExperiment(Base):
 
     progress = db.Column(db.Integer)
 
-    participant_id = db.Column(db.Integer, db.ForeignKey('participant.id'))
+    participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
     assignments = db.relationship("Assignment")
 
@@ -117,7 +122,8 @@ class Assignment(Base):
 
     skipped = db.Column(db.Boolean)
 
-    participant_id = db.Column(db.Integer, db.ForeignKey("participant.id"))
+    graphs = db.relationship("Graph", secondary=assignment_graph_table)
+    participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
@@ -157,7 +163,7 @@ class Activity(Base):
         O2M with Assignment (parent)
     """
 
-    type = db.Column(db.String(20))
+    type = db.Column(db.String(50))
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table)
     assignments = db.relationship("Assignment")
@@ -169,7 +175,7 @@ class Activity(Base):
 
 question_dataset_table = db.Table(
     "question_dataset", db.metadata,
-    db.Column("question_id", db.Integer, db.ForeignKey("question.id")),
+    db.Column("question_id", db.Integer, db.ForeignKey("activity.id")),
     db.Column("dataset_id", db.Integer, db.ForeignKey("dataset.id"))
 )
 
@@ -178,13 +184,14 @@ class Question(Activity):
     and is a part of one or more Experiments.
 
     Attributes:
-       question_type - string: A description of this question.
+        question - string: This question as a string
 
     Relationships:
        O2M with Choice (parent)
        M2M with Dataset - if empty, this Question is universal
     """
 
+    question = db.Column(db.String(200))
     choices = db.relationship("Choice")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
 
@@ -249,7 +256,7 @@ class Choice(Base):
     label = db.Column(db.String(3))
     correct = db.Column(db.Boolean)
 
-    question_id = db.Column(db.Integer, db.ForeignKey("question.id"))
+    question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     assignments = db.relationship("Assignment")
 
 class Graph(Base):
