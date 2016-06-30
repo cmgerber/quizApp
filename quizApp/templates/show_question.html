@@ -1,31 +1,28 @@
-{% include 'header.html' %}
-<div id='index' class='index wrapper container'>
-    <header id='main-search' class='container'>
-        <div class='page-header row'>
-            <div class='col-xs-12 col-sm-12 col-md-12'>
-                <h3>Quiz</h3>
-            </div>
-    </header>
+{% extends 'header.html' %}
 
-    <section class='container'>
-        {% for graph in question.graphs %}
-        <div class="row">
-            <div class='col-sm-12 col-md-12'>
-                {{ graph.graph_location|path_to_img }}
-            </div>
-        </div>
-        {% endfor %}
-    </section>
+{% block title %}
+Quiz
+{% endblock %}
 
-    <div id='question' class="container col-xs-12 col-sm-12 col-md-12">
-        <h3>{{ question.question }}</h3>
+{% block content %}
+<section class='container'>
+  {% for graph in test.graphs %}
+  <div class="row">
+    <div class='col-sm-12 col-md-12'>
+      {{ graph.graph_location|path_to_img }}
     </div>
+  </div>
+  {% endfor %}
+</section>
+
+<div id='question' class="container col-xs-12 col-sm-12 col-md-12">
+  <h3>{{ question.question }}</h3>
+</div>
 
 
-    <div id='pretest-next' class='col-xs-12 col-sm-12 col-md-offset-10 col-md-12'>
-    <form>
-      {{ mc_form.answers() }}
-    </form>
-    </div>
-
-{% include 'footer.html' %}
+<div id='pretest-next' class='col-xs-12 col-sm-12 col-md-offset-10 col-md-12'>
+  <form>
+    {{ mc_form.answers() }}
+  </form>
+</div>
+{% endblock %}

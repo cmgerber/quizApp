@@ -110,10 +110,14 @@ def update_experiment():
 
     exp.save()
 
-@app.route('/experiments/<int:exp_id>/<int:q_id>')
+@app.route('/experiments/<int:exp_id>/questions/<int:q_id>')
 def show_question(exp_id, q_id):
     experiment = Experiment.query.get(exp_id)
     question = Question.query.get(q_id)
+    student = Student.query.get(flask.session["userid"])
+    student_test = StudentTest.query.filter_by(student_id=student.id).\
+            filter_by(question_id=question.id).\
+            filter_by(test=student.progress).all()
     pdb.set_trace()
     if not experiment or not question:
         abort(404)
@@ -123,7 +127,8 @@ def show_question(exp_id, q_id):
     mc_form.answers.choices = [(str(x), a.answer) for x, a in enumerate(question.answers)]
 
     return render_template("show_question.html", exp=experiment,
-                           question=question, mc_form=mc_form)
+                           question=question, test=student_test,
+                           mc_form=mc_form)
 
 @app.route("/experiments/<int:exp_id>/modification_form")
 def experiment_modification_form_html(exp_id):
