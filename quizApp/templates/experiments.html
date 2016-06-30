@@ -1,84 +1,40 @@
-{% include 'header.html' %}
-<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
-<div id='index' class='index wrapper container'>
-  <header id='main-search' class='container'>
-    <div class='page-header row'>
-  </header>
-  <section class='container'>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <h3>Experiment List</h3>
-    <table class="table table-striped" id="exp_table">
-      <thead>
-        <tr>
-          <th class="col-md-3">Name</th>
-          <th class="col-md-2">Start time</th>
-          <th class="col-md-2">End time</th>
-          <th class="col-md-1">Modify</th>
-          <th class="col-md=1">Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for exp in experiments %}
-        <tr data-id="{{ exp.id }}">
-          <td class="name"><a href="{{ url_for('view_experiment', exp_id=exp.id) }}">{{exp.name}}</a></td>
-          <td class="start">{{exp.start|datetime_format}}</td>
-          <td class="stop">{{exp.stop|datetime_format}}</td>
-          <td>
-            <button type="button" class="btn
-            btn-primary btn-modify" id="btn-modify-{{ exp.id }}" >
-            Modify
-            </button>
-          </td>
-          <td>
-            <form action="{{ url_for('delete_experiment') }}"
-                  id="delete-form-{{ exp.id }}" class="delete-form">
-              {{ delete_form.exp_id(value=exp.id, class_="exp_id") }}
-              {{ delete_form.submit(class_="btn btn-danger",
-              value="Delete") }}
-            </form>
-          </td>
-        </tr>
-        {% endfor %})
-        <tr>
-          <form action="{{ url_for('create_experiment') }}"
-                id="create-form">
-            <td>{{ create_form.name(class_='form-control') }}</td>
-            <td>{{ create_form.start }}</td>
-            <td>{{ create_form.stop }}</td>
-            <td>{{ create_form.submit(class_="btn btn-success",
-              value="Create") }}</td>
-            <td></td>
-            <!--
-              <td>
-              <input type="text" name='name' class="form-control"
-              placeholder="name">
-              </td>
-              <td>
-              </td>
-              <td>
-              <div class="input-group date" id="end_time">
-              <input type="text" class="form-control"
-              name="start"/>
-              <span class="input-group-addon">
-              <span class="glyphicon
-              glyphicon-calendar"></span>
-              </span>
-              </div>
-              </td>
-              <td>
-              <input type="submit" class="btn btn-success"
-              value="Create">
-              </td>
-            -->
-          </form>
-      </tbody>
-      <script type="text/javascript">
-$(function () {
-  $("#start_time").datetimepicker();
-  $("#end_time").datetimepicker();
-});
-      </script>
-  </section>
-    </div>
+{% extends 'header.html' %}
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/moment.js')}}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.js') }}"></script>
+{% endblock %}
 
-    {% include 'footer.html' %}
+{% block title %}
+Experiment List
+{% endblock %}
+
+{% import "experiment_macros.html" as exp_macros %}
+
+{% block content %}
+<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+<section class='container'>
+  <table class="table table-striped" id="exp_table">
+    <thead>
+      <tr>
+        <th class="col-md-3">Name</th>
+        <th class="col-md-2">Start time</th>
+        <th class="col-md-2">End time</th>
+        <th class="col-md-1">Modify</th>
+        <th class="col-md=1">Delete</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for exp in experiments %}
+      {{ exp_macros.experiment_row(exp, delete_form) }}
+      {% endfor %}
+      <tr>
+        {{ exp_macros.create_row(create_form, url_for('create_experiment'),
+        "create-form") }}
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+{% endblock %}

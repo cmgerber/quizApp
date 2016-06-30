@@ -20,7 +20,8 @@ from quizApp.models import Question, Answer, Result, Student, StudentTest, \
 def home():
     return flask.render_template('index.html',
                                  is_home=True)
-@app.route('/experiments')
+
+@app.route('/experiments', methods=["GET"])
 def read_experiments():
     """List experiments.
     """
@@ -31,7 +32,7 @@ def read_experiments():
     return render_template("experiments.html", experiments=exps,
                           create_form=create_form, delete_form=delete_form)
 
-@app.route('/experiments/<int:exp_id>')
+@app.route('/experiments/<int:exp_id>', methods=["GET"])
 def view_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
@@ -42,13 +43,14 @@ def view_experiment(exp_id):
 
     return render_template("view_experiment.html", experiment=exp)
 
-@app.route("/experiments/create", methods=["POST"])
+@app.route("/experiments", methods=["POST"])
 def create_experiment():
     """Create an experiment and save it to the database.
     """
     form = forms.CreateExperimentForm()
     if not form.validate_on_submit():
-        return flask.jsonify({"success": 0})
+        abort(400)
+
 
     exp = Experiment(
         name=form.name.data,
@@ -58,19 +60,20 @@ def create_experiment():
 
     exp.save()
 
-    return flask.jsonify({"success": 1})
+    return render_template("create_experiment_response.html", exp=exp,
+                           delete_form=forms.DeleteExperimentForm())
 
-@app.route("/experiments/delete", methods=["POST"])
-def delete_experiment():
+@app.route("/experiments/<int:exp_id>", methods=["DELETE"])
+def delete_experiment(exp_id):
     """Delete an experiment.
     """
     form = forms.DeleteExperimentForm()
     #TODO: auth
 
-    if not form.validate_on_submit():
+    if not form.validate():
         return flask.jsonify({"success": 0})
 
-    exp = Experiment.query.get(request.json["id"])
+    exp = Experiment.query.get(exp_id)
 
     if not exp:
         return flask.jsonify({"success": 0})
@@ -80,6 +83,7 @@ def delete_experiment():
 
     return flask.jsonify({"success": 1, "id": request.json["id"]})
 
+@app.route("/experiments/<int:exp_id>", methods=["PUT"])
 def update_experiment():
     """Modify an experiment's properties.
 
@@ -120,6 +124,23 @@ def show_question(exp_id, q_id):
 
     return render_template("show_question.html", exp=experiment,
                            question=question, mc_form=mc_form)
+
+@app.route("/experiments/<int:exp_id>/modification_form")
+def experiment_modification_form_html(exp_id):
+    """Get an HTML representation of a modification form for the given
+    experiment.
+
+    I'm not really happy with this, but I can't think of another method that
+    minimizes repitition of code. I am open to suggestions...
+    """
+    exp = Experiment.query.get(exp_id)
+    modify_form = forms.CreateExperimentForm()
+
+    if not exp:
+        abort(404)
+
+    return render_template("experiment_modification_form.html", exp=exp,
+                   modify_form=modify_form)
 
 @app.route('/_login')
 def login():
