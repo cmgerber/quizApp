@@ -84,8 +84,8 @@ class Participant(User):
 
     designed_datasets = db.relationship("Dataset",
                                         secondary=participant_dataset_table)
-    assignments = db.relationship("Assignment")
-    experiments = db.relationship("ParticipantExperiment")
+    assignments = db.relationship("Assignment", backref="participant")
+    experiments = db.relationship("ParticipantExperiment", backref="participant")
 
     __mapper_args__ = {
         'polymorphic_identity': 'participant',
@@ -111,7 +111,17 @@ class ParticipantExperiment(Base):
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
-    assignments = db.relationship("Assignment")
+    
+    assignments = db.relationship("Assignment", backref="participant_experiment"))
+
+    @validates('assignments')
+    def validate_assignments(self, key, assignment):
+        """The Assignments in this model must be related to the same Experiment
+        as this model is."""
+        assert(assignment.experiment_id == self.experiment_id)
+        assert(assignment.participant_id == self.participant_id)
+        assert(assignment.activity in self.experiment.activities)
+        return assignment
 
 assignment_graph_table = db.Table(
     "assignment_graph", db.metadata,
@@ -149,6 +159,22 @@ class Assignment(Base):
         db.Integer,
         db.ForeignKey("participant_experiment.id"))
 
+    @validates("activity")
+    def validate_activity(self, key, activity):
+        """Make sure that the activity is part of this experiment.
+        """
+        assert(self.experiment in activity.experiments)
+        return activity
+    
+    @validates("choice_id")
+    def validate_choice(self, key, choice):
+        """This must be a valid choice, i.e. contained in the question (if any)
+        """
+        if "question" in self.activity.type:
+            assert(choice in self.activity.choices)
+
+        return choice
+
 activity_experiment_table = db.Table(
     "activity_experiment", db.metadata,
     db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
@@ -184,7 +210,7 @@ class Activity(Base):
     type = db.Column(db.String(50))
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table)
-    assignments = db.relationship("Assignment")
+    assignments = db.relationship("Assignment", backref="activity")
 
     __mapper_args__ = {
         'polymorphic_identity':'activity',
@@ -210,7 +236,7 @@ class Question(Activity):
     """
 
     question = db.Column(db.String(200))
-    choices = db.relationship("Choice")
+    choices = db.relationship("Choice", backref="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
 
     __mapper_args__ = {
@@ -275,7 +301,7 @@ class Choice(Base):
     correct = db.Column(db.Boolean)
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
-    assignments = db.relationship("Assignment")
+    assignments = db.relationship("Assignment", backref="choice")
 
 class Graph(Base):
     """A Graph is an image file located on the server that may be shown in
@@ -317,8 +343,9 @@ class Experiment(Base):
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table)
-    participant_experiments = db.relationship("ParticipantExperiment")
-    assignment = db.relationship("Assignment")
+    participant_experiments = db.relationship("ParticipantExperiment",
+        backref="experiment")
+    assignment = db.relationship("Assignment", backref="experiment")
 
 
 class Dataset(Base):
@@ -336,7 +363,7 @@ class Dataset(Base):
     name = db.Column(db.String(100))
     uri = db.Column(db.String(200))
 
-    graphs = db.relationship("Graph")
+    graphs = db.relationship("Graph", backref="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table)
     participant = db.relationship("Participant",
                                   secondary=participant_dataset_table)
