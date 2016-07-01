@@ -1,4 +1,5 @@
-from quizApp import app
+from quizApp import create_app
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8882)
+    app = create_app("development")
+    app.run()

@@ -1,33 +1,13 @@
-from datetime import datetime
-from random import shuffle
-import os
-import uuid
-
-import flask
-from flask import render_template, request, url_for, abort
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
-from flask_login import login_required, logout_user, login_user, current_user
-
-from quizApp import app, db, login_manager
-from quizApp import csrf
-from quizApp import forms
+from flask import Blueprint, render_template, url_for, Markup
+from flask_login import login_required
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
         User, Assignment, ParticipantExperiment, Activity
+from quizApp.forms.experiments import CreateExperimentForm, \
+        DeleteExperimentForm, MultipleChoiceForm, ScaleForm
 
-# homepage
-@app.route('/')
-def home():
-    return flask.render_template('index.html',
-                                 is_home=True)
+experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
-@login_manager.user_loader
-def user_loader(user_id):
-    """Load the given user id.
-    """
-    return User.query.get(int(user_id))
-
-@app.route('/experiments', methods=["GET"])
+@experiments.route('/', methods=["GET"])
 @login_required
 def read_experiments():
     """List experiments.
@@ -39,7 +19,7 @@ def read_experiments():
     return render_template("experiments.html", experiments=exps,
                           create_form=create_form, delete_form=delete_form)
 
-@app.route('/experiments/<int:exp_id>', methods=["GET"])
+@experiments.route('/<int:exp_id>', methods=["GET"])
 @login_required
 def read_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
@@ -65,7 +45,7 @@ def read_experiment(exp_id):
     return render_template("read_experiment.html", experiment=exp,
                           activity=activity)
 
-@app.route("/experiments", methods=["POST"])
+@experiments.route("", methods=["POST"])
 @login_required
 def create_experiment():
     """Create an experiment and save it to the database.
@@ -85,7 +65,7 @@ def create_experiment():
     return render_template("create_experiment_response.html", exp=exp,
                            delete_form=forms.DeleteExperimentForm())
 
-@app.route("/experiments/<int:exp_id>", methods=["DELETE"])
+@experiments.route("/<int:exp_id>", methods=["DELETE"])
 @login_required
 def delete_experiment(exp_id):
     """Delete an experiment.
@@ -106,7 +86,7 @@ def delete_experiment(exp_id):
 
     return flask.jsonify({"success": 1, "id": request.json["id"]})
 
-@app.route("/experiments/<int:exp_id>", methods=["PUT"])
+@experiments.route("/<int:exp_id>", methods=["PUT"])
 @login_required
 def update_experiment():
     """Modify an experiment's properties.
@@ -134,7 +114,7 @@ def update_experiment():
 
     exp.save()
 
-@app.route('/experiments/<int:exp_id>/questions/<int:q_id>')
+@experiments.route('/<int:exp_id>/questions/<int:q_id>')
 @login_required
 def read_question(exp_id, q_id):
     experiment = Experiment.query.get(exp_id)
@@ -162,7 +142,7 @@ def read_question(exp_id, q_id):
                            question=question, assignment=assignment,
                            mc_form=question_form)
 
-@app.route('/experiments/<int:exp_id>/questions/<int:q_id>', methods=["POST"])
+@experiments.route('/<int:exp_id>/questions/<int:q_id>', methods=["POST"])
 def update_question(exp_id, q_id):
     """Record a user's answer to this question
     """
@@ -225,7 +205,7 @@ def update_question(exp_id, q_id):
     db.session.commit()
     return flask.jsonify({"success": 1, "next_url": next_url})
 
-@app.route("/experiments/<int:exp_id>/modification_form")
+@experiments.route("/<int:exp_id>/modification_form")
 @login_required
 def experiment_modification_form_html(exp_id):
     """Get an HTML representation of a modification form for the given
@@ -243,38 +223,15 @@ def experiment_modification_form_html(exp_id):
     return render_template("experiment_modification_form.html", exp=exp,
                    modify_form=modify_form)
 
-@app.route('/login', methods=["GET", "POST"])
-def login():
-    form = forms.LoginForm()
-
-    if form.validate_on_submit():
-       user = User.query.get(int(form.name.data))
-       if user:
-           login_user(user)
-           flask.flash("Logged in successfully.")
-           return flask.redirect(flask.url_for("home"))
-
-    return render_template("login.html", form=form)
-
-@app.route("/logout", methods=["GET"])
-@login_required
-def logout():
-    user = current_user
-    user.authenticated = False
-    db.session.add(user)
-    db.session.commit()
-    logout_user()
-    return flask.redirect(flask.url_for("home"))
-
 #TODO: done vs donedone
 
 #Complete page
-@app.route('/donedone')
+@experiments.route('/donedone')
 def donedone():
     return flask.render_template('done.html')
 
 #Complete page
-@app.route('/done')
+@experiments.route('/done')
 def done():
     questions = Question.query.join(StudentTest).\
             filter(StudentTest.student_id == flask.session['userid']).\
@@ -290,3 +247,19 @@ def done():
     else:
         #TODO: proper logging
         print "Unknown question types"
+
+
+@experiments.app_template_filter("datetime_format")
+def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
+    """Format the value (a datetime) according to fmt with strftime.
+    """
+    return value.strftime(fmt)
+
+@experiments.app_template_filter("graph_to_img")
+def graph_to_img_filter(graph):
+    """Given a graph, return html to display it.
+    """
+    graph_path = url_for('static', filename=os.path.join("graphs/",
+                                                         graph.filename))
+
+    return Markup("<img src='" + graph_path + "' \>")

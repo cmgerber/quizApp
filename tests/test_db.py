@@ -1,6 +1,6 @@
-from quizApp.models import Question, Answer, Result, Student, StudentTest, \
-        Graph, Experiment
+from quizApp.models import Question
 from quizApp import db, app
+import pytest
 
 @pytest.yield_fixture
 def app():
@@ -21,6 +21,6 @@ def db(app, monkeypatch):
         transaction.rollback()
         connection.close()
 
-def test_environment(idb):
+def test_environment(db):
     models.Question.query.all()
     assert 0

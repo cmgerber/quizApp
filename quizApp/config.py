@@ -28,7 +28,7 @@ class Development(Config):
     """
     DEBUG = True
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp_test"
+    SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"
     SECRET_KEY = "Foobar"
 
 class Testing(Config):
