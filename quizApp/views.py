@@ -1,7 +1,6 @@
 from datetime import datetime
 from random import shuffle
 import os
-import pdb
 import uuid
 
 import flask
@@ -148,8 +147,6 @@ def read_question(exp_id, q_id):
     if assignment.choice_id:
         abort(400)
 
-    pdb.set_trace()
-
     if not experiment or not question:
         abort(404)
 
@@ -169,8 +166,6 @@ def read_question(exp_id, q_id):
 def update_question(exp_id, q_id):
     """Record a user's answer to this question
     """
-    pdb.set_trace()
-
     question = Question.query.get(q_id)
 
     if not question:
@@ -250,7 +245,6 @@ def experiment_modification_form_html(exp_id):
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
-    pdb.set_trace()
     form = forms.LoginForm()
 
     if form.validate_on_submit():
