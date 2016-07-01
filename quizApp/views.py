@@ -8,18 +8,25 @@ import flask
 from flask import render_template, request, url_for, abort
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
+from flask_login import login_required, logout_user, login_user, current_user
 
-from quizApp import app,db
+from quizApp import app, db, login_manager
 from quizApp import csrf
 from quizApp import forms
 from quizApp.models import Question, Answer, Result, Student, StudentTest, \
-        Graph, Experiment
+        Graph, Experiment, User
 
 # homepage
 @app.route('/')
 def home():
     return flask.render_template('index.html',
                                  is_home=True)
+
+@login_manager.user_loader
+def user_loader(user_id):
+    """Load the given user id.
+    """
+    return User.query.get(int(user_id))
 
 @app.route('/experiments', methods=["GET"])
 def read_experiments():
@@ -147,6 +154,31 @@ def experiment_modification_form_html(exp_id):
     return render_template("experiment_modification_form.html", exp=exp,
                    modify_form=modify_form)
 
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    pdb.set_trace()
+    form = forms.LoginForm()
+
+    if form.validate_on_submit():
+       user = User.query.get(int(form.name.data))
+       if user:
+           login_user(user)
+           flask.flash("Logged in successfully.")
+           return flask.redirect(flask.url_for("home"))
+
+    return render_template("login.html", form=form)
+
+@app.route("/logout", methods=["GET"])
+@login_required
+def logout():
+    user = current_user
+    user.authenticated = False
+    db.session.add(user)
+    db.session.commit()
+    logout_user()
+    return flask.redirect(flask.url_for("home"))
+
+"""
 @app.route('/_login')
 def login():
     #TODO: careful casting to int
@@ -166,6 +198,7 @@ def login():
 def logout():
     flask.session.pop('userid', None)
     return flask.jsonify(result='ok')
+"""
 
 @app.route('/_check_login')
 def check_login():

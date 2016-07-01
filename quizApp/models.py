@@ -36,7 +36,22 @@ class User(Base):
     OtO with Student
     """
 
-    name = db.Column(db.String)
+    name = db.Column(db.String(50))
+    password = db.Column(db.String(50))
+    authenticated = db.Column(db.Boolean, default=False)
+
+    def is_active(self):
+        """All users are active, so return True"""
+        return True
+
+    def get_id(self):
+        return unicode(self.id)
+
+    def is_authenticated(self):
+        return self.authenticated
+
+    def is_anonymous(self):
+        return False
 
 class Experiment(Base):
     """An experiment contains a set of Questions.

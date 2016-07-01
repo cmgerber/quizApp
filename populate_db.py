@@ -1,7 +1,7 @@
 #!/bin/env python2
 
 from quizApp.models import Question, Answer, Result, Student, StudentTest, \
-        Graph, Experiment
+        Graph, Experiment, User
 from quizApp import db
 from sqlalchemy import and_
 import pandas as pd
@@ -112,6 +112,9 @@ heuristic_student_id_list = [int(x) for x in list(df_sid.Heuristics)]
 combined_id_list = question_student_id_list + heuristic_student_id_list
 
 for sid in combined_id_list:
+    user = User(
+        id=sid, name=str(sid))
+    db.session.add(user)
     student = Student(
             id=sid,
             progress='pre_test', #TODO: enum
@@ -237,5 +240,3 @@ def create_student_data(sid_list, student_question_list, test, group):
 for test in ['pre_test', 'training', 'post_test']:
     create_student_data(question_student_id_list, student_question_list, test, 'question')
     create_student_data(heuristic_student_id_list, student_question_list, test, 'heuristic')
-
-
