@@ -8,7 +8,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config(object):
     """Global default config.
     """
-
     DEBUG = False
     TESTING = False
     SQLALCHEMY_ECHO = True

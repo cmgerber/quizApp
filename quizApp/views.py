@@ -13,7 +13,7 @@ from quizApp import app,db
 from quizApp import csrf
 from quizApp import forms
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
-        User
+        User, Assignment, ParticipantExperiment, Activity
 
 # homepage
 @app.route('/')
@@ -33,7 +33,7 @@ def read_experiments():
                           create_form=create_form, delete_form=delete_form)
 
 @app.route('/experiments/<int:exp_id>', methods=["GET"])
-def view_experiment(exp_id):
+def read_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
     exp = Experiment.query.get(exp_id)
@@ -41,7 +41,21 @@ def view_experiment(exp_id):
     if not exp:
         abort(404)
 
-    return render_template("view_experiment.html", experiment=exp)
+    try:
+        part_exp = ParticipantExperiment.query.\
+                filter_by(participant_id=flask.session["userid"]).\
+                filter_by(experiment_id=exp_id).one()
+    except NoResultFound:
+        abort(400)
+
+    try:
+        activity = Activity.query.get(
+            part_exp.assignments[part_exp.progress].activity_id)
+    except IndexError:
+        activity = None
+
+    return render_template("read_experiment.html", experiment=exp,
+                          activity=activity)
 
 @app.route("/experiments", methods=["POST"])
 def create_experiment():
@@ -50,7 +64,6 @@ def create_experiment():
     form = forms.CreateExperimentForm()
     if not form.validate_on_submit():
         abort(400)
-
 
     exp = Experiment(
         name=form.name.data,
@@ -111,24 +124,98 @@ def update_experiment():
     exp.save()
 
 @app.route('/experiments/<int:exp_id>/questions/<int:q_id>')
-def show_question(exp_id, q_id):
+def read_question(exp_id, q_id):
     experiment = Experiment.query.get(exp_id)
     question = Question.query.get(q_id)
-    student = Student.query.get(flask.session["userid"])
-    student_test = StudentTest.query.filter_by(student_id=student.id).\
-            filter_by(question_id=question.id).\
-            filter_by(test=student.progress).all()
+    participant = Participant.query.get(flask.session["userid"])
+    assignment = Assignment.query.filter_by(participant_id=participant.id).\
+            filter_by(activity_id=question.id).\
+            filter_by(experiment_id=experiment.id).one()
+
+    if assignment.choice_id:
+        abort(400)
+
     pdb.set_trace()
+
     if not experiment or not question:
         abort(404)
 
-    mc_form = forms.MultipleChoiceForm()
+    if "scale" in question.type:
+        question_form = forms.ScaleForm()
+    else:
+        question_form = forms.MultipleChoiceForm()
 
-    mc_form.answers.choices = [(str(x), a.answer) for x, a in enumerate(question.answers)]
+    question_form.answers.choices = [(str(c.id), c.choice) for c in
+                               question.choices]
 
     return render_template("show_question.html", exp=experiment,
-                           question=question, test=student_test,
-                           mc_form=mc_form)
+                           question=question, assignment=assignment,
+                           mc_form=question_form)
+
+@app.route('/experiments/<int:exp_id>/questions/<int:q_id>', methods=["POST"])
+def update_question(exp_id, q_id):
+    """Record a user's answer to this question
+    """
+    pdb.set_trace()
+
+    question = Question.query.get(q_id)
+
+    if not question:
+        abort(404)
+
+    #TODO: factor this code out
+    if "scale" in question.type:
+        question_form = forms.ScaleForm()
+    else:
+        question_form = forms.MultipleChoiceForm()
+    question_form.answers.choices = [(str(c.id), c.choice) for c in
+                               question.choices]
+
+    if not question_form.validate():
+        return flask.jsonify({"success": 0})
+
+    # User has answered this question successfully
+
+    participant_id = flask.session["userid"]
+
+    try:
+        part_exp = ParticipantExperiment.query.\
+                filter_by(experiment_id=exp_id).\
+                filter_by(participant_id=participant_id).one()
+    except NoResultFound:
+        abort(404)
+
+    # Get the user's assignment, associate it with the choice, and get the next
+    # assignment
+    assignment = part_exp.assignments[part_exp.progress]
+
+    selected_choice = Choice.query.get(int(question_form.answers.data))
+
+    if not selected_choice:
+        # This choice does not exist
+        abort(400)
+
+    #TODO: sqlalchemy validators
+    assignment.choice_id = selected_choice.id
+
+    part_exp.progress += 1
+
+    try:
+        next_assignment = part_exp.assignments[part_exp.progress]
+    except IndexError:
+        next_assignment = None
+
+    if next_assignment:
+        next_url = url_for("read_question", exp_id=exp_id,
+                           q_id=part_exp.assignments[part_exp.progress].\
+                           activity_id)
+    else:
+        next_url = url_for("donedone")
+
+    db.session.add(assignment)
+    db.session.add(part_exp)
+    db.session.commit()
+    return flask.jsonify({"success": 1, "next_url": next_url})
 
 @app.route("/experiments/<int:exp_id>/modification_form")
 def experiment_modification_form_html(exp_id):

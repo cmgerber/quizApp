@@ -12,6 +12,7 @@ import os
 from sqlalchemy.orm.exc import NoResultFound
 import pdb
 
+SQLALCHEMY_ECHO = False
 db.drop_all()
 db.create_all()
 
@@ -61,13 +62,18 @@ for _, data in questions.iterrows():
         question=data.question_text,
         type=question_type_mapping[data.question_type])
 
+    if "scale" in question.type:
+        for i in range(0, 5):
+            question.choices.append(Choice(choice=str(i), label=str(i),
+                                           correct=True))
+
     db.session.add(question)
 
 choices = pd.read_excel(os.path.join(DATA_ROOT, 'DatasetsAndQuestions.xlsx'),
                         'Answers')
 for _, data in choices.iterrows():
     choice = Choice(
-        id=data.answer_id,
+        #id=data.answer_id,
         question_id=data.question_id,
         choice=data.answer_text,
         correct=data.correct == "yes",

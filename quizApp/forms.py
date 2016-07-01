@@ -28,6 +28,19 @@ class DateTimeWidget(object):
                                       field.id)
         return HTMLString(output)
 
+class LikertWidget(object):
+    def __call__(self, field, **kwargs):
+        # Likert widget from Pete Fectau's example
+        output = "<ul class='likert'>\n"
+        for choice in field.choices:
+            output += ('<li>\n'
+                       '  <input type="radio" name="{}" value="{}">\n'
+                       '  <label>{}</label>\n'
+                       '</li>\n').format(field.name, choice[0], choice[1])
+
+        output += "</ul>\n"
+        return HTMLString(output)
+
 class CreateExperimentForm(Form):
     name = StringField("Name", validators=[DataRequired()])
     start = DateTimeField("Start time", widget=DateTimeWidget(),
@@ -42,3 +55,8 @@ class DeleteExperimentForm(Form):
 
 class MultipleChoiceForm(Form):
     answers = RadioField(validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class ScaleForm(Form):
+    answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
+    submit = SubmitField("Submit")
