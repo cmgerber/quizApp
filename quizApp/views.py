@@ -29,6 +29,7 @@ def user_loader(user_id):
     return User.query.get(int(user_id))
 
 @app.route('/experiments', methods=["GET"])
+@login_required
 def read_experiments():
     """List experiments.
     """
@@ -40,6 +41,7 @@ def read_experiments():
                           create_form=create_form, delete_form=delete_form)
 
 @app.route('/experiments/<int:exp_id>', methods=["GET"])
+@login_required
 def view_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
@@ -51,6 +53,7 @@ def view_experiment(exp_id):
     return render_template("view_experiment.html", experiment=exp)
 
 @app.route("/experiments", methods=["POST"])
+@login_required
 def create_experiment():
     """Create an experiment and save it to the database.
     """
@@ -71,6 +74,7 @@ def create_experiment():
                            delete_form=forms.DeleteExperimentForm())
 
 @app.route("/experiments/<int:exp_id>", methods=["DELETE"])
+@login_required
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
@@ -91,6 +95,7 @@ def delete_experiment(exp_id):
     return flask.jsonify({"success": 1, "id": request.json["id"]})
 
 @app.route("/experiments/<int:exp_id>", methods=["PUT"])
+@login_required
 def update_experiment():
     """Modify an experiment's properties.
 
@@ -118,6 +123,7 @@ def update_experiment():
     exp.save()
 
 @app.route('/experiments/<int:exp_id>/questions/<int:q_id>')
+@login_required
 def show_question(exp_id, q_id):
     experiment = Experiment.query.get(exp_id)
     question = Question.query.get(q_id)
@@ -138,6 +144,7 @@ def show_question(exp_id, q_id):
                            mc_form=mc_form)
 
 @app.route("/experiments/<int:exp_id>/modification_form")
+@login_required
 def experiment_modification_form_html(exp_id):
     """Get an HTML representation of a modification form for the given
     experiment.
@@ -177,53 +184,6 @@ def logout():
     db.session.commit()
     logout_user()
     return flask.redirect(flask.url_for("home"))
-
-"""
-@app.route('/_login')
-def login():
-    #TODO: careful casting to int
-    #TODO: we should just use flask-login
-    username = int(request.args['username'])
-
-    try:
-        user = Student.query.filter_by(id=username).one()
-    except NoResultFound:
-        return flask.jsonify(result='bad')
-
-    flask.session['userid'] = username
-    return flask.jsonify(result='ok',
-                         username=username)
-
-@app.route('/_logout')
-def logout():
-    flask.session.pop('userid', None)
-    return flask.jsonify(result='ok')
-"""
-
-@app.route('/_check_login')
-def check_login():
-    userid = flask.session['userid'] if 'userid' in flask.session else None
-    if userid:
-        student = Student.query.filter_by(id=userid).one()
-        username = student.id
-        progress = student.progress
-    else:
-        username = None
-        progress = None
-    return flask.jsonify(logged_in='userid' in flask.session,
-                         username=username,
-                         progress=progress)
-
-@app.route('/_clear_session')
-def clear_session():
-    thisuser = None
-    if 'userid' in flask.session:
-        thisuser = flask.session['userid']
-    flask.session.clear()
-    if thisuser:
-        flask.session['userid'] = thisuser
-
-    return flask.jsonify(done=True)
 
 #pretest
 @app.route('/pre_test')
