@@ -79,4 +79,33 @@ $(document).ready(function() {
 
         event.preventDefault();
     });
+
+    $("#question-submit-form").submit(function(event) {
+        event.preventDefault();
+        checked_box = $('input:checked', this);
+
+        if(!checked_box.size()) {
+            alert("Please make a selection");
+            return;
+        }
+
+        var formData = {
+            'answers': checked_box[0].getAttribute("value"),
+        };
+
+        $.ajax({
+            type: this.getAttribute("method"),
+            contentType: "application/json",
+            url: this.getAttribute("action"),
+            data: JSON.stringify(formData),
+            dataType: 'json',
+            encode: true
+        })
+
+        .done(function(data) {
+            console.log(data);
+            window.location.href = data["next_url"]
+        });
+
+    })
 });
