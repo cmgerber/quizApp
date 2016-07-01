@@ -14,5 +14,6 @@ class Config(object):
     SQLALCHEMY_ECHO = True
     CSRF_ENABLED = True
     SECRET_KEY = "---"
+    WTF_CSRF_METHODS=["POST","PUT","PATCH","DELETE"]
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"

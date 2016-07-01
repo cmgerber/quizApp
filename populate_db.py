@@ -257,8 +257,9 @@ def create_participant_data(pid_list, participant_question_list, test, group):
 
     db.session.commit()
     print "Completed storing {} {} tests".format(test, group)
-    print "Failed to find the following questions:"
-    print missing_qs
+    if missing_qs:
+        print "Failed to find the following questions:"
+        print missing_qs
 
 #create all the participant_test table data
 for test in ['pre_test', 'test', 'post_test']:
