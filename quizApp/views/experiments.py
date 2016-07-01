@@ -90,8 +90,6 @@ def delete_experiment(exp_id):
 @login_required
 def update_experiment():
     """Modify an experiment's properties.
-
-    Arguments should be None unless they should be updated.
     """
     try:
         name = request.args["name"]
