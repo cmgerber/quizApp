@@ -52,7 +52,7 @@ def read_experiment(exp_id):
 
     try:
         part_exp = ParticipantExperiment.query.\
-                filter_by(participant_id=flask.session["userid"]).\
+                filter_by(participant_id=current_user.id).\
                 filter_by(experiment_id=exp_id).one()
     except NoResultFound:
         abort(400)
@@ -140,7 +140,7 @@ def update_experiment():
 def read_question(exp_id, q_id):
     experiment = Experiment.query.get(exp_id)
     question = Question.query.get(q_id)
-    participant = Participant.query.get(flask.session["userid"])
+    participant = current_user
     assignment = Assignment.query.filter_by(participant_id=participant.id).\
             filter_by(activity_id=question.id).\
             filter_by(experiment_id=experiment.id).one()
@@ -189,7 +189,7 @@ def update_question(exp_id, q_id):
 
     # User has answered this question successfully
 
-    participant_id = flask.session["userid"]
+    participant_id = current_user.id
 
     try:
         part_exp = ParticipantExperiment.query.\

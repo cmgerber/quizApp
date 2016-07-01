@@ -26,10 +26,13 @@
         <nav>
           <ul class="nav nav-pills pull-right">
             {% if current_user.is_authenticated %}
-            <li role="presentation" class="active"><a>Hello {{ current_user.name
+            <li role="presentation" class="active"><a>Hello {{ current_user.id
                 }}</a></li>
             <li role="presentation">
               <a href="{{ url_for('logout') }}">Logout</a>
+            </li>
+            <li role="presentation">
+              <a href="{{ url_for('read_experiments') }}">Experiments</a>
             </li>
             {% else %}
             <li role="presentation" class="active">
@@ -43,14 +46,11 @@
         </nav>
         <h1 class="site-name">Quiz App</h1>
       </div>
-      <header id='main-search' class='container'>
-            <h3>{% block title %}{% endblock %}</h3>
-      </header>
-      <section class='container'>
+      <h3>{% block title %}{% endblock %}</h3>
+
       {% include 'modals.html' %}
 
       {% block content %}{% endblock %}
-      </section>
     </div> <!-- end .wrapper.container -->
   </body>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
