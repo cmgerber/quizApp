@@ -10,7 +10,6 @@ Quiz
 {% endblock %}
 
 {% block content %}
-<section class='container col-xs-12 col-sm-12 col-md-12'>
   {% for graph in assignment.graphs %}
   <div class="row">
     <div class='col-sm-12 col-md-12'>
@@ -27,5 +26,4 @@ Quiz
     {{ mc_form.submit }}
   </form>
 </div>
-</section>
 {% endblock %}
