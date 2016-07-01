@@ -9,12 +9,14 @@ login_manager = LoginManager()
 db = SQLAlchemy()
 csrf = CsrfProtect()
 
-def create_app(config_name):
+def create_app(config_name, overrides=None):
     global login_manager
     app = Flask(__name__, instance_relative_config=True)
 
     app.config.from_object(config.configs[config_name])
     app.config.from_pyfile("instance_config.py", silent=True)
+    if overrides:
+        app.config.from_mapping(overrides)
 
     print "Using config: " + config_name
 
