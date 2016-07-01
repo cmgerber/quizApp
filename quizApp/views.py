@@ -8,8 +8,9 @@ import flask
 from flask import render_template, request, url_for, abort
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
+from flask_login import login_required, logout_user, login_user, current_user
 
-from quizApp import app,db
+from quizApp import app, db, login_manager
 from quizApp import csrf
 from quizApp import forms
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
@@ -21,7 +22,14 @@ def home():
     return flask.render_template('index.html',
                                  is_home=True)
 
+@login_manager.user_loader
+def user_loader(user_id):
+    """Load the given user id.
+    """
+    return User.query.get(int(user_id))
+
 @app.route('/experiments', methods=["GET"])
+@login_required
 def read_experiments():
     """List experiments.
     """
@@ -33,6 +41,7 @@ def read_experiments():
                           create_form=create_form, delete_form=delete_form)
 
 @app.route('/experiments/<int:exp_id>', methods=["GET"])
+@login_required
 def read_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
@@ -58,6 +67,7 @@ def read_experiment(exp_id):
                           activity=activity)
 
 @app.route("/experiments", methods=["POST"])
+@login_required
 def create_experiment():
     """Create an experiment and save it to the database.
     """
@@ -77,6 +87,7 @@ def create_experiment():
                            delete_form=forms.DeleteExperimentForm())
 
 @app.route("/experiments/<int:exp_id>", methods=["DELETE"])
+@login_required
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
@@ -97,6 +108,7 @@ def delete_experiment(exp_id):
     return flask.jsonify({"success": 1, "id": request.json["id"]})
 
 @app.route("/experiments/<int:exp_id>", methods=["PUT"])
+@login_required
 def update_experiment():
     """Modify an experiment's properties.
 
@@ -124,6 +136,7 @@ def update_experiment():
     exp.save()
 
 @app.route('/experiments/<int:exp_id>/questions/<int:q_id>')
+@login_required
 def read_question(exp_id, q_id):
     experiment = Experiment.query.get(exp_id)
     question = Question.query.get(q_id)
@@ -218,6 +231,7 @@ def update_question(exp_id, q_id):
     return flask.jsonify({"success": 1, "next_url": next_url})
 
 @app.route("/experiments/<int:exp_id>/modification_form")
+@login_required
 def experiment_modification_form_html(exp_id):
     """Get an HTML representation of a modification form for the given
     experiment.
@@ -234,50 +248,29 @@ def experiment_modification_form_html(exp_id):
     return render_template("experiment_modification_form.html", exp=exp,
                    modify_form=modify_form)
 
-@app.route('/_login')
+@app.route('/login', methods=["GET", "POST"])
 def login():
-    #TODO: careful casting to int
-    #TODO: we should just use flask-login
-    username = int(request.args['username'])
+    pdb.set_trace()
+    form = forms.LoginForm()
 
-    try:
-        user = Participant.query.filter_by(id=username).one()
-    except NoResultFound:
-        return flask.jsonify(result='bad')
+    if form.validate_on_submit():
+       user = User.query.get(int(form.name.data))
+       if user:
+           login_user(user)
+           flask.flash("Logged in successfully.")
+           return flask.redirect(flask.url_for("home"))
 
-    flask.session['userid'] = username
-    return flask.jsonify(result='ok',
-                         username=username)
+    return render_template("login.html", form=form)
 
-@app.route('/_logout')
+@app.route("/logout", methods=["GET"])
+@login_required
 def logout():
-    flask.session.pop('userid', None)
-    return flask.jsonify(result='ok')
-
-@app.route('/_check_login')
-def check_login():
-    userid = flask.session['userid'] if 'userid' in flask.session else None
-    if userid:
-        user = Participant.query.filter_by(id=userid).one()
-        username = user.id
-        progress = user.progress
-    else:
-        username = None
-        progress = None
-    return flask.jsonify(logged_in='userid' in flask.session,
-                         username=username,
-                         progress=progress)
-
-@app.route('/_clear_session')
-def clear_session():
-    thisuser = None
-    if 'userid' in flask.session:
-        thisuser = flask.session['userid']
-    flask.session.clear()
-    if thisuser:
-        flask.session['userid'] = thisuser
-
-    return flask.jsonify(done=True)
+    user = current_user
+    user.authenticated = False
+    db.session.add(user)
+    db.session.commit()
+    logout_user()
+    return flask.redirect(flask.url_for("home"))
 
 #TODO: done vs donedone
 

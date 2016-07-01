@@ -9,7 +9,6 @@ class Base(db.Model):
     """
     __abstract__ = True
     id = db.Column(db.Integer, primary_key=True)
-
     def save(self, commit=True):
         """Save this model to the database.
 
@@ -21,13 +20,32 @@ class Base(db.Model):
             db.session.commit()
 
 class User(Base):
-    """A User of the system.
+    """A User is used for authentication.
+
+    Attributes:
+        name: string: The username of this user.
+        password: string: This user's password.
+        authenticated: bool: True if this user is authenticated.
+        type: string: The type of this user, e.g. experimenter, participant
     """
 
     name = db.Column(db.String(50))
     password = db.Column(db.String(50))
-    authenticated = db.Column(db.Boolean)
+    authenticated = db.Column(db.Boolean, default=False)
     type = db.Column(db.String(50))
+
+    def is_active(self):
+        """All users are active, so return True"""
+        return True
+
+    def get_id(self):
+        return unicode(self.id)
+
+    def is_authenticated(self):
+        return self.authenticated
+
+    def is_anonymous(self):
+        return False
 
     __mapper_args__ = {
         'polymorphic_identity':'user',

@@ -3,6 +3,8 @@
 """Using excel files, populate the database with some placeholder data.
 """
 
+from quizApp.models import Question, Answer, Result, Student, StudentTest, \
+        Graph, Experiment, User
 from quizApp import db
 from quizApp.models import *
 from sqlalchemy import and_
