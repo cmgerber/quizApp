@@ -1,7 +1,7 @@
 """Models for the quizApp.
 """
 
-from app import db
+from quizApp import db
 from enum import Enum
 
 class Base(db.Model):
@@ -9,25 +9,57 @@ class Base(db.Model):
     """
     __abstract__ = True
     id = db.Column(db.Integer, primary_key=True)
+    def save(self, commit=True):
+        """Save this model to the database.
+
+        If commit is True, then the session will be comitted as well.
+        """
+        db.session.add(self)
+
+        if commit:
+            db.session.commit()
 
 class User(Base):
     """A User is used for authentication.
-    
+
     Each User may be associated with a Student, in this case the User is
     considered to have the permissions of a Student.
 
     Otherwise, the User is considered to be an admin.
-    
+
     Students log in using their ID's and do not have passwords. For students,
     the user's name is their ID. For others, they log in using their name
     and their password.
 
     Relationships:
-    
+
     OtO with Student
     """
 
     name = db.Column(db.String)
+
+class Experiment(Base):
+    """An experiment contains a set of Questions.
+
+    name: The name of this experiment.
+    created: A datetime representing when this experiment was created.
+    start: A datetime representing when this experiment begins accepting
+        responses.
+    stop: A datetime representing when this experiment stops accepting
+        responses.
+
+    Relationships:
+
+    OtM wth Question
+    OtM with Graph
+    """
+
+    #TODO: how do we associate graphs here? Should graphs be a part of
+    # question? For now we will not create the relationships.
+    name = db.Column(db.String(150), index=True)
+    created = db.Column(db.DateTime)
+    start = db.Column(db.DateTime)
+    stop = db.Column(db.DateTime)
 
 class Question(Base):
     """A Question appears on a StudentTest and has an Answer.
@@ -47,10 +79,10 @@ class Question(Base):
 
     # id is combo of dataset number and question order
 
-    dataset = db.Column(db.String)
-    question = db.Column(db.String)
+    dataset = db.Column(db.String(10))
+    question = db.Column(db.String(200))
     #question, heuristic, rating, best_worst
-    question_type = db.Column(db.String)
+    question_type = db.Column(db.String(50))
 
     answers = db.relationship("Answer")
     tests = db.relationship("StudentTest")
@@ -66,8 +98,8 @@ class Answer(Base):
     """
     __tablename__ = "answers"
 
-    answer = db.Column(db.String)
-    correct = db.Column(db.String) # TODO: should be bool
+    answer = db.Column(db.String(200))
+    correct = db.Column(db.String(5)) # TODO: should be bool
 
     question_id = db.Column(db.Integer, db.ForeignKey("questions.id"))
 
@@ -82,7 +114,7 @@ class Result(Base):
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"))
     student_test_id = db.Column(db.Integer, db.ForeignKey("students_test.id"))
     graph_id = db.Column(db.Integer, db.ForeignKey("graphs.id"))
-    answer = db.Column(db.String)
+    answer = db.Column(db.String(200))
 
 class Progress(Enum):
     pre_test = 0
@@ -102,8 +134,8 @@ class Student(Base):
     __tablename__ = "students"
 
     #progress: pre_test, training, post_test, complete
-    progress = db.Column(db.String)
-    opt_in = db.Column(db.String)
+    progress = db.Column(db.String(50))
+    opt_in = db.Column(db.String(10))
 
     tests = db.relationship("StudentTest")
     results = db.relationship("Result")
@@ -126,11 +158,11 @@ class StudentTest(Base):
 
     student_id = db.Column(db.Integer, db.ForeignKey("students.id"))
     #pre_test, training, post_test
-    test = db.Column(db.String) #TODO: enum
+    test = db.Column(db.String(50)) #TODO: enum
 
     dataset = db.Column(db.Integer)
     order = db.Column(db.Integer) #TODO: what is this?
-    complete = db.Column(db.String) #TODO: bool
+    complete = db.Column(db.String(5)) #TODO: bool
 
     graph_id = db.Column(db.Integer, db.ForeignKey('graphs.id'))
     graph = db.relationship("Graph")
@@ -152,6 +184,6 @@ class Graph(Base):
     __tablename__ = "graphs"
 
     dataset = db.Column(db.Integer)
-    graph_location = db.Column(db.String)
+    graph_location = db.Column(db.String(100))
 
     results = db.relationship("Result")

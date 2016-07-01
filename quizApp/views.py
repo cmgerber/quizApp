@@ -1,22 +1,151 @@
-#!env/bin/python
-# -*- coding: utf-8 -*-
-
-from quizApp import app
-import flask, uuid
-from flask import request, url_for
+from datetime import datetime
 from random import shuffle
 import os
+import pdb
+import uuid
 
-from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
+import flask
+from flask import render_template, request, url_for, abort
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
 
-from models import Question, Answer, Result, Student, StudentsTest, Graph
+from quizApp import app,db
+from quizApp import csrf
+from quizApp import forms
+from quizApp.models import Question, Answer, Result, Student, StudentTest, \
+        Graph, Experiment
 
 # homepage
 @app.route('/')
 def home():
     return flask.render_template('index.html',
                                  is_home=True)
+
+@app.route('/experiments', methods=["GET"])
+def read_experiments():
+    """List experiments.
+    """
+    exps = Experiment.query.all()
+    create_form = forms.CreateExperimentForm()
+    delete_form = forms.DeleteExperimentForm()
+
+    return render_template("experiments.html", experiments=exps,
+                          create_form=create_form, delete_form=delete_form)
+
+@app.route('/experiments/<int:exp_id>', methods=["GET"])
+def view_experiment(exp_id):
+    """View the landing page of an experiment, along with the ability to start.
+    """
+    exp = Experiment.query.get(exp_id)
+
+    if not exp:
+        abort(404)
+
+    return render_template("view_experiment.html", experiment=exp)
+
+@app.route("/experiments", methods=["POST"])
+def create_experiment():
+    """Create an experiment and save it to the database.
+    """
+    form = forms.CreateExperimentForm()
+    if not form.validate_on_submit():
+        abort(400)
+
+
+    exp = Experiment(
+        name=form.name.data,
+        start=form.start.data,
+        stop=form.stop.data,
+        created=datetime.now())
+
+    exp.save()
+
+    return render_template("create_experiment_response.html", exp=exp,
+                           delete_form=forms.DeleteExperimentForm())
+
+@app.route("/experiments/<int:exp_id>", methods=["DELETE"])
+def delete_experiment(exp_id):
+    """Delete an experiment.
+    """
+    form = forms.DeleteExperimentForm()
+    #TODO: auth
+
+    if not form.validate():
+        return flask.jsonify({"success": 0})
+
+    exp = Experiment.query.get(exp_id)
+
+    if not exp:
+        return flask.jsonify({"success": 0})
+
+    db.session.delete(exp)
+    db.session.commit()
+
+    return flask.jsonify({"success": 1, "id": request.json["id"]})
+
+@app.route("/experiments/<int:exp_id>", methods=["PUT"])
+def update_experiment():
+    """Modify an experiment's properties.
+
+    Arguments should be None unless they should be updated.
+    """
+    try:
+        name = request.args["name"]
+        start = request.args["start"]
+        stop = request.args["stop"]
+    except KeyError:
+        return 000;
+
+    try:
+        exp = Experiment.query.filter_by(name=name).one()
+    except NoResultFoiund:
+        return 000
+
+    if name:
+        exp.name = name
+    if start:
+        exp.start = start
+    if stop:
+        exp.stop = stop
+
+    exp.save()
+
+@app.route('/experiments/<int:exp_id>/questions/<int:q_id>')
+def show_question(exp_id, q_id):
+    experiment = Experiment.query.get(exp_id)
+    question = Question.query.get(q_id)
+    student = Student.query.get(flask.session["userid"])
+    student_test = StudentTest.query.filter_by(student_id=student.id).\
+            filter_by(question_id=question.id).\
+            filter_by(test=student.progress).all()
+    pdb.set_trace()
+    if not experiment or not question:
+        abort(404)
+
+    mc_form = forms.MultipleChoiceForm()
+
+    mc_form.answers.choices = [(str(x), a.answer) for x, a in enumerate(question.answers)]
+
+    return render_template("show_question.html", exp=experiment,
+                           question=question, test=student_test,
+                           mc_form=mc_form)
+
+@app.route("/experiments/<int:exp_id>/modification_form")
+def experiment_modification_form_html(exp_id):
+    """Get an HTML representation of a modification form for the given
+    experiment.
+
+    I'm not really happy with this, but I can't think of another method that
+    minimizes repitition of code. I am open to suggestions...
+    """
+    exp = Experiment.query.get(exp_id)
+    modify_form = forms.CreateExperimentForm()
+
+    if not exp:
+        abort(404)
+
+    return render_template("experiment_modification_form.html", exp=exp,
+                   modify_form=modify_form)
 
 @app.route('/_login')
 def login():
@@ -42,7 +171,7 @@ def logout():
 def check_login():
     userid = flask.session['userid'] if 'userid' in flask.session else None
     if userid:
-        student = Student.query.filter_by(id=userid).fetchone()
+        student = Student.query.filter_by(id=userid).one()
         username = student.id
         progress = student.progress
     else:
@@ -93,7 +222,7 @@ def donedone():
 #Complete page
 @app.route('/done')
 def done():
-    questions = Question.query.join(StudenTest).\
+    questions = Question.query.join(StudentTest).\
             filter(StudentTest.student_id == flask.session['userid']).\
             all()
 
@@ -122,13 +251,15 @@ def get_question(order):
             add_columns(Student.progress, #TODO: do we need all these columns
                         Question.question,
                         Question.question_type,
-                        Question.id).\
+                        StudentTest.complete,
+                        StudentTest.dataset,
+                        Question.id.label("question_id")).\
             filter(and_(
                 StudentTest.student_id == flask.session["userid"],
                 StudentTest.test == Student.progress,
-                StudentTest.order == order)).\
-            first()
-    return test
+                StudentTest.order == order))
+
+    return test.first()
     #return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id
 
 #provide first quiz question
@@ -142,27 +273,28 @@ def first_question():
     except: #TODO: bad except
         order = 1
 
-    try:
-        #progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
-        test = get_question(order)
-    except: #TODO: bad except
+    #progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
+    test = get_question(order)
+    if test:
+        complete = test.complete
+        progress = test.progress
+    else:
         complete = 'yes'
         progress = student.progress
 
     #check to make sure they have not done the question before
     if complete == 'yes':
         #this means the question has already been completed
+        #TODO: maybe just sort by order on the query?
         order_list = StudentTest.query.join(Student).\
                 filter(and_(StudentTest.student_id == flask.session["userid"],
                             StudentTest.complete == "no",
                             StudentTest.test == Student.progress)).\
-                all()
-        #TODO: how is this sorting?
-        #TODO: verify lambda
-        #TODO: maybe just sort by order on the query?
-        order_list = sorted(order_list, lambda x: x.order)
+                    all()
+        order_list = sorted(order_list, key=lambda x: x.order)
 
         if len(order_list) >= 1:
+            #TODO: log error, this should not happen...
             test = get_question(order_list[0].order)
         else:
             #the section has been completed, update progress and return to home page
@@ -176,51 +308,51 @@ def first_question():
                 student.progress = progress_list[progress_list.index(progress) + 1]
             except IndexError:
                 student.progress = "complete"
-            
-            db.session.add(student)
+
             db.session.commit()
             #return to homepage
-            if new_progress == 'complete':
+            if student.progress == 'complete':
                 return flask.jsonify(progress='done')
             else:
                 return flask.jsonify(progress='next')
 
     #put the student_test_id in session
-    flask.session['student_test_id'] = test.id
-    flask.session['order'] = test.order
+    flask.session['student_test_id'] = test[0].id
+    flask.session['order'] = test[0].order
     flask.session['question_type'] = test.question_type
 
     #check which test
-    if progress == 'pre_test' or progress == 'post_test':
+    if test.progress == 'pre_test' or test.progress == 'post_test':
         # query three graphs
-        graph_list = Graph.query.filter_by(dataset=dataset).all()
+        graph_list = Graph.query.filter_by(dataset=test.dataset).all()
         #randomly shuffle order of graphs
         shuffle(graph_list)
 
         #put graph id's in session
-        flask.session['graph1'] = graph_list[0][1]
-        flask.session['graph2'] = graph_list[1][1]
-        flask.session['graph3'] = graph_list[2][1]
-        
+        flask.session['graph1'] = graph_list[0].id
+        flask.session['graph2'] = graph_list[1].id
+        flask.session['graph3'] = graph_list[2].id
+
         # Find urls of each graph
         graph_urls = [url_for('static',
-            filename='graphs/'+str(graph.graph_location)) for graph in graphs_list]
+            filename='graphs/'+str(graph.graph_location)) for graph in graph_list]
 
         return flask.jsonify(
                              graphs=graph_urls,
                              question=test.question,
                              question_type=test.question_type,
-                             order=test.order,
+                             order=test[0].order,
                              progress=test.progress)
 
     elif progress == 'training':
+        graph_id = test[0].graph_id
         #get graph location
         graph = Graph.query.get(graph_id)
         graph_urls = [url_for('static',
             filename='graphs/' + graph.graph_location)]
         flask.session['graph1'] = graph_id
         #if it is a rating question just return graph
-        if question_type == 'rating':
+        if test.question_type == 'rating':
             return flask.jsonify(graphs=graph_urls,
                              question=test.question,
                              question_type=test.question_type,
@@ -228,20 +360,20 @@ def first_question():
                              progress=test.progress)
         else:
             #get answers query
-            answer_list = Answer.query.filter(question_id=question_id).all()
+            answer_list = Answer.query.filter_by(question_id=test.question_id).all()
             answer_strings = [a.answer for a in answer_list]
 
-            for i, answer in answer_strings:
+            for i, answer in enumerate(answer_strings):
                 #TODO: zero index
                 flask.session['answer' + str(i + 1)] = answer
 
-            if question_type == 'heuristic':
+            if test.question_type == 'heuristic':
                 #put graph id's in session
-                
+
                 return flask.jsonify(graphs=graph_urls,
                                      question=test.question,
                                      question_type=test.question_type,
-                                     order=test.order,
+                                     order=test[0].order,
                                      progress=test.progress,
                                      answers=answer_strings)
 
@@ -250,7 +382,7 @@ def first_question():
                 return flask.jsonify(graphs=graph_urls,
                                      question=test.question,
                                      question_type=test.question_type,
-                                     order=test.order,
+                                     order=test[0].order,
                                      progress=test.progress,
                                      answers=answer_strings)
 
@@ -284,7 +416,6 @@ def pretest_answers():
     #update complete row in StudentsTest table
     test = StudentTest.query.get(student_test_id)
     test.complete = "yes"
-    db.session.add(test)
     db.session.commit()
     for answer in answer_list:
         result = Result(
@@ -292,9 +423,9 @@ def pretest_answers():
             student_test_id=student_test_id,
             answer=answer[0],
             graph_id=answer[1])
-        session.add(result)
+        db.session.add(result)
 
-    session.commit()
+    db.session.commit()
     #get next question
     # question_json = first_question()
     # return question_json
@@ -375,7 +506,6 @@ def training_answers():
     #update complete row in StudentsTest table
     student_test = StudentTest.query.get(student_test_id)
     student_test.complete = "yes"
-    db.session.add(student_test)
 
     for answer in answer_list:
         result = Result(

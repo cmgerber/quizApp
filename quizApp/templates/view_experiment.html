@@ -1,6 +1,6 @@
 {% extends 'header.html' %}
 {% block title %}
-Training and Quiz
+{{ experiment.name }}
 {% endblock %}
 
 {% block content %}
@@ -8,12 +8,13 @@ Training and Quiz
 <section class='container'>
   <div class='row'>
     <div class='col-sm-12 col-md-12'>
-      <p>Login with the id you were assigned to begin.</p>
-      <p>Then, continue to the <a href="{{ url_for('read_experiments') }}">
-        Experiments page.</a></p>
+      <p>Login with the id you were assigned to begin.<br>
+      A start button will appear once you have logged in.</p>
 
     </div>
   </div> <!-- end .row -->
 </section>
+<div id='quiz-start-area' class="navbar-button col-xs-12 col-sm-12">
+</div>
 
 {% endblock %}

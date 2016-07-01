@@ -1,32 +1,53 @@
-from quizApp.models import Question, Answer, Result, Student, StudentTest, Graph
-from quizApp.app import db
+#!/bin/env python2
+
+from quizApp.models import Question, Answer, Result, Student, StudentTest, \
+        Graph, Experiment
+from quizApp import db
+from sqlalchemy import and_
 import pandas as pd
+from datetime import datetime, timedelta
+import os
 
 db.drop_all()
 db.create_all()
 
-df_questions = pd.read_excel('quizApp/data/question_table.xlsx', 'Sheet1')
+exp1 = Experiment(name="experiment1",
+                 start=datetime.now(),
+                 stop=datetime.now() + timedelta(days=3))
 
-for _, data in df_questions.iterrows():
+exp2 = Experiment(name="experiment2",
+                 start=datetime.now() + timedelta(days=-3),
+                 stop=datetime.now())
+
+db.session.add(exp1)
+db.session.add(exp2)
+
+DATA_ROOT = "quizApp/data/"
+
+questions = pd.read_excel(os.path.join(DATA_ROOT,
+                                       'DatasetsAndQuestions.xlsx'),
+                          'Questions')
+
+for _, data in questions.iterrows():
     question = Question(
-            id=data.question_id,
-            dataset=data.dataset,
-            question=data.question,
-            question_type=data.question_type)
-
+        id = data.question_id,
+        dataset = data.dataset_id,
+        question = data.question_text,
+        question_type=data.question_type)
     db.session.add(question)
 
-df_answers = pd.read_excel('quizApp/data/answer_table.xlsx', 'Sheet1')
-
-for _, data in df_answers.iterrows():
+answers = pd.read_excel(os.path.join(DATA_ROOT, 'DatasetsAndQuestions.xlsx'),
+                          'Answers')
+for _, data in answers.iterrows():
     answer = Answer(
-            id=data.answer_id,
-            question_id=data.question_id,
-            answer=data.answer,
-            correct=data.correct)
+        id=data.answer_id,
+        question_id=data.question_id,
+        answer=data.answer_text,
+        correct=data.correct)
     db.session.add(answer)
 
-df_graphs = pd.read_excel('quizApp/data/graph_table.xlsx', 'Sheet1')
+df_graphs = pd.read_excel(os.path.join(DATA_ROOT, 'graph_table.xlsx'),
+                          'Sheet1')
 
 for _, data in df_graphs.iterrows():
     graph = Graph(
@@ -34,8 +55,6 @@ for _, data in df_graphs.iterrows():
             dataset=data.dataset,
             graph_location=data.graph_location)
     db.session.add(graph)
-
-db.session.commit()
 
 
 # In this list, each list is associated with a student (one to one).
@@ -85,7 +104,7 @@ student_question_list = \
 # heuristic_student_id_list = [x + 1 for x in range(30,60)]
 
 #read in student lists
-df_sid = pd.read_csv('quizApp/data/student_id_list.csv')
+df_sid = pd.read_csv(os.path.join(DATA_ROOT, 'student_id_list.csv'))
 df_sid.Questions = df_sid.Questions.apply(lambda x: int(x))
 df_sid.Heuristics = df_sid.Heuristics.apply(lambda x: int(x))
 question_student_id_list = [int(x) for x in list(df_sid.Questions)]
@@ -109,6 +128,7 @@ def create_student_data(sid_list, student_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
+    missing_qs = set()
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in student_question_list]
     else:
@@ -128,6 +148,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                 order += 1
                 #TODO: why +5
                 question_id = int(str(dataset)+str(5))
+
+                if not Question.query.get(question_id):
+                    missing_qs.add(question_id)
+                    continue
 
                 #write row to db
                 student_test = StudentTest(
@@ -149,6 +173,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x))
 
+                        if not Question.query.get(question_id):
+                            missing_qs.add(question_id)
+                            continue
+
                         #write row to db
                         student_test = StudentTest(
                                 student_id=student_id,
@@ -166,6 +194,9 @@ def create_student_data(sid_list, student_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x + 1))
                         #write row to db
+                        if not Question.query.get(question_id):
+                            missing_qs.add(question_id)
+                            continue
                         student_test = StudentTest(
                                 student_id=student_id,
                                 test=test,
@@ -181,6 +212,10 @@ def create_student_data(sid_list, student_question_list, test, group):
                 order += 1
                 question_id = int(str(dataset)+str(4))
                 #write row to db
+                if not Question.query.get(question_id):
+                    missing_qs.add(question_id)
+                    continue
+
                 student_test = StudentTest(
                         student_id=student_id,
                         test=test,
@@ -193,8 +228,14 @@ def create_student_data(sid_list, student_question_list, test, group):
                 db.session.add(student_test)
 
     db.session.commit()
+    print "Completed storing {} {} tests".format(test, group)
+    if missing_qs:
+        print "Failed to find the following questions:"
+        print missing_qs
 
 #create all the student_test table data
 for test in ['pre_test', 'training', 'post_test']:
     create_student_data(question_student_id_list, student_question_list, test, 'question')
     create_student_data(heuristic_student_id_list, student_question_list, test, 'heuristic')
+
+

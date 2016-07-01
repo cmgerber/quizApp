@@ -1,7 +1,14 @@
-"""
-import flask
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CsrfProtect
+import os
+import config
 
-app = flask.Flask('quizApp')
-app.config['DEBUG'] = True
-import quizApp.views
-"""
+app = Flask(__name__)
+csrf = CsrfProtect(app)
+app.config.from_object(config.Config)
+db = SQLAlchemy(app)
+
+# These imports depend on app, above
+import filters
+import views
