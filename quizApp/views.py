@@ -1,26 +1,34 @@
 from datetime import datetime
 from random import shuffle
 import os
-import pdb
 import uuid
 
 import flask
 from flask import render_template, request, url_for, abort
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import text, func, select, and_, or_, not_, desc, bindparam
+from flask_login import login_required, logout_user, login_user, current_user
 
-from quizApp import app,db
+from quizApp import app, db, login_manager
 from quizApp import csrf
 from quizApp import forms
-from quizApp.models import Question, Answer, Result, Student, StudentTest, \
-        Graph, Experiment
+from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
+        User, Assignment, ParticipantExperiment, Activity
 
 # homepage
 @app.route('/')
 def home():
     return flask.render_template('index.html',
                                  is_home=True)
-@app.route('/experiments')
+
+@login_manager.user_loader
+def user_loader(user_id):
+    """Load the given user id.
+    """
+    return User.query.get(int(user_id))
+
+@app.route('/experiments', methods=["GET"])
+@login_required
 def read_experiments():
     """List experiments.
     """
@@ -31,8 +39,9 @@ def read_experiments():
     return render_template("experiments.html", experiments=exps,
                           create_form=create_form, delete_form=delete_form)
 
-@app.route('/experiments/<int:exp_id>')
-def view_experiment(exp_id):
+@app.route('/experiments/<int:exp_id>', methods=["GET"])
+@login_required
+def read_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
     exp = Experiment.query.get(exp_id)
@@ -40,15 +49,30 @@ def view_experiment(exp_id):
     if not exp:
         abort(404)
 
-    return render_template("view_experiment.html", experiment=exp)
+    try:
+        part_exp = ParticipantExperiment.query.\
+                filter_by(participant_id=current_user.id).\
+                filter_by(experiment_id=exp_id).one()
+    except NoResultFound:
+        abort(400)
 
-@app.route("/experiments/create", methods=["POST"])
+    try:
+        activity = Activity.query.get(
+            part_exp.assignments[part_exp.progress].activity_id)
+    except IndexError:
+        activity = None
+
+    return render_template("read_experiment.html", experiment=exp,
+                          activity=activity)
+
+@app.route("/experiments", methods=["POST"])
+@login_required
 def create_experiment():
     """Create an experiment and save it to the database.
     """
     form = forms.CreateExperimentForm()
     if not form.validate_on_submit():
-        return flask.jsonify({"success": 0})
+        abort(400)
 
     exp = Experiment(
         name=form.name.data,
@@ -58,19 +82,21 @@ def create_experiment():
 
     exp.save()
 
-    return flask.jsonify({"success": 1})
+    return render_template("create_experiment_response.html", exp=exp,
+                           delete_form=forms.DeleteExperimentForm())
 
-@app.route("/experiments/delete", methods=["POST"])
-def delete_experiment():
+@app.route("/experiments/<int:exp_id>", methods=["DELETE"])
+@login_required
+def delete_experiment(exp_id):
     """Delete an experiment.
     """
     form = forms.DeleteExperimentForm()
     #TODO: auth
 
-    if not form.validate_on_submit():
+    if not form.validate():
         return flask.jsonify({"success": 0})
 
-    exp = Experiment.query.get(request.json["id"])
+    exp = Experiment.query.get(exp_id)
 
     if not exp:
         return flask.jsonify({"success": 0})
@@ -80,6 +106,8 @@ def delete_experiment():
 
     return flask.jsonify({"success": 1, "id": request.json["id"]})
 
+@app.route("/experiments/<int:exp_id>", methods=["PUT"])
+@login_required
 def update_experiment():
     """Modify an experiment's properties.
 
@@ -106,70 +134,137 @@ def update_experiment():
 
     exp.save()
 
-@app.route('/_login')
-def login():
-    #TODO: careful casting to int
-    #TODO: we should just use flask-login
-    username = int(request.args['username'])
+@app.route('/experiments/<int:exp_id>/questions/<int:q_id>')
+@login_required
+def read_question(exp_id, q_id):
+    experiment = Experiment.query.get(exp_id)
+    question = Question.query.get(q_id)
+    participant = current_user
+    assignment = Assignment.query.filter_by(participant_id=participant.id).\
+            filter_by(activity_id=question.id).\
+            filter_by(experiment_id=experiment.id).one()
+
+    if assignment.choice_id:
+        abort(400)
+
+    if not experiment or not question:
+        abort(404)
+
+    if "scale" in question.type:
+        question_form = forms.ScaleForm()
+    else:
+        question_form = forms.MultipleChoiceForm()
+
+    question_form.answers.choices = [(str(c.id), c.choice) for c in
+                               question.choices]
+
+    return render_template("show_question.html", exp=experiment,
+                           question=question, assignment=assignment,
+                           mc_form=question_form)
+
+@app.route('/experiments/<int:exp_id>/questions/<int:q_id>', methods=["POST"])
+def update_question(exp_id, q_id):
+    """Record a user's answer to this question
+    """
+    question = Question.query.get(q_id)
+
+    if not question:
+        abort(404)
+
+    #TODO: factor this code out
+    if "scale" in question.type:
+        question_form = forms.ScaleForm()
+    else:
+        question_form = forms.MultipleChoiceForm()
+    question_form.answers.choices = [(str(c.id), c.choice) for c in
+                               question.choices]
+
+    if not question_form.validate():
+        return flask.jsonify({"success": 0})
+
+    # User has answered this question successfully
+
+    participant_id = current_user.id
 
     try:
-        user = Student.query.filter_by(id=username).one()
+        part_exp = ParticipantExperiment.query.\
+                filter_by(experiment_id=exp_id).\
+                filter_by(participant_id=participant_id).one()
     except NoResultFound:
-        return flask.jsonify(result='bad')
+        abort(404)
 
-    flask.session['userid'] = username
-    return flask.jsonify(result='ok',
-                         username=username)
+    # Get the user's assignment, associate it with the choice, and get the next
+    # assignment
+    assignment = part_exp.assignments[part_exp.progress]
 
-@app.route('/_logout')
-def logout():
-    flask.session.pop('userid', None)
-    return flask.jsonify(result='ok')
+    selected_choice = Choice.query.get(int(question_form.answers.data))
 
-@app.route('/_check_login')
-def check_login():
-    userid = flask.session['userid'] if 'userid' in flask.session else None
-    if userid:
-        student = Student.query.filter_by(id=userid).one()
-        username = student.id
-        progress = student.progress
+    if not selected_choice:
+        # This choice does not exist
+        abort(400)
+
+    #TODO: sqlalchemy validators
+    assignment.choice_id = selected_choice.id
+
+    part_exp.progress += 1
+
+    try:
+        next_assignment = part_exp.assignments[part_exp.progress]
+    except IndexError:
+        next_assignment = None
+
+    if next_assignment:
+        next_url = url_for("read_question", exp_id=exp_id,
+                           q_id=part_exp.assignments[part_exp.progress].\
+                           activity_id)
     else:
-        username = None
-        progress = None
-    return flask.jsonify(logged_in='userid' in flask.session,
-                         username=username,
-                         progress=progress)
+        next_url = url_for("donedone")
 
-@app.route('/_clear_session')
-def clear_session():
-    thisuser = None
-    if 'userid' in flask.session:
-        thisuser = flask.session['userid']
-    flask.session.clear()
-    if thisuser:
-        flask.session['userid'] = thisuser
+    db.session.add(assignment)
+    db.session.add(part_exp)
+    db.session.commit()
+    return flask.jsonify({"success": 1, "next_url": next_url})
 
-    return flask.jsonify(done=True)
+@app.route("/experiments/<int:exp_id>/modification_form")
+@login_required
+def experiment_modification_form_html(exp_id):
+    """Get an HTML representation of a modification form for the given
+    experiment.
 
-#pretest
-@app.route('/pre_test')
-def pre_test():
-    return flask.render_template('pretest.html')
+    I'm not really happy with this, but I can't think of another method that
+    minimizes repitition of code. I am open to suggestions...
+    """
+    exp = Experiment.query.get(exp_id)
+    modify_form = forms.CreateExperimentForm()
 
-#posttest
-@app.route('/post_test')
-def post_test():
-    return flask.render_template('posttest.html')
+    if not exp:
+        abort(404)
 
-#training
-@app.route('/training')
-def training():
-    return flask.render_template('training.html')
+    return render_template("experiment_modification_form.html", exp=exp,
+                   modify_form=modify_form)
 
-#landing page between tests
-@app.route('/next')
-def next():
-    return flask.render_template('lobby.html')
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    form = forms.LoginForm()
+
+    if form.validate_on_submit():
+       user = User.query.get(int(form.name.data))
+       if user:
+           login_user(user)
+           flask.flash("Logged in successfully.")
+           return flask.redirect(flask.url_for("home"))
+
+    return render_template("login.html", form=form)
+
+@app.route("/logout", methods=["GET"])
+@login_required
+def logout():
+    user = current_user
+    user.authenticated = False
+    db.session.add(user)
+    db.session.commit()
+    logout_user()
+    return flask.redirect(flask.url_for("home"))
 
 #TODO: done vs donedone
 
@@ -195,287 +290,3 @@ def done():
     else:
         #TODO: proper logging
         print "Unknown question types"
-
-#quiz start button
-@app.route('/_quizStart')
-def quizStart():
-    student = Student.query.filter_by(id=flask.session["userid"]).one()
-
-    return flask.jsonify(progress=student.progress)
-
-def get_question(order):
-    test = StudentTest.query.\
-            join(Student).\
-            join(Question).\
-            add_columns(Student.progress, #TODO: do we need all these columns
-                        Question.question,
-                        Question.question_type,
-                        StudentTest.complete,
-                        StudentTest.dataset,
-                        Question.id.label("question_id")).\
-            filter(and_(
-                StudentTest.student_id == flask.session["userid"],
-                StudentTest.test == Student.progress,
-                StudentTest.order == order))
-
-    return test.first()
-    #return progress, graph_id, questions, question_type, answers, complete, dataset, student_test_id, question_id
-
-#provide first quiz question
-@app.route('/first_question')
-def first_question():
-    userid = flask.session['userid']
-    student = Student.query.get(flask.session["userid"])
-
-    try:
-        order = flask.session['order']
-    except: #TODO: bad except
-        order = 1
-
-    #progress, graph_id, question, question_type, answers, complete, dataset, student_test_id,question_id = get_question(order)
-    test = get_question(order)
-    if test:
-        complete = test.complete
-        progress = test.progress
-    else:
-        complete = 'yes'
-        progress = student.progress
-
-    #check to make sure they have not done the question before
-    if complete == 'yes':
-        #this means the question has already been completed
-        #TODO: maybe just sort by order on the query?
-        order_list = StudentTest.query.join(Student).\
-                filter(and_(StudentTest.student_id == flask.session["userid"],
-                            StudentTest.complete == "no",
-                            StudentTest.test == Student.progress)).\
-                    all()
-        order_list = sorted(order_list, key=lambda x: x.order)
-
-        if len(order_list) >= 1:
-            #TODO: log error, this should not happen...
-            test = get_question(order_list[0].order)
-        else:
-            #the section has been completed, update progress and return to home page
-            #update order back to start
-            #TODO: what does order mean?
-            flask.session['order'] = 1
-            #TODO: enum
-            progress_list = ['pre_test', 'training', 'post_test']
-
-            try:
-                student.progress = progress_list[progress_list.index(progress) + 1]
-            except IndexError:
-                student.progress = "complete"
-
-            db.session.commit()
-            #return to homepage
-            if student.progress == 'complete':
-                return flask.jsonify(progress='done')
-            else:
-                return flask.jsonify(progress='next')
-
-    #put the student_test_id in session
-    flask.session['student_test_id'] = test[0].id
-    flask.session['order'] = test[0].order
-    flask.session['question_type'] = test.question_type
-
-    #check which test
-    if test.progress == 'pre_test' or test.progress == 'post_test':
-        # query three graphs
-        graph_list = Graph.query.filter_by(dataset=test.dataset).all()
-        #randomly shuffle order of graphs
-        shuffle(graph_list)
-
-        #put graph id's in session
-        flask.session['graph1'] = graph_list[0].id
-        flask.session['graph2'] = graph_list[1].id
-        flask.session['graph3'] = graph_list[2].id
-
-        # Find urls of each graph
-        graph_urls = [url_for('static',
-            filename='graphs/'+str(graph.graph_location)) for graph in graph_list]
-
-        return flask.jsonify(
-                             graphs=graph_urls,
-                             question=test.question,
-                             question_type=test.question_type,
-                             order=test[0].order,
-                             progress=test.progress)
-
-    elif progress == 'training':
-        graph_id = test[0].graph_id
-        #get graph location
-        graph = Graph.query.get(graph_id)
-        graph_urls = [url_for('static',
-            filename='graphs/' + graph.graph_location)]
-        flask.session['graph1'] = graph_id
-        #if it is a rating question just return graph
-        if test.question_type == 'rating':
-            return flask.jsonify(graphs=graph_urls,
-                             question=test.question,
-                             question_type=test.question_type,
-                             order=test.order,
-                             progress=test.progress)
-        else:
-            #get answers query
-            answer_list = Answer.query.filter_by(question_id=test.question_id).all()
-            answer_strings = [a.answer for a in answer_list]
-
-            for i, answer in enumerate(answer_strings):
-                #TODO: zero index
-                flask.session['answer' + str(i + 1)] = answer
-
-            if test.question_type == 'heuristic':
-                #put graph id's in session
-
-                return flask.jsonify(graphs=graph_urls,
-                                     question=test.question,
-                                     question_type=test.question_type,
-                                     order=test[0].order,
-                                     progress=test.progress,
-                                     answers=answer_strings)
-
-            else:
-                #put graph id's in session
-                return flask.jsonify(graphs=graph_urls,
-                                     question=test.question,
-                                     question_type=test.question_type,
-                                     order=test[0].order,
-                                     progress=test.progress,
-                                     answers=answer_strings)
-
-#get answers to question, write to db then get next question
-@app.route('/_pretest_answers')
-def pretest_answers():
-    params = request.args
-
-    #update order number
-    flask.session['order'] = flask.session['order'] + 1
-
-    #data
-    #TODO: would it make sense to just grab best* and graph*?
-    best1 = params['best1']
-    best2 = params['best2']
-    best3 = params['best3']
-    order = params['order']
-    graph1 = flask.session['graph1']
-    graph2 = flask.session['graph2']
-    graph3 = flask.session['graph3']
-    student_test_id = flask.session['student_test_id']
-    student_id = flask.session['userid']
-
-    try:
-        best4 = params['best4']
-        answer_list = [(best1,graph1),(best2,graph2),(best3,graph3),(best4,'na')]
-    except KeyError:
-        answer_list = [(best1,graph1),(best2,graph2),(best3,graph3)]
-
-    #write to db
-    #update complete row in StudentsTest table
-    test = StudentTest.query.get(student_test_id)
-    test.complete = "yes"
-    db.session.commit()
-    for answer in answer_list:
-        result = Result(
-            student_id=student_id,
-            student_test_id=student_test_id,
-            answer=answer[0],
-            graph_id=answer[1])
-        db.session.add(result)
-
-    db.session.commit()
-    #get next question
-    # question_json = first_question()
-    # return question_json
-    return flask.jsonify(result={"status": 200})
-
-#get answers to question, write to db then get next question
-@app.route('/_posttest_answers')
-def posttest_answers():
-    params = request.args
-
-    #update order number
-    flask.session['order'] = flask.session['order'] + 1
-
-    #data
-    best1 = params['best1']
-    best2 = params['best2']
-    order = params['order']
-    #student_test_id = flask.session['student_test_id']
-    student_id = flask.session['userid']
-
-
-    answer_list = [(best1,1000), (best2,1001)]
-
-    #write to db
-    #update complete row in StudentsTest table
-    # r = conn.execute(StudentsTest.update().\
-    #                  where(StudentsTest.c.student_test_id == student_test_id).\
-    #                  values(complete='yes'))
-
-    for answer in answer_list:
-        result = Result(
-            student_id=student_id,
-            student_test_id=int(str(student_id) + str(answer[1])),
-            answer=answer[0],
-            graph_id="na"
-        )
-
-    #get next question
-    # question_json = first_question()
-    # return question_json
-    return flask.jsonify(result={"status": 200})
-
-#get answers to question, write to db then get next question
-@app.route('/_training_answers')
-def training_answers():
-    params = request.args
-
-    #update order number
-    flask.session['order'] = flask.session['order'] + 1
-
-    #data
-    order = params['order']
-    graph1 = flask.session['graph1']
-    student_test_id = flask.session['student_test_id']
-    student_id = flask.session['userid']
-
-    #TODO: not very well thought out
-    if flask.session['question_type'] == 'rating':
-        answer_id = params['rating1']
-    else:
-        answer1 = params['best1']
-        #figure out answer
-        if answer1 == 'optionA':
-            answer_id = flask.session['answer1']
-        elif answer1 == 'optionB':
-            answer_id = flask.session['answer2']
-        elif answer1 == 'optionC':
-            answer_id = flask.session['answer3']
-        elif answer1 == 'optionD':
-            answer_id = flask.session['answer4']
-        elif answer1 == 'optionE':
-            answer_id = flask.session['answer5']
-
-
-    answer_list = [(answer_id,graph1)]
-
-    #write to db
-    #update complete row in StudentsTest table
-    student_test = StudentTest.query.get(student_test_id)
-    student_test.complete = "yes"
-
-    for answer in answer_list:
-        result = Result(
-            student_id=student_id,
-            student_test_id=student_test_id,
-            answer=answer[0],
-            graph_id=answer[1])
-        db.session.add(result)
-    db.session.commit()
-
-    #get next question
-    # question_json = first_question()
-    # return question_json
-    return flask.jsonify(result={"status": 200})

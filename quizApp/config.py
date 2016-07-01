@@ -10,6 +10,11 @@ class Config(object):
     """
 
     CSRF_ENABLED = True
+    DEBUG = False
+    TESTING = False
+    SQLALCHEMY_ECHO = True
+    SECRET_KEY = "---"
+    WTF_CSRF_METHODS=["POST","PUT","PATCH","DELETE"]
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class Production(Config):

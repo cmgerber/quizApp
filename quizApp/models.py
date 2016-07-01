@@ -9,7 +9,6 @@ class Base(db.Model):
     """
     __abstract__ = True
     id = db.Column(db.Integer, primary_key=True)
-
     def save(self, commit=True):
         """Save this model to the database.
 
@@ -20,152 +19,324 @@ class Base(db.Model):
         if commit:
             db.session.commit()
 
-class Experiment(Base):
-    """An experiment contains a set of Questions.
+class User(Base):
+    """A User is used for authentication.
 
-    name: The name of this experiment.
-    created: A datetime representing when this experiment was created.
-    start: A datetime representing when this experiment begins accepting
-        responses.
-    stop: A datetime representing when this experiment stops accepting
-        responses.
-
-    Relationships:
-
-    OtM wth Question
-    OtM with Graph
+    Attributes:
+        name: string: The username of this user.
+        password: string: This user's password.
+        authenticated: bool: True if this user is authenticated.
+        type: string: The type of this user, e.g. experimenter, participant
     """
 
-    #TODO: how do we associate graphs here? Should graphs be a part of
-    # question? For now we will not create the relationships.
+    name = db.Column(db.String(50))
+    password = db.Column(db.String(50))
+    authenticated = db.Column(db.Boolean, default=False)
+    type = db.Column(db.String(50))
+
+    def is_active(self):
+        """All users are active, so return True"""
+        return True
+
+    def get_id(self):
+        return unicode(self.id)
+
+    def is_authenticated(self):
+        return self.authenticated
+
+    def is_anonymous(self):
+        return False
+
+    __mapper_args__ = {
+        'polymorphic_identity':'user',
+        'polymorphic_on': type
+    }
+
+class Experimenter(User):
+    """A User with permissions to modify Experiments.
+    """
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'experimenter',
+    }
+
+participant_dataset_table = db.Table(
+    "participant_dataset", db.metadata,
+    db.Column('participant_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('dataset_id', db.Integer, db.ForeignKey('dataset.id'))
+)
+
+class Participant(User):
+    """A User that takes Experiments.
+
+    Attributes:
+        opt_in (bool): Has this user opted in to data collection?
+        designed_datasets: Datasets this user has made visualizations for
+
+    Relationships:
+        M2M with Dataset
+        O2M with Assignment (parent)
+        O2M with ParticipantExperiment (parent)
+    """
+
+    opt_in = db.Column(db.Boolean)
+    progress = db.Column(db.String(50)) #TODO: remove this, just transitional
+
+    designed_datasets = db.relationship("Dataset",
+                                        secondary=participant_dataset_table)
+    assignments = db.relationship("Assignment")
+    experiments = db.relationship("ParticipantExperiment")
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'participant',
+    }
+
+class ParticipantExperiment(Base):
+    """An Association Object that relates a User to an Experiment and also
+    stores the progress of the User in this Experiment as well as the order of
+    Questions that this user does.
+    Essentially, this tracks the progress of each User in each Experiment.
+
+    Attributes:
+        activities - set: Order of activities for this user in this experiment
+        progress - int: Which question the user is currently working on.
+
+    Relationships:
+        M2O with Participant (child)
+        M2O with Experiment (child)
+        O2M with Assignment (parent)
+    """
+
+    progress = db.Column(db.Integer)
+
+    participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
+    assignments = db.relationship("Assignment")
+
+assignment_graph_table = db.Table(
+    "assignment_graph", db.metadata,
+    db.Column("assignment_id", db.Integer,
+              db.ForeignKey("assignment.id")),
+    db.Column("graph_id", db.Integer, db.ForeignKey("graph.id"))
+)
+
+class Assignment(Base):
+    """For a given Activity, determine which Graphs, if any, a particular
+    Participant sees, as well as recording the Participant's answer, or if
+    they skipped this assignment.
+
+    Attributes:
+        skipped - bool: True if the Participant skipped this Question, False
+                         otherwise
+
+    Relationships:
+        M2M with Graph
+        M2O with Participant (child)
+        M2O with Activity (child)
+        M2O with Choice (specifically, which answer this User chose) (child)
+        M2O with Experiment (child)
+        M2O with ParticipantExperiment (child)
+    """
+
+    skipped = db.Column(db.Boolean)
+
+    graphs = db.relationship("Graph", secondary=assignment_graph_table)
+    participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
+    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
+    experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
+    participant_experiment_id = db.Column(
+        db.Integer,
+        db.ForeignKey("participant_experiment.id"))
+
+activity_experiment_table = db.Table(
+    "activity_experiment", db.metadata,
+    db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
+    db.Column('experiment_id', db.Integer, db.ForeignKey('experiment.id'))
+)
+
+activity_participant_experiment_table = db.Table(
+    "activity_participant_experiment", db.metadata,
+    db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
+    db.Column('participant_experiment_id', db.Integer,
+              db.ForeignKey('participant_experiment.id'))
+)
+
+class Activity(Base):
+    """An Activity is essentially a screen that a User sees while doing an
+    Experiment. It may be an instructional screen or show a Question, or do
+    something else.
+
+    This class allows us to use Inheritance to easily have a variety of
+    Activities in an Experiment, since we have a M2M between Experiment
+    and Activity, while a specific Activity may actually be a Question thanks
+    to SQLAlchemy's support for polymorphism.
+
+    Attributes:
+        type - string: Discriminator column that determines what kind
+        of Activity this is.
+
+    Relationships:
+        M2M with Experiment
+        O2M with Assignment (parent)
+    """
+
+    type = db.Column(db.String(50))
+    experiments = db.relationship("Experiment",
+                                  secondary=activity_experiment_table)
+    assignments = db.relationship("Assignment")
+
+    __mapper_args__ = {
+        'polymorphic_identity':'activity',
+        'polymorphic_on': type
+    }
+
+question_dataset_table = db.Table(
+    "question_dataset", db.metadata,
+    db.Column("question_id", db.Integer, db.ForeignKey("activity.id")),
+    db.Column("dataset_id", db.Integer, db.ForeignKey("dataset.id"))
+)
+
+class Question(Activity):
+    """A Question is related to one or more Graphs and has one or more Choices,
+    and is a part of one or more Experiments.
+
+    Attributes:
+        question - string: This question as a string
+
+    Relationships:
+       O2M with Choice (parent)
+       M2M with Dataset - if empty, this Question is universal
+    """
+
+    question = db.Column(db.String(200))
+    choices = db.relationship("Choice")
+    datasets = db.relationship("Dataset", secondary=question_dataset_table)
+
+    __mapper_args__ = {
+        'polymorphic_identity':'question',
+    }
+
+class MultipleChoiceQuestion(Question):
+    """A MultipleChoiceQuestion has one or more choices that are correct.
+    """
+    __mapper_args__ = {
+        'polymorphic_identity':'question_mc',
+    }
+
+class SingleSelectQuestion(MultipleChoiceQuestion):
+    """A SingleSelectQuestion allows only one Choice to be selected.
+    """
+
+    __mapper_args__ = {
+        'polymorphic_identity':'question_mc_singleselect',
+    }
+
+class MultiSelectQuestion(MultipleChoiceQuestion):
+    """A MultiSelectQuestion allows any number of Choices to be selected.
+    """
+
+    __mapper_args__ = {
+        'polymorphic_identity':'question_mc_multiselect',
+    }
+
+class ScaleQuestion(SingleSelectQuestion):
+    """A ScaleQuestion is like a SingleSelectQuestion, but it displays
+    its options horizontally. This is useful for "strongly agree/disagree"
+    sort of questions.
+    """
+
+    __mapper_args__ = {
+        'polymorphic_identity':'question_mc_singleselect_scale',
+    }
+
+class FreeAnswerQuestion(Question):
+    """A FreeAnswerQuestion allows a Participant to enter an arbitrary answer.
+    """
+
+    __mapper_args__ = {
+        'polymorphic_identity':'question_freeanswer',
+    }
+
+class Choice(Base):
+    """ A Choice is a string that is a possible answer for a Question.
+
+    Attributes:
+        choice - string: The choice as a string.
+        label - string: The label for this choice (1,2,3,a,b,c etc)
+        correct - bool: "True" if this choice is correct, "False" otherwise
+
+    Relationships:
+        M2O with Question (child)
+        O2M with Assignment (parent)
+    """
+    choice = db.Column(db.String(200))
+    label = db.Column(db.String(3))
+    correct = db.Column(db.Boolean)
+
+    question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
+    assignments = db.relationship("Assignment")
+
+class Graph(Base):
+    """A Graph is an image file located on the server that may be shown in
+    conjunction with a Question.
+
+    Attributes:
+        filename - string: Filename of the graph
+
+    Relationships:
+        M2M with Assignment
+        M2O with Dataset (child)
+    """
+
+    filename = db.Column(db.String(100))
+    assignments = db.relationship(
+        "Assignment",
+        secondary=assignment_graph_table)
+    dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
+
+class Experiment(Base):
+    """An Experiment contains a list of Activities.
+
+    Attributes:
+      name - string
+      created - datetime
+      start - datetime: When this experiment becomes accessible for answers
+      stop - datetime: When this experiment stops accepting answers
+
+    Relationships:
+      M2M with Activity
+      O2M with ParticipantExperiment (parent)
+      O2M with Assignment (parent)
+    """
+
     name = db.Column(db.String(150), index=True)
     created = db.Column(db.DateTime)
     start = db.Column(db.DateTime)
     stop = db.Column(db.DateTime)
 
-class Question(Base):
-    """A Question appears on a StudentTest and has an Answer.
+    activities = db.relationship("Activity",
+                                 secondary=activity_experiment_table)
+    participant_experiments = db.relationship("ParticipantExperiment")
+    assignment = db.relationship("Assignment")
+
+
+class Dataset(Base):
+    """A Dataset represents some data that graphs are based on.
+
+    Attributes:
+        name - string
+        uri - A path or descriptor of where this dataset is located.
 
     Relationships:
-        MtO with dataset
-        OtM with answers
-        MtO with StudentTest
-
-    dataset: The dataset this Question belongs to
-    question: A string representation of this question
-    question_type: e.g. heuristic or question
-    answers: all answers that this question has
-    tests: all tests including this question
+        O2M with Graph (parent)
+        M2M with Question
+        M2M with Participant
     """
-    __tablename__ = "questions"
+    name = db.Column(db.String(100))
+    uri = db.Column(db.String(200))
 
-    # id is combo of dataset number and question order
-
-    dataset = db.Column(db.String(10))
-    question = db.Column(db.String(200))
-    #question, heuristic, rating, best_worst
-    question_type = db.Column(db.String(50))
-
-    answers = db.relationship("Answer")
-    tests = db.relationship("StudentTest")
-
-class Answer(Base):
-    """An answer is a possible answer to a question.
-
-    Relationships:
-        MtO with Question
-
-    answer: The answer to this question, as a string
-    correct: True if this is the correct answer to the question
-    """
-    __tablename__ = "answers"
-
-    answer = db.Column(db.String(200))
-    correct = db.Column(db.String(5)) # TODO: should be bool
-
-    question_id = db.Column(db.Integer, db.ForeignKey("questions.id"))
-
-class Result(Base):
-    #TODO: how does this class work
-    __tablename__ = "results"
-    # Result of student taking a StudentTest.
-    # Many to one with student
-    # Many to one with student_test TODO: how is this possible
-    # Many to one with graph_id
-
-    student_id = db.Column(db.Integer, db.ForeignKey("students.id"))
-    student_test_id = db.Column(db.Integer, db.ForeignKey("students_test.id"))
-    graph_id = db.Column(db.Integer, db.ForeignKey("graphs.id"))
-    answer = db.Column(db.String(200))
-
-class Progress(Enum):
-    pre_test = 0
-    training = 1
-    post_test = 2
-
-class Student(Base):
-    """A Student.
-
-    progress: how far the student has gotten in the quiz
-    opt_in: if the student has opted in to data collection
-
-    Relationships:
-        OtM with StudentTest
-        OtM with Result
-    """
-    __tablename__ = "students"
-
-    #progress: pre_test, training, post_test, complete
-    progress = db.Column(db.String(50))
-    opt_in = db.Column(db.String(10))
-
-    tests = db.relationship("StudentTest")
-    results = db.relationship("Result")
-
-class StudentTest(Base):
-    """Each StudentTest ultimately associates a student, a graph, and a
-        question.
-
-    Relationships:
-        MtO with Student
-        MtO with graph
-        MtO with dataset
-        MtO with question
-
-    test: e.g. pretest, training, posttest
-    order: order of this test for display
-    complete: if this test is complete
-    """
-    __tablename__ = "students_test"
-
-    student_id = db.Column(db.Integer, db.ForeignKey("students.id"))
-    #pre_test, training, post_test
-    test = db.Column(db.String(50)) #TODO: enum
-
-    dataset = db.Column(db.Integer)
-    order = db.Column(db.Integer) #TODO: what is this?
-    complete = db.Column(db.String(5)) #TODO: bool
-
-    graph_id = db.Column(db.Integer, db.ForeignKey('graphs.id'))
-    graph = db.relationship("Graph")
-
-    question_id = db.Column(db.Integer, db.ForeignKey("questions.id"))
-    question = db.relationship("Question")
-
-    results = db.relationship("Result")
-
-class Graph(Base):
-    """A graph is a visualization of a dataset.
-
-    graph_location: Path to this graph
-    Relationships:
-        MtO with dataset
-        OtM with StudentTest
-        OtM with Result
-    """
-    __tablename__ = "graphs"
-
-    dataset = db.Column(db.Integer)
-    graph_location = db.Column(db.String(100))
-
-    results = db.relationship("Result")
+    graphs = db.relationship("Graph")
+    questions = db.relationship("Question", secondary=question_dataset_table)
+    participant = db.relationship("Participant",
+                                  secondary=participant_dataset_table)

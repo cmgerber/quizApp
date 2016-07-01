@@ -1,19 +1,14 @@
-{% include 'header.html' %}
+{% extends 'header.html' %}
 
-<div id='index' class='index wrapper container'>
-    <header id='main-search' class='container'>
-      <div class='page-header row'>
-        <div class='col-xs-12 col-sm-12 col-md-12'>
-          <h3>Thank you for participating.</h3>
-      </div>
-    </header>
-    <section class='container'>
-      <div class='row'>
-        <div class='col-sm-12 col-md-12'>
-          <p>You are now finished.</p>
+{% block title %}
+Thank you for participating.</h3>
+{% endblock %}
 
-        </div>
-      </div> <!-- end .row -->
-    </section>
+{% block content %}
+  <div class='row'>
+    <div class='col-sm-12 col-md-12'>
+      <p>You are now finished.</p>
 
-{% include 'footer.html' %}
+    </div>
+  </div> <!-- end .row -->
+{% endblock %}
