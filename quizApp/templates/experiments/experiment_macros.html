@@ -2,7 +2,7 @@
 {% macro experiment_row(exp, delete_form) -%}
 <tr data-exp-id="{{ exp.id }}">
   <td class="name">
-    <a href="{{ url_for('read_experiment', exp_id=exp.id) }}">{{exp.name}}</a>
+    <a href="{{ url_for('experiments.read_experiment', exp_id=exp.id) }}">{{exp.name}}</a>
   </td>
   <td class="start">{{exp.start|datetime_format}}</td>
   <td class="stop">{{exp.stop|datetime_format}}</td>
@@ -13,7 +13,7 @@
     </button>
   </td>
   <td>
-    <form action="{{ url_for('delete_experiment', exp_id=exp.id) }}"
+    <form action="{{ url_for('experiments.delete_experiment', exp_id=exp.id) }}"
           method="delete" id="delete-form-{{ exp.id }}"
                           class="delete-form">
       {{ delete_form.exp_id(value=exp.id, class_="exp_id") }}

@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, url_for, Markup
-from flask_login import login_required
+from flask import Blueprint, render_template, url_for, Markup, jsonify
+from flask_login import login_required, current_user
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
         User, Assignment, ParticipantExperiment, Activity
 from quizApp.forms.experiments import CreateExperimentForm, \
         DeleteExperimentForm, MultipleChoiceForm, ScaleForm
+from sqlalchemy.orm.exc import NoResultFound
+import os
+from quizApp import db
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
@@ -13,10 +16,10 @@ def read_experiments():
     """List experiments.
     """
     exps = Experiment.query.all()
-    create_form = forms.CreateExperimentForm()
-    delete_form = forms.DeleteExperimentForm()
+    create_form = CreateExperimentForm()
+    delete_form = DeleteExperimentForm()
 
-    return render_template("experiments.html", experiments=exps,
+    return render_template("experiments/experiments.html", experiments=exps,
                           create_form=create_form, delete_form=delete_form)
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
@@ -42,7 +45,7 @@ def read_experiment(exp_id):
     except IndexError:
         activity = None
 
-    return render_template("read_experiment.html", experiment=exp,
+    return render_template("experiments/read_experiment.html", experiment=exp,
                           activity=activity)
 
 @experiments.route("", methods=["POST"])
@@ -50,7 +53,7 @@ def read_experiment(exp_id):
 def create_experiment():
     """Create an experiment and save it to the database.
     """
-    form = forms.CreateExperimentForm()
+    form = CreateExperimentForm()
     if not form.validate_on_submit():
         abort(400)
 
@@ -62,29 +65,29 @@ def create_experiment():
 
     exp.save()
 
-    return render_template("create_experiment_response.html", exp=exp,
-                           delete_form=forms.DeleteExperimentForm())
+    return render_template("experiments/create_experiment_response.html", exp=exp,
+                           delete_form=DeleteExperimentForm())
 
 @experiments.route("/<int:exp_id>", methods=["DELETE"])
 @login_required
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
-    form = forms.DeleteExperimentForm()
+    form = DeleteExperimentForm()
     #TODO: auth
 
     if not form.validate():
-        return flask.jsonify({"success": 0})
+        return jsonify({"success": 0})
 
     exp = Experiment.query.get(exp_id)
 
     if not exp:
-        return flask.jsonify({"success": 0})
+        return jsonify({"success": 0})
 
     db.session.delete(exp)
     db.session.commit()
 
-    return flask.jsonify({"success": 1, "id": request.json["id"]})
+    return jsonify({"success": 1, "id": request.json["id"]})
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
 @login_required
@@ -129,14 +132,14 @@ def read_question(exp_id, q_id):
         abort(404)
 
     if "scale" in question.type:
-        question_form = forms.ScaleForm()
+        question_form = ScaleForm()
     else:
-        question_form = forms.MultipleChoiceForm()
+        question_form = MultipleChoiceForm()
 
     question_form.answers.choices = [(str(c.id), c.choice) for c in
                                question.choices]
 
-    return render_template("show_question.html", exp=experiment,
+    return render_template("experiments/show_question.html", exp=experiment,
                            question=question, assignment=assignment,
                            mc_form=question_form)
 
@@ -151,14 +154,14 @@ def update_question(exp_id, q_id):
 
     #TODO: factor this code out
     if "scale" in question.type:
-        question_form = forms.ScaleForm()
+        question_form = ScaleForm()
     else:
-        question_form = forms.MultipleChoiceForm()
+        question_form = MultipleChoiceForm()
     question_form.answers.choices = [(str(c.id), c.choice) for c in
                                question.choices]
 
     if not question_form.validate():
-        return flask.jsonify({"success": 0})
+        return jsonify({"success": 0})
 
     # User has answered this question successfully
 
@@ -192,16 +195,16 @@ def update_question(exp_id, q_id):
         next_assignment = None
 
     if next_assignment:
-        next_url = url_for("read_question", exp_id=exp_id,
+        next_url = url_for("experiments.read_question", exp_id=exp_id,
                            q_id=part_exp.assignments[part_exp.progress].\
                            activity_id)
     else:
-        next_url = url_for("donedone")
+        next_url = url_for("experiments.donedone")
 
     db.session.add(assignment)
     db.session.add(part_exp)
     db.session.commit()
-    return flask.jsonify({"success": 1, "next_url": next_url})
+    return jsonify({"success": 1, "next_url": next_url})
 
 @experiments.route("/<int:exp_id>/modification_form")
 @login_required
@@ -213,12 +216,12 @@ def experiment_modification_form_html(exp_id):
     minimizes repitition of code. I am open to suggestions...
     """
     exp = Experiment.query.get(exp_id)
-    modify_form = forms.CreateExperimentForm()
+    modify_form = CreateExperimentForm()
 
     if not exp:
         abort(404)
 
-    return render_template("experiment_modification_form.html", exp=exp,
+    return render_template("experiments/experiment_modification_form.html", exp=exp,
                    modify_form=modify_form)
 
 #TODO: done vs donedone
@@ -226,7 +229,7 @@ def experiment_modification_form_html(exp_id):
 #Complete page
 @experiments.route('/donedone')
 def donedone():
-    return flask.render_template('done.html')
+    return render_template('experiments/done.html')
 
 #Complete page
 @experiments.route('/done')
@@ -239,9 +242,9 @@ def done():
 
     #TODO: enum
     if 'multiple_choice' in question_types:
-        return flask.render_template('doneA.html')
+        return render_template('experiments/doneA.html')
     elif 'heuristic' in question_types:
-        return flask.render_template('doneB.html')
+        return render_template('experiments/doneB.html')
     else:
         #TODO: proper logging
         print "Unknown question types"

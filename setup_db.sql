@@ -1,4 +1,4 @@
-DROP USER IF EXISTS 'quizapp'@'localhost';
+DROP USER 'quizapp'@'localhost';
 DROP DATABASE IF EXISTS quizapp;
 DROP DATABASE IF EXISTS quizapp_test;
 
