@@ -5,6 +5,7 @@ addons:
 
 install:
     - mysql -u root < setup_db.sql
+    - pip install -r requirements.txt
 
 script:
     - ./runtests.py
