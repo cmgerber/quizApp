@@ -4,7 +4,7 @@ addons:
     mariadb: '10.1'
 
 install:
-    - pip install -r requirements.txt
+    - mysql -u root < setup_db.sql
 
 script:
     - ./runtests.py
