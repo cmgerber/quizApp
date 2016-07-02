@@ -7,7 +7,7 @@
   {% if activity %}
   <p>Press the start button to begin.</p>
 
-  <a href="{{ url_for('read_question', exp_id=experiment.id,
+  <a href="{{ url_for('experiments.read_question', exp_id=experiment.id,
   q_id=activity.id) }}" class="btn btn-primary">Start
   </a>
   {% else %}

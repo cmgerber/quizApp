@@ -10,7 +10,7 @@
 Experiment List
 {% endblock %}
 
-{% import "experiment_macros.html" as exp_macros %}
+{% import "experiments/experiment_macros.html" as exp_macros %}
 
 {% block content %}
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
@@ -29,7 +29,7 @@ Experiment List
     {{ exp_macros.experiment_row(exp, delete_form) }}
     {% endfor %}
     <tr>
-      {{ exp_macros.create_row(create_form, url_for('create_experiment'),
+      {{ exp_macros.create_row(create_form, url_for('experiments.create_experiment'),
       "create-form") }}
     </tr>
   </tbody>
