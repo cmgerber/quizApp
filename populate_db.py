@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import os
 from sqlalchemy.orm.exc import NoResultFound
 import pdb
+import random
 
 SQLALCHEMY_ECHO = False
 db.drop_all()
@@ -52,19 +53,30 @@ for _, data in questions.iterrows():
     # Convert from 0 indexed to 1 indexed
     dataset_id = data.dataset_id + 1
     dataset = Dataset.query.get(dataset_id)
+    includes_explanation = int(random.random() * 10) % 2
+    needs_reflection = int(random.random() * 10) % 2    
 
     if not dataset:
         dataset = Dataset(id=dataset_id)
         db.session.add(dataset)
 
+    explanation = ""
+    if includes_explanation:
+        explanation = "This explains question " + str(data.question_id)
+
     question = Question(
         id=data.question_id,
         datasets=[dataset],
         question=data.question_text,
-        type=question_type_mapping[data.question_type])
+        type=question_type_mapping[data.question_type],
+        explanation=explanation,
+        needs_reflection=needs_reflection)
 
     if "scale" in question.type:
-        for i in range(0, 5):
+        #Note: while this appears to be hardcoded, in reality this is not -
+        # I merely implemented this because the given heuristic questions
+        # did not have corresponding choices for the users to pick from
+        for i in range(0, 6):
             question.choices.append(Choice(choice=str(i), label=str(i),
                                            correct=True))
 

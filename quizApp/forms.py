@@ -53,13 +53,15 @@ class DeleteExperimentForm(Form):
     exp_id = HiddenField()
     submit = SubmitField("Submit")
 
-class MultipleChoiceForm(Form):
-    answers = RadioField(validators=[DataRequired()])
+class QuestionForm(Form):
     submit = SubmitField("Submit")
+    reflection = StringField()
 
-class ScaleForm(Form):
+class MultipleChoiceForm(QuestionForm):
+    answers = RadioField(validators=[DataRequired()])
+
+class ScaleForm(QuestionForm):
     answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
-    submit = SubmitField("Submit")
 
 class LoginForm(Form):
     name = StringField("Name", validators=[DataRequired()])

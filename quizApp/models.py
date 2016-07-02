@@ -130,7 +130,7 @@ class Assignment(Base):
                          otherwise
         reflection - string: A reflection on why this participant answered this
             question in this way.
-        order - string: A JSON object in string form that represents the order
+        choice_order - string: A JSON object in string form that represents the order
             of choices that this participant was presented with when answering
             this question, e.g. {[1, 50, 9, 3]} where the numbers are the IDs
             of those choices.
@@ -146,7 +146,7 @@ class Assignment(Base):
 
     skipped = db.Column(db.Boolean)
     reflection = db.Column(db.String(200))
-    order = db.Column(db.String(80))
+    choice_order = db.Column(db.String(80))
 
     graphs = db.relationship("Graph", secondary=assignment_graph_table)
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -208,6 +208,8 @@ class Question(Activity):
             correct.
         needs_reflection - bool: True if the participant should be asked why they
             picked what they did after they answer the question.
+        duration - int: If nonzero, how long (in milliseconds) to display the
+            graphs before hiding them again.
 
     Relationships:
        O2M with Choice (parent)
@@ -219,6 +221,7 @@ class Question(Activity):
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
     explanation = db.Column(db.String(200))
     needs_reflection = db.Column(db.Boolean())
+    duration = db.Column(db.Integer)
 
     __mapper_args__ = {
         'polymorphic_identity':'question',

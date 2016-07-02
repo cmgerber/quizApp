@@ -2,7 +2,7 @@ from datetime import datetime
 from random import shuffle
 import os
 import uuid
-
+import pdb
 import flask
 from flask import render_template, request, url_for, abort
 from sqlalchemy.orm.exc import NoResultFound
@@ -157,11 +157,16 @@ def read_question(exp_id, q_id):
 
     question_form.answers.choices = [(str(c.id), c.choice) for c in
                                question.choices]
+    
+    choice_order = {[c.id for c in question.choices]}
+    assignment.choice_order = choice_order
+    assignment.save()
 
     return render_template("show_question.html", exp=experiment,
                            question=question, assignment=assignment,
                            mc_form=question_form)
 
+#TODO: should this be /assignments/ instead of /questions?
 @app.route('/experiments/<int:exp_id>/questions/<int:q_id>', methods=["POST"])
 def update_question(exp_id, q_id):
     """Record a user's answer to this question
@@ -176,6 +181,7 @@ def update_question(exp_id, q_id):
         question_form = forms.ScaleForm()
     else:
         question_form = forms.MultipleChoiceForm()
+    pdb.set_trace()
     question_form.answers.choices = [(str(c.id), c.choice) for c in
                                question.choices]
 
@@ -205,7 +211,7 @@ def update_question(exp_id, q_id):
 
     #TODO: sqlalchemy validators
     assignment.choice_id = selected_choice.id
-
+    assignment.reflection = question_form.reflection.data
     part_exp.progress += 1
 
     try:
@@ -223,7 +229,8 @@ def update_question(exp_id, q_id):
     db.session.add(assignment)
     db.session.add(part_exp)
     db.session.commit()
-    return flask.jsonify({"success": 1, "next_url": next_url})
+    return flask.jsonify({"success": 1, "explanation": question.explanation,
+        "next_url": next_url})
 
 @app.route("/experiments/<int:exp_id>/modification_form")
 @login_required

@@ -104,7 +104,9 @@ $(document).ready(function() {
 
         .done(function(data) {
             console.log(data);
-            window.location.href = data["next_url"]
+            if(data.success) {
+                window.location.href = data["next_url"];
+            }
         });
 
     })
