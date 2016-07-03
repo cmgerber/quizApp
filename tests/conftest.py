@@ -19,10 +19,17 @@ def app(request):
 
     return app
 
+@pytest.yield_fixture(scope="session")
+def client(request, app):
+    with app.test_client() as client:
+        yield client
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_db(request, app):
     db.drop_all()
     db.create_all()
+    
+    
 
 @pytest.fixture(autouse=True)
 def dbsession(request, monkeypatch):

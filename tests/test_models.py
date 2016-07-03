@@ -1,5 +1,3 @@
-from quizApp import create_app
-from quizApp import db 
 from quizApp.models import Experiment
 
 from tests import conftest

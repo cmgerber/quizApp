@@ -9,7 +9,7 @@ class Config(object):
     """Global default config.
     """
 
-    CSRF_ENABLED = True
+    WTF_CSRF_ENABLED = True
     DEBUG = False
     TESTING = False
     SQLALCHEMY_ECHO = True
@@ -36,6 +36,7 @@ class Testing(Config):
     """
     DEBUG = True
     TESTING = True
+    WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp_test"
     SECRET_KEY = "Foobar"
 

@@ -10,7 +10,7 @@ from quizApp import db
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
-@experiments.route('/', methods=["GET"])
+@experiments.route('', methods=["GET"])
 @login_required
 def read_experiments():
     """List experiments.
@@ -91,9 +91,10 @@ def delete_experiment(exp_id):
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
 @login_required
-def update_experiment():
+def update_experiment(exp_id):
     """Modify an experiment's properties.
     """
+    abort(501)
     try:
         name = request.args["name"]
         start = request.args["start"]
