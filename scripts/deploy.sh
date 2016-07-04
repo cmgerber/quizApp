@@ -2,7 +2,7 @@
 
 set -x
 
-if [ %TRAVIS_BRANCH == 'develop' ] ; then
+if [ $TRAVIS_BRANCH == 'develop' ] ; then
     chmod 600 deploy_key
 
     mv deploy_key ~/.ssh/id_rsa
