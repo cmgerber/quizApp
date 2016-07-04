@@ -11,7 +11,9 @@ if [ $TRAVIS_BRANCH == 'develop' ] ; then
     git config user.name "Travis CI"
     git config user.email "alexeibendebury+travis@gmail.com"
 
-    git push --force deploy develop
+    # This may seem bad, but since this is a public repo I am not concerned
+    # about MITM attacks.
+    yes | git push --force deploy develop 
 else
     echo "Not deploying"
 fi
