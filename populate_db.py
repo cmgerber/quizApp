@@ -3,18 +3,22 @@
 """Using excel files, populate the database with some placeholder data.
 """
 
-from quizApp.models import Question, Assignment, ParticipantExperiment, \
-    Participant, Graph, Experiment, User, Dataset, Choice
-from quizApp import db
+from quizApp import create_app
 from sqlalchemy import and_
 from datetime import datetime, timedelta
 import os
 from sqlalchemy.orm.exc import NoResultFound
 import csv
+from quizApp.models import Question, Assignment, ParticipantExperiment, \
+    Participant, Graph, Experiment, User, Dataset, Choice
+from quizApp import db
+import pdb
 
-SQLALCHEMY_ECHO = False
-db.drop_all()
-db.create_all()
+app = create_app("development")
+
+with app.app_context():
+    db.drop_all()
+    db.create_all()
 
 question_type_mapping = {"multiple_choice": "question_mc_singleselect",
                          "heuristic": "question_mc_singleselect_scale",
@@ -33,60 +37,61 @@ post_test = Experiment(name="post_test",
                        start=datetime.now() + timedelta(days=-3),
                        stop=datetime.now())
 
-experiments = {"pre_test": pre_test,
-               "test": test,
-               "post_test": post_test}
 
-db.session.add(pre_test)
-db.session.add(test)
-db.session.add(post_test)
+with app.app_context():
+    db.session.add(pre_test)
+    db.session.add(test)
+    db.session.add(post_test)
+    db.session.commit()
 
 DATA_ROOT = "quizApp/data/"
 
-with open(os.path.join(DATA_ROOT, "questions.csv")) as questions_csv:
-    question_reader = csv.DictReader(questions_csv)
-    for row in question_reader:
-        # Convert from 0 indexed to 1 indexed
-        dataset_id = int(row["dataset_id"]) + 1
-        dataset = Dataset.query.get(dataset_id)
+def get_questions():
+    with open(os.path.join(DATA_ROOT, "questions.csv")) as questions_csv:
+        question_reader = csv.DictReader(questions_csv)
+        for row in question_reader:
+            # Convert from 0 indexed to 1 indexed
+            dataset_id = int(row["dataset_id"]) + 1
+            dataset = Dataset.query.get(dataset_id)
 
-        if not dataset:
-            dataset = Dataset(id=dataset_id)
-            db.session.add(dataset)
+            if not dataset:
+                dataset = Dataset(id=dataset_id)
+                db.session.add(dataset)
 
-        question = Question(
-            id=row["question_id"],
-            datasets=[dataset],
-            question=row["question_text"],
-            type=question_type_mapping[row["question_type"]])
+            question = Question(
+                id=row["question_id"],
+                datasets=[dataset],
+                question=row["question_text"],
+                type=question_type_mapping[row["question_type"]])
 
-        if "scale" in question.type:
-            for i in range(0, 5):
-                question.choices.append(Choice(choice=str(i), label=str(i),
-                                               correct=True))
+            if "scale" in question.type:
+                for i in range(0, 5):
+                    question.choices.append(Choice(choice=str(i), label=str(i),
+                                                   correct=True))
 
-        db.session.add(question)
+            db.session.add(question)
+    db.session.commit()
 
-with open(os.path.join(DATA_ROOT, "choices.csv")) as choices_csv:
-    choice_reader = csv.DictReader(choices_csv)
-    for row in choice_reader:
-        choice = Choice(
-            question_id=row["question_id"],
-            choice=row["answer_text"],
-            correct=row["correct"] == "yes",
-            label=row["answer_letter"])
-        db.session.add(choice)
+def get_choices():
+    with open(os.path.join(DATA_ROOT, "choices.csv")) as choices_csv:
+        choice_reader = csv.DictReader(choices_csv)
+        for row in choice_reader:
+            choice = Choice(
+                question_id=row["question_id"],
+                choice=row["answer_text"],
+                correct=row["correct"] == "yes",
+                label=row["answer_letter"])
+            db.session.add(choice)
+    with open(os.path.join(DATA_ROOT, 'graph_table.csv')) as graphs_csv:
+        graphs = csv.DictReader(graphs_csv)
 
-with open(os.path.join(DATA_ROOT, 'graph_table.csv')) as graphs_csv:
-    graphs = csv.DictReader(graphs_csv)
-
-    for graph in graphs:
-        graph = Graph(
-            id=graph["graph_id"],
-            dataset_id=int(graph["dataset"])+1,
-            filename=graph["graph_location"])
-        db.session.add(graph)
-
+        for graph in graphs:
+            graph = Graph(
+                id=graph["graph_id"],
+                dataset_id=int(graph["dataset"])+1,
+                filename=graph["graph_location"])
+            db.session.add(graph)
+    db.session.commit()
 
 # In this list, each list is associated with a participant (one to one).  The
 # first three tuples in each list are associated with training questions.  The
@@ -130,37 +135,40 @@ participant_question_list = \
  [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
  [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
-combined_id_list = []
-question_participant_id_list = []
-heuristic_participant_id_list = []
+def get_students():
+    combined_id_list = []
+    question_participant_id_list = []
+    heuristic_participant_id_list = []
+    experiments = Experiment.query.all()
 
-with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
-    participant_reader = csv.DictReader(participants_csv)
-    for row in participant_reader:
-        questions_id = row["Questions"]
-        heuristics_id = row["Heuristics"]
-        if questions_id:
-            question_participant_id_list.append(questions_id)
-            combined_id_list.append(questions_id)
-        if heuristics_id:
-            heuristic_participant_id_list.append(heuristics_id)
-            combined_id_list.append(heuristics_id)
+    with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
+        participant_reader = csv.DictReader(participants_csv)
+        for row in participant_reader:
+            questions_id = row["Questions"]
+            heuristics_id = row["Heuristics"]
+            if questions_id:
+                question_participant_id_list.append(questions_id)
+                combined_id_list.append(questions_id)
+            if heuristics_id:
+                heuristic_participant_id_list.append(heuristics_id)
+                combined_id_list.append(heuristics_id)
 
-for pid in combined_id_list:
-    participant = Participant(
-        id=pid,
-        opt_in=False,
-        progress="pre_test"
-    )
-    for exp in experiments.values():
-        part_exp = ParticipantExperiment(
-            progress=0,
-            participant_id=pid,
-            experiment_id=exp.id)
-        db.session.add(part_exp)
-    db.session.add(participant)
+    for pid in combined_id_list:
+        participant = Participant(
+            id=pid,
+            opt_in=False,
+            progress="pre_test"
+        )
+        for exp in experiments:
+            part_exp = ParticipantExperiment(
+                progress=0,
+                participant_id=pid,
+                experiment_id=exp.id)
+            db.session.add(part_exp)
+        db.session.add(participant)
 
-db.session.commit()
+    db.session.commit()
+    return question_participant_id_list, heuristic_participant_id_list
 
 def create_participant_data(pid_list, participant_question_list, test, group):
     """
@@ -169,6 +177,10 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
+    experiments = {"pre_test":
+                   Experiment.query.filter_by(name="pre_test").one(),
+                   "test": Experiment.query.filter_by(name="test").one(),
+                   "post_test": Experiment.query.filter_by(name="post_test").one()}
     missing_qs = set()
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in participant_question_list]
@@ -269,8 +281,17 @@ def create_participant_data(pid_list, participant_question_list, test, group):
         print missing_qs
 
 #create all the participant_test table data
-for test in ['pre_test', 'test', 'post_test']:
-    create_participant_data(question_participant_id_list,
-                            participant_question_list, test, 'question')
-    create_participant_data(heuristic_participant_id_list,
-                            participant_question_list, test, 'heuristic')
+
+def create_assignments(participants_question, participants_heuristic):
+    for test in ['pre_test', 'test', 'post_test']:
+        create_participant_data(participants_question,
+                                participant_question_list, test, 'question')
+        create_participant_data(participants_heuristic,
+                                participant_question_list, test, 'heuristic')
+
+if __name__ == "__main__":
+    with app.app_context():
+        get_questions()
+        get_choices()
+        questions, heuristics = get_students()
+        create_assignments(questions, heuristics)

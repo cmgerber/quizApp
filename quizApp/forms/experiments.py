@@ -3,7 +3,6 @@ from wtforms import StringField, DateTimeField, SubmitField, HiddenField, \
         RadioField, PasswordField
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import HTMLString
-import pdb
 
 class DateTimeWidget(object):
     def __call__(self, field, **kwargs):
@@ -60,8 +59,3 @@ class MultipleChoiceForm(Form):
 class ScaleForm(Form):
     answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
     submit = SubmitField("Submit")
-
-class LoginForm(Form):
-    name = StringField("Name", validators=[DataRequired()])
-    password = PasswordField("Password")
-    submit = SubmitField("Login")

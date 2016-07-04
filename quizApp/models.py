@@ -2,7 +2,6 @@
 """
 
 from quizApp import db
-from enum import Enum
 
 class Base(db.Model):
     """All models have an identical id field.
