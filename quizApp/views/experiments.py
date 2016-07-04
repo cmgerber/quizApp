@@ -116,11 +116,19 @@ def update_experiment(exp_id):
 
     exp.save()
 
-@experiments.route('/<int:exp_id>/questions/<int:q_id>')
+@experiments.route('/<int:exp_id>/activities/<int:a_id>')
 @login_required
-def read_question(exp_id, q_id):
+def read_activity(exp_id, a_id):
+    activity = Activity.query.get(a_id)
+    
+    if not activity:
+        abort(404)   
+ 
+    if "question" in activity.type:
+        return read_question(exp_id, activity)
+
+def read_question(exp_id, question):
     experiment = Experiment.query.get(exp_id)
-    question = Question.query.get(q_id)
     participant = current_user
     assignment = Assignment.query.filter_by(participant_id=participant.id).\
             filter_by(activity_id=question.id).\
@@ -144,14 +152,18 @@ def read_question(exp_id, q_id):
                            question=question, assignment=assignment,
                            mc_form=question_form)
 
-@experiments.route('/<int:exp_id>/questions/<int:q_id>', methods=["POST"])
-def update_question(exp_id, q_id):
-    """Record a user's answer to this question
+@experiments.route('/<int:exp_id>/activities/<int:a_id>', methods=["POST"])
+def update_activity(exp_id, a_id):
+    """Record a user's answer to this activity
     """
-    question = Question.query.get(q_id)
+    activity = Activity.query.get(a_id)
 
     if not question:
         abort(404)
+
+    if "question" not in activity:
+        # Pass for now
+        return jsonify({"success": 1})
 
     #TODO: factor this code out
     if "scale" in question.type:
