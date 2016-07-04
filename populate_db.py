@@ -7,11 +7,10 @@ from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice
 from quizApp import db
 from sqlalchemy import and_
-import pandas as pd
 from datetime import datetime, timedelta
 import os
 from sqlalchemy.orm.exc import NoResultFound
-import pdb
+import csv
 
 SQLALCHEMY_ECHO = False
 db.drop_all()
@@ -44,52 +43,49 @@ db.session.add(post_test)
 
 DATA_ROOT = "quizApp/data/"
 
-questions = pd.read_excel(os.path.join(DATA_ROOT,
-                                       'DatasetsAndQuestions.xlsx'),
-                          'Questions')
+with open(os.path.join(DATA_ROOT, "questions.csv")) as questions_csv:
+    question_reader = csv.DictReader(questions_csv)
+    for row in question_reader:
+        # Convert from 0 indexed to 1 indexed
+        dataset_id = int(row["dataset_id"]) + 1
+        dataset = Dataset.query.get(dataset_id)
 
-for _, data in questions.iterrows():
-    # Convert from 0 indexed to 1 indexed
-    dataset_id = data.dataset_id + 1
-    dataset = Dataset.query.get(dataset_id)
+        if not dataset:
+            dataset = Dataset(id=dataset_id)
+            db.session.add(dataset)
 
-    if not dataset:
-        dataset = Dataset(id=dataset_id)
-        db.session.add(dataset)
+        question = Question(
+            id=row["question_id"],
+            datasets=[dataset],
+            question=row["question_text"],
+            type=question_type_mapping[row["question_type"]])
 
-    question = Question(
-        id=data.question_id,
-        datasets=[dataset],
-        question=data.question_text,
-        type=question_type_mapping[data.question_type])
+        if "scale" in question.type:
+            for i in range(0, 5):
+                question.choices.append(Choice(choice=str(i), label=str(i),
+                                               correct=True))
 
-    if "scale" in question.type:
-        for i in range(0, 5):
-            question.choices.append(Choice(choice=str(i), label=str(i),
-                                           correct=True))
+        db.session.add(question)
 
-    db.session.add(question)
+with open(os.path.join(DATA_ROOT, "choices.csv")) as choices_csv:
+    choice_reader = csv.DictReader(choices_csv)
+    for row in choice_reader:
+        choice = Choice(
+            question_id=row["question_id"],
+            choice=row["answer_text"],
+            correct=row["correct"] == "yes",
+            label=row["answer_letter"])
+        db.session.add(choice)
 
-choices = pd.read_excel(os.path.join(DATA_ROOT, 'DatasetsAndQuestions.xlsx'),
-                        'Answers')
-for _, data in choices.iterrows():
-    choice = Choice(
-        #id=data.answer_id,
-        question_id=data.question_id,
-        choice=data.answer_text,
-        correct=data.correct == "yes",
-        label=data.answer_letter)
-    db.session.add(choice)
+with open(os.path.join(DATA_ROOT, 'graph_table.csv')) as graphs_csv:
+    graphs = csv.DictReader(graphs_csv)
 
-df_graphs = pd.read_excel(os.path.join(DATA_ROOT, 'graph_table.xlsx'),
-                          'Sheet1')
-
-for _, data in df_graphs.iterrows():
-    graph = Graph(
-        id=data.graph_id,
-        dataset_id=data.dataset+1,
-        filename=data.graph_location)
-    db.session.add(graph)
+    for graph in graphs:
+        graph = Graph(
+            id=graph["graph_id"],
+            dataset_id=int(graph["dataset"])+1,
+            filename=graph["graph_location"])
+        db.session.add(graph)
 
 
 # In this list, each list is associated with a participant (one to one).  The
@@ -134,17 +130,21 @@ participant_question_list = \
  [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
  [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
-#temp created participant id list
-# question_participant_id_list = [x + 1 for x in range(30)]
-# heuristic_participant_id_list = [x + 1 for x in range(30,60)]
+combined_id_list = []
+question_participant_id_list = []
+heuristic_participant_id_list = []
 
-#read in participant lists
-df_sid = pd.read_csv(os.path.join(DATA_ROOT, 'participant_id_list.csv'))
-df_sid.Questions = df_sid.Questions.apply(lambda x: int(x))
-df_sid.Heuristics = df_sid.Heuristics.apply(lambda x: int(x))
-question_participant_id_list = [int(x) for x in list(df_sid.Questions)]
-heuristic_participant_id_list = [int(x) for x in list(df_sid.Heuristics)]
-combined_id_list = question_participant_id_list + heuristic_participant_id_list
+with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
+    participant_reader = csv.DictReader(participants_csv)
+    for row in participant_reader:
+        questions_id = row["Questions"]
+        heuristics_id = row["Heuristics"]
+        if questions_id:
+            question_participant_id_list.append(questions_id)
+            combined_id_list.append(questions_id)
+        if heuristics_id:
+            heuristic_participant_id_list.append(heuristics_id)
+            combined_id_list.append(heuristics_id)
 
 for pid in combined_id_list:
     participant = Participant(
