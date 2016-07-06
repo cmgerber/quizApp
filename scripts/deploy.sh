@@ -11,7 +11,7 @@ if [ $TRAVIS_BRANCH == 'develop' ] ; then
     git config user.name "Travis CI"
     git config user.email "alexeibendebury+travis@gmail.com"
 
-    git push --force deploy develop
+    git push --force deploy master
 else
     echo "Not deploying"
 fi
