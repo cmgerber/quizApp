@@ -249,3 +249,7 @@ body {
 ul#answers {
   list-style-type: none;
 }
+
+#explanation-container {
+  display: none;
+}

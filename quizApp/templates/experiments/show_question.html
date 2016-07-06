@@ -23,7 +23,17 @@ Quiz
   <form action="{{ url_for('experiments.update_question', exp_id=exp.id,
         q_id=question.id)}}" method="post" id="question-submit-form">
     {{ mc_form.answers() }}
+    {% if question.needs_reflection %}
+        <p>Why do you think this is the correct choice?</p>
+        {{ mc_form.reflection(class_="form-control", rows="5") }}
+        <br />
+    {% endif %}
     {{ mc_form.submit(class_="btn btn-primary") }}
   </form>
+</div>
+<div id="explanation-container">
+  <p id="explanation-text"></p>
+  <a href="#" role="button" id="continue-link"
+    class="btn btn-primary">Continue</a>
 </div>
 {% endblock %}

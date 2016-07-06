@@ -13,6 +13,7 @@ from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice
 from quizApp import db
 import pdb
+import random
 
 app = create_app("development")
 
@@ -54,15 +55,26 @@ def get_questions():
             dataset_id = int(row["dataset_id"]) + 1
             dataset = Dataset.query.get(dataset_id)
 
+            includes_explanation = int(random.random() * 10) % 2
+            needs_reflection = int(random.random() * 10) % 2
+
             if not dataset:
                 dataset = Dataset(id=dataset_id)
                 db.session.add(dataset)
+
+            explanation = ""
+            if includes_explanation:
+                explanation = "This explains question " + \
+                str(row["question_id"])
 
             question = Question(
                 id=row["question_id"],
                 datasets=[dataset],
                 question=row["question_text"],
-                type=question_type_mapping[row["question_type"]])
+                type=question_type_mapping[row["question_type"]],
+                explanation=explanation,
+                needs_reflection=needs_reflection)
+
 
             if "scale" in question.type:
                 for i in range(0, 5):

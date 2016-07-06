@@ -2,7 +2,7 @@ from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, HiddenField, \
         RadioField, PasswordField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString
+from wtforms.widgets.core import HTMLString, Input
 
 class DateTimeWidget(object):
     def __call__(self, field, **kwargs):
@@ -26,6 +26,16 @@ class DateTimeWidget(object):
                                       kwargs.pop("value", ""),
                                       field.id)
         return HTMLString(output)
+
+class TextAreaWidget(Input):
+    input_type = "text"
+    def __call__(self, field, **kwargs):
+        kwargs.setdefault('id', field.id)
+        kwargs.setdefault('type', self.input_type)
+        kwargs.setdefault('value', field._value())
+
+        return HTMLString("<textarea %s></textarea>" % \
+                          self.html_params(name=field.name, **kwargs))
 
 class LikertWidget(object):
     def __call__(self, field, **kwargs):
@@ -52,10 +62,17 @@ class DeleteExperimentForm(Form):
     exp_id = HiddenField()
     submit = SubmitField("Submit")
 
-class MultipleChoiceForm(Form):
-    answers = RadioField(validators=[DataRequired()])
+class QuestionForm(Form):
     submit = SubmitField("Submit")
+    reflection = StringField(widget=TextAreaWidget())
 
-class ScaleForm(Form):
+class MultipleChoiceForm(QuestionForm):
+    answers = RadioField(validators=[DataRequired()])
+
+class ScaleForm(QuestionForm):
     answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
-    submit = SubmitField("Submit")
+
+class LoginForm(Form):
+    name = StringField("Name", validators=[DataRequired()])
+    password = PasswordField("Password")
+    submit = SubmitField("Login")

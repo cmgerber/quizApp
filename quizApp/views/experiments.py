@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, url_for, Markup, jsonify
+from flask import Blueprint, render_template, url_for, Markup, jsonify, abort
 from flask_login import login_required, current_user
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
         User, Assignment, ParticipantExperiment, Activity
@@ -7,6 +7,8 @@ from quizApp.forms.experiments import CreateExperimentForm, \
 from sqlalchemy.orm.exc import NoResultFound
 import os
 from quizApp import db
+import json
+import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
@@ -139,6 +141,10 @@ def read_question(exp_id, q_id):
     question_form.answers.choices = [(str(c.id), c.choice) for c in
                                question.choices]
 
+    choice_order = [c.id for c in question.choices]
+    assignment.choice_order = json.dumps(choice_order)
+    assignment.save()
+
     return render_template("experiments/show_question.html", exp=experiment,
                            question=question, assignment=assignment,
                            mc_form=question_form)
@@ -186,7 +192,7 @@ def update_question(exp_id, q_id):
 
     #TODO: sqlalchemy validators
     assignment.choice_id = selected_choice.id
-
+    assignment.reflection = question_form.reflection.data
     part_exp.progress += 1
 
     try:
@@ -204,7 +210,8 @@ def update_question(exp_id, q_id):
     db.session.add(assignment)
     db.session.add(part_exp)
     db.session.commit()
-    return jsonify({"success": 1, "next_url": next_url})
+    return jsonify({"success": 1, "explanation": question.explanation,
+        "next_url": next_url})
 
 @experiments.route("/<int:exp_id>/modification_form")
 @login_required

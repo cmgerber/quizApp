@@ -127,6 +127,12 @@ class Assignment(Base):
     Attributes:
         skipped - bool: True if the Participant skipped this Question, False
                          otherwise
+        reflection - string: A reflection on why this participant answered this
+            question in this way.
+        choice_order - string: A JSON object in string form that represents the order
+            of choices that this participant was presented with when answering
+            this question, e.g. {[1, 50, 9, 3]} where the numbers are the IDs
+            of those choices.
 
     Relationships:
         M2M with Graph
@@ -138,6 +144,8 @@ class Assignment(Base):
     """
 
     skipped = db.Column(db.Boolean)
+    reflection = db.Column(db.String(200))
+    choice_order = db.Column(db.String(80))
 
     graphs = db.relationship("Graph", secondary=assignment_graph_table)
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
@@ -152,13 +160,6 @@ activity_experiment_table = db.Table(
     "activity_experiment", db.metadata,
     db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
     db.Column('experiment_id', db.Integer, db.ForeignKey('experiment.id'))
-)
-
-activity_participant_experiment_table = db.Table(
-    "activity_participant_experiment", db.metadata,
-    db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
-    db.Column('participant_experiment_id', db.Integer,
-              db.ForeignKey('participant_experiment.id'))
 )
 
 class Activity(Base):
@@ -202,6 +203,12 @@ class Question(Activity):
 
     Attributes:
         question - string: This question as a string
+        explantion - string: The explanation for why the correct answer is
+            correct.
+        needs_reflection - bool: True if the participant should be asked why they
+            picked what they did after they answer the question.
+        duration - int: If nonzero, how long (in milliseconds) to display the
+            graphs before hiding them again.
 
     Relationships:
        O2M with Choice (parent)
@@ -211,6 +218,9 @@ class Question(Activity):
     question = db.Column(db.String(200))
     choices = db.relationship("Choice")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
+    explanation = db.Column(db.String(200))
+    needs_reflection = db.Column(db.Boolean())
+    duration = db.Column(db.Integer)
 
     __mapper_args__ = {
         'polymorphic_identity':'question',
