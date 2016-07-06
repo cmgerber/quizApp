@@ -5,11 +5,9 @@
 Log in
 {% endblock %}
 
-{% import "experiment_macros.html" as exp_macros %}
-
 {% block content %}
 <section class='container'>
-  <form action="{{ url_for("login") }}" method="post">
+  <form action="{{ url_for("admin.login") }}" method="post">
     {{ form.csrf_token() }}
   {{ form.name.label }}
   {{ form.name(class_="form-control") }}

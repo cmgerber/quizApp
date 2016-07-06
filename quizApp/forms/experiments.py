@@ -3,7 +3,6 @@ from wtforms import StringField, DateTimeField, SubmitField, HiddenField, \
         RadioField, PasswordField
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import HTMLString
-import pdb
 
 class DateTimeWidget(object):
     def __call__(self, field, **kwargs):
