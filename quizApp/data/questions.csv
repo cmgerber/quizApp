@@ -18,12 +18,12 @@ dataset_id,Dataset Nickname,question_id,question_text,answer,question_type
 5,Jeopardy,51,Which question type occurred in all but 3 years?,Literature,multiple_choice
 5,Jeopardy,52,Which year on average was the most lucrative for players in terms of earnings?,2008,multiple_choice
 5,Jeopardy,53,"Based on these numbers, which category would be the strategically best to select as a contestant in the game?",Colleges and Universities,multiple_choice
-0,,4,heuristic,,heuristic
-1,,14,heuristic,,heuristic
-2,,24,heuristic,,heuristic
-3,,34,heuristic,,heuristic
-4,,44,heuristic,,heuristic
-5,,54,heuristic,,heuristic
+0,,4,Rate the graph on a scale of 0 to 5,,heuristic
+1,,14,Rate the graph on a scale of 0 to 5,,heuristic
+2,,24,Rate the graph on a scale of 0 to 5,,heuristic
+3,,34,Rate the graph on a scale of 0 to 5,,heuristic
+4,,44,Rate the graph on a scale of 0 to 5,,heuristic
+5,,54,Rate the graph on a scale of 0 to 5,,heuristic
 0,,5,Rate the graph on a scale of 0 to 5,,rating
 1,,15,Rate the graph on a scale of 0 to 5,,rating
 2,,25,Rate the graph on a scale of 0 to 5,,rating
