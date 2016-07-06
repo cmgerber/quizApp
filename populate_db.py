@@ -64,7 +64,8 @@ def get_questions():
 
             explanation = ""
             if includes_explanation:
-                explanation = "This explains question " + str(data.question_id)
+                explanation = "This explains question " + \
+                str(row["question_id"])
 
             question = Question(
                 id=row["question_id"],

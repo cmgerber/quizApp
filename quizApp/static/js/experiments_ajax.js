@@ -91,6 +91,7 @@ $(document).ready(function() {
 
         var formData = {
             'answers': checked_box[0].getAttribute("value"),
+            'reflection': $("#reflection").val()
         };
 
         $.ajax({
@@ -105,7 +106,15 @@ $(document).ready(function() {
         .done(function(data) {
             console.log(data);
             if(data.success) {
-                window.location.href = data["next_url"];
+                if(data.explanation) {
+                    $("#explanation-container").css("display", "block");
+                    $("#explanation-text").text(data.explanation);
+                    $("#continue-link").attr("href", data.next_url);
+                    $("#submit").remove();
+                }
+                else {
+                    window.location.href = data["next_url"];
+                }
             }
         });
 
