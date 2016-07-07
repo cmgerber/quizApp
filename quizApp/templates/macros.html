@@ -9,29 +9,57 @@
         {{ macros.render_field(form.email, placeholder='Input email', type='email') }}
 #}
 
-{% macro render_field(field) -%}
+{% macro render_field(field, label_visible=true) -%}
 	{% if field.type == 'BooleanField' %}
-    {{ render_checkbox_field(field, **kwargs) }}
+    {{ render_checkbox_field(field, label_visible, **kwargs) }}
 	{% elif field.type == 'RadioField' %}
     {% if field.widget.input_type == "likert" %}
       {{ field(**kwargs) }}
     {% else %}
-      {{ render_radio_field(field, **kwargs) }}
+      {{ render_radio_field(field, label_visible,  **kwargs) }}
     {% endif %}
   {% elif field.type == 'SubmitField' %}
-    {{ render_submit_field(field, **kwargs) }}
-  {% elif field.type == 'StringField' %}
-    {{ render_string_field(field, **kwargs) }}
+    {{ render_submit_field(field, label_visible, **kwargs) }}
+  {% elif field.type == 'StringField' or field.type == 'PasswordField' %}
+    {{ render_string_field(field, label_visible, **kwargs) }}
+  {% elif field.type == 'DateTimeField' %}
+    {{ render_date_time_field(field, label_visible, **kwargs) }}
 	{% endif %}
 {% endmacro %}
 
-{% macro render_submit_field(field) -%}
-  {{ field(class_=kwargs.pop('class_', 'btn-primary') + ' btn') }}
+{% macro render_date_time_field(field, label_visible=true) -%}
+<div class="form-group {% if field.errors %}has-error{% endif %}">
+  {% if label_visible %}
+    <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
+  {% endif %}
+  <div class="input-group date" id="{{ field.id }}-group">
+    {{ field(class_='form-control', **kwargs) }}
+    <span class="input-group-addon">
+      <span class="glyphicon glyphicon-calendar"></span>
+    </span>
+  </div>
+  {% if field.errors %}
+    {% for e in field.errors %}
+    <p class="help-block">{{ e }}</p>
+    {% endfor %}
+  {% endif %}
+</div>
+<script type="text/javascript">
+$(function () {
+  $("#{{ field.id }}-group").datetimepicker({
+    format: "YYYY-MM-DD HH:mm:ss"
+  });
+});
+</script>
 {%- endmacro %}
 
-{% macro render_string_field(field) -%}
+{% macro render_submit_field(field, label_visible=True) -%}
+  {{ field(class_=kwargs.pop('class_', 'btn-primary') + ' btn', **kwargs) }}
+{%- endmacro %}
+
+{% macro render_string_field(field, label_visible=True) -%}
     <div class="form-group {% if field.errors %}has-error{% endif %} {{ kwargs.pop('class_', '') }}">
-        {% if field.type != 'HiddenField' and field.type !='CSRFTokenField' and label_visible %}
+        {% if label_visible %}
             <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
         {% endif %}
         {{ field(class_='form-control', **kwargs) }}
@@ -52,10 +80,13 @@
     Example usage:
         {{ macros.render_checkbox_field(form.remember_me) }}
  #}
-{% macro render_checkbox_field(field) -%}
+{% macro render_checkbox_field(field, label_visible=true) -%}
     <div class="checkbox">
         <label>
-            {{ field(type='checkbox', **kwargs) }} {{ field.label }}
+            {{ field(type='checkbox', **kwargs) }}
+            {% if label_visible %}
+              {{ field.label }}
+            {% endif %}
         </label>
     </div>
 {%- endmacro %}
@@ -69,11 +100,14 @@
     Example usage:
         {{ macros.render_radio_field(form.answers) }}
  #}
-{% macro render_radio_field(field) -%}
+{% macro render_radio_field(field, label_visible=true) -%}
     {% for value, label, _ in field.iter_choices() %}
         <div class="radio">
             <label>
-                <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">{{ label }}
+                <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">
+                {% if label_visible %}
+                  {{ label }}
+                {% endif %}
             </label>
         </div>
     {% endfor %}

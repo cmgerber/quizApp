@@ -3,9 +3,9 @@
 {% macro create_row(form, action, id, name="", start="",
 stop="",submit="Create", class_="") -%}
 <form action="{{ action }}" id="{{ id }}" class="{{ class_ }}" method="post">
-  <td>{{ macros.render_field(form.name, value=name) }}</td>
-  <td>{{ macros.render_field(form.start, value=start) }}</td>
-  <td>{{ macros.render_field(form.stop, value=stop) }}</td>
+  <td>{{ macros.render_field(form.name, label_visible=false, value=name) }}</td>
+  <td>{{ macros.render_field(form.start, label_visible=false, value=start) }}</td>
+  <td>{{ macros.render_field(form.stop, label_visible=false, value=stop) }}</td>
   <td>{{ macros.render_field(form.submit, value=submit) }}</td>
   <td></td>
 </form>
