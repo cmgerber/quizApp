@@ -2,6 +2,7 @@
 """
 
 from quizApp import db
+from flask_security import UserMixin, RoleMixin
 
 class Base(db.Model):
     """All models have an identical id field.
@@ -18,7 +19,17 @@ class Base(db.Model):
         if commit:
             db.session.commit()
 
-class User(Base):
+roles_users = db.Table('roles_users',
+                       db.Column('user_id', db.Integer(),
+                                 db.ForeignKey('user.id')),
+                       db.Column('role_id', db.Integer(),
+                                 db.ForeignKey('role.id')))
+
+class Role(Base, RoleMixin):
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+class User(Base, UserMixin):
     """A User is used for authentication.
 
     Attributes:
@@ -28,36 +39,23 @@ class User(Base):
         type: string: The type of this user, e.g. experimenter, participant
     """
 
-    name = db.Column(db.String(50))
-    password = db.Column(db.String(50))
-    authenticated = db.Column(db.Boolean, default=False)
+    email = db.Column(db.String(255), unique=True)
+    active = db.Column(db.Boolean())
+    password = db.Column(db.String(255))
+    confirmed_at = db.Column(db.DateTime())
+    roles = db.relationship("Role", secondary=roles_users,
+                            backref=db.backref('users', lazy='dynamic'))
+
+
+    #authenticated = db.Column(db.Boolean, default=False)
     type = db.Column(db.String(50))
-
-    def is_active(self):
-        """All users are active, so return True"""
-        return True
-
-    def get_id(self):
-        return unicode(self.id)
-
-    def is_authenticated(self):
-        return self.authenticated
-
-    def is_anonymous(self):
-        return False
+    #name = db.Column(db.String(50))
 
     __mapper_args__ = {
         'polymorphic_identity':'user',
         'polymorphic_on': type
     }
 
-class Experimenter(User):
-    """A User with permissions to modify Experiments.
-    """
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'experimenter',
-    }
 
 participant_dataset_table = db.Table(
     "participant_dataset", db.metadata,

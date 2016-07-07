@@ -13,12 +13,10 @@ import os
 from sqlalchemy.orm.exc import NoResultFound
 import csv
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
-    Participant, Graph, Experiment, User, Dataset, Choice
+    Participant, Graph, Experiment, User, Dataset, Choice, Role
 from quizApp import db
 import pdb
 import random
-
-app = create_app("development")
 
 def clear_db():
     #https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
@@ -66,8 +64,6 @@ def get_experiments():
     db.session.add(test)
     db.session.add(post_test)
     db.session.commit()
-
-
 
 DATA_ROOT = "quizApp/data/"
 
@@ -183,6 +179,9 @@ def get_students():
     heuristic_participant_id_list = []
     experiments = Experiment.query.all()
 
+    participant_role = Role(name="participant", description="Participant role")
+    experimenter_role = Role(name="experimenter", description="Experimenter role")
+
     with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
         participant_reader = csv.DictReader(participants_csv)
         for row in participant_reader:
@@ -198,8 +197,12 @@ def get_students():
     for pid in combined_id_list:
         participant = Participant(
             id=pid,
+            email=str(pid),
+            password=str(pid),
             opt_in=False,
-            progress="pre_test"
+            progress="pre_test",
+            active=True,
+            roles=[participant_role]
         )
         for exp in experiments:
             part_exp = ParticipantExperiment(
@@ -208,6 +211,15 @@ def get_students():
                 experiment_id=exp.id)
             db.session.add(part_exp)
         db.session.add(participant)
+
+    root = User(
+        email="experimenter@example.com",
+        password="foobar",
+        active=True,
+        roles=[experimenter_role]
+    )
+
+    db.session.add(root)
 
     db.session.commit()
     return question_participant_id_list, heuristic_participant_id_list
@@ -331,7 +343,8 @@ def create_assignments(participants_question, participants_heuristic):
         create_participant_data(participants_heuristic,
                                 participant_question_list, test, 'heuristic')
 
-if __name__ == "__main__":
+def setup_db():
+    app = create_app("development")
     with app.app_context():
         clear_db()
         get_experiments()
@@ -339,3 +352,6 @@ if __name__ == "__main__":
         get_choices()
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
+
+if __name__ == "__main__":
+    setup_db()

@@ -23,17 +23,20 @@
         <nav>
           <ul class="nav nav-pills pull-right">
             {% if current_user.is_authenticated %}
-            <li role="presentation" class="active"><a>Hello {{ current_user.id
-                }}</a></li>
+            <li role="presentation" class="active"><a>Hello {{
+                current_user.email }}</a></li>
             <li role="presentation">
-              <a href="{{ url_for('admin.logout') }}">Logout</a>
+              <a href="{{ url_for('security.logout') }}">Logout</a>
             </li>
             <li role="presentation">
               <a href="{{ url_for('experiments.read_experiments') }}">Experiments</a>
             </li>
             {% else %}
             <li role="presentation" class="active">
-              <a href="{{ url_for('admin.login') }}">Login</a>
+              <a href="{{ url_for('security.login') }}">Login</a>
+            </li>
+            <li role="presentation" class="active">
+              <a href="{{ url_for('security.register') }}">Register</a>
             </li>
             {% endif %}
             <li role="presentation">
