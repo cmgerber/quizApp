@@ -10,7 +10,7 @@ import os
 from sqlalchemy.orm.exc import NoResultFound
 import csv
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
-    Participant, Graph, Experiment, User, Dataset, Choice
+    Participant, Graph, Experiment, User, Dataset, Choice, Role
 from quizApp import db
 import pdb
 import random
@@ -153,6 +153,9 @@ def get_students():
     heuristic_participant_id_list = []
     experiments = Experiment.query.all()
 
+    participant_role = Role(name="participant", description="Participant role")
+    experimenter_role = Role(name="experimenter", description="Experimenter role")
+
     with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
         participant_reader = csv.DictReader(participants_csv)
         for row in participant_reader:
@@ -168,8 +171,12 @@ def get_students():
     for pid in combined_id_list:
         participant = Participant(
             id=pid,
+            email=str(pid),
+            password=str(pid),
             opt_in=False,
-            progress="pre_test"
+            progress="pre_test",
+            active=True,
+            roles=[participant_role]
         )
         for exp in experiments:
             part_exp = ParticipantExperiment(
@@ -178,6 +185,13 @@ def get_students():
                 experiment_id=exp.id)
             db.session.add(part_exp)
         db.session.add(participant)
+
+    root = User(
+        email="experimenter@example.com",
+        password="foobar",
+        active=True,
+        roles=[experimenter_role]
+    )
 
     db.session.commit()
     return question_participant_id_list, heuristic_participant_id_list

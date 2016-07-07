@@ -22,6 +22,7 @@ class Production(Config):
     """
     DEBUG = False
     TESTING = False
+    #SECURITY_PASSWORD_HASH = "bcrypt"
 
 class Development(Config):
     """Configuration for development environments.
@@ -30,6 +31,7 @@ class Development(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"
     SECRET_KEY = "Foobar"
+    SECURITY_REGISTERABLE = True
 
 class Testing(Config):
     """Config used for testing.

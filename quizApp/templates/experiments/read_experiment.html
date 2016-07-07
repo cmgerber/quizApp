@@ -4,11 +4,11 @@
 {% endblock %}
 
 {% block content %}
-  {% if activity %}
+  {% if assignment %}
   <p>Press the start button to begin.</p>
 
-  <a href="{{ url_for('experiments.read_question', exp_id=experiment.id,
-  q_id=activity.id) }}" class="btn btn-primary">Start
+  <a href="{{ url_for('experiments.read_assignment', exp_id=experiment.id,
+  a_id=assignment.id) }}" class="btn btn-primary">Start
   </a>
   {% else %}
   <p>You are done with this experiment.</p>

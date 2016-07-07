@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, url_for, Markup, jsonify, abort
-from flask_login import login_required, current_user
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
         User, Assignment, ParticipantExperiment, Activity
 from quizApp.forms.experiments import CreateExperimentForm, \
         DeleteExperimentForm, MultipleChoiceForm, ScaleForm
+from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 import os
 from quizApp import db
@@ -21,8 +21,9 @@ def read_experiments():
     create_form = CreateExperimentForm()
     delete_form = DeleteExperimentForm()
 
-    return render_template("experiments/experiments.html", experiments=exps,
-                          create_form=create_form, delete_form=delete_form)
+    return render_template("experiments/read_experiments.html",
+                           experiments=exps, create_form=create_form,
+                           delete_form=delete_form)
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
 @login_required
@@ -42,16 +43,15 @@ def read_experiment(exp_id):
         abort(400)
 
     try:
-        activity = Activity.query.get(
-            part_exp.assignments[part_exp.progress].activity_id)
+        assignment = part_exp.assignments[part_exp.progress]
     except IndexError:
-        activity = None
+        assignment = None
 
     return render_template("experiments/read_experiment.html", experiment=exp,
-                          activity=activity)
+                          assignment=assignment)
 
 @experiments.route("", methods=["POST"])
-@login_required
+@roles_required("experimenter")
 def create_experiment():
     """Create an experiment and save it to the database.
     """
@@ -71,12 +71,11 @@ def create_experiment():
                            delete_form=DeleteExperimentForm())
 
 @experiments.route("/<int:exp_id>", methods=["DELETE"])
-@login_required
+@roles_required("experimenter")
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
     form = DeleteExperimentForm()
-    #TODO: auth
 
     if not form.validate():
         return jsonify({"success": 0})
@@ -92,7 +91,7 @@ def delete_experiment(exp_id):
     return jsonify({"success": 1, "id": request.json["id"]})
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
-@login_required
+@roles_required("experimenter")
 def update_experiment():
     """Modify an experiment's properties.
     """
@@ -117,11 +116,26 @@ def update_experiment():
 
     exp.save()
 
-@experiments.route('/<int:exp_id>/questions/<int:q_id>')
-@login_required
-def read_question(exp_id, q_id):
+@experiments.route('/<int:exp_id>/assignment/<int:a_id>')
+@roles_required("participant")
+def read_assignment(exp_id, a_id):
+    assignment = Assignment.query.get(a_id)
+
+    if not assignment:
+        abort(404)
+
+    activity = Activity.query.get(assignment.activity_id)
+
+    if not activity:
+        abort(404)
+
+    if "question" in activity.type:
+        return read_question(exp_id, activity)
+
+    abort(404)
+
+def read_question(exp_id, question):
     experiment = Experiment.query.get(exp_id)
-    question = Question.query.get(q_id)
     participant = current_user
     assignment = Assignment.query.filter_by(participant_id=participant.id).\
             filter_by(activity_id=question.id).\
@@ -145,15 +159,16 @@ def read_question(exp_id, q_id):
     assignment.choice_order = json.dumps(choice_order)
     assignment.save()
 
-    return render_template("experiments/show_question.html", exp=experiment,
+    return render_template("experiments/read_question.html", exp=experiment,
                            question=question, assignment=assignment,
                            mc_form=question_form)
 
-@experiments.route('/<int:exp_id>/questions/<int:q_id>', methods=["POST"])
-def update_question(exp_id, q_id):
-    """Record a user's answer to this question
+@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["POST"])
+def update_assignment(exp_id, a_id):
+    """Record a user's answer to this assignment
     """
-    question = Question.query.get(q_id)
+    assignment = Assignment.query.get(a_id)
+    question = Question.query.get(assignment.activity_id)
 
     if not question:
         abort(404)
@@ -201,9 +216,8 @@ def update_question(exp_id, q_id):
         next_assignment = None
 
     if next_assignment:
-        next_url = url_for("experiments.read_question", exp_id=exp_id,
-                           q_id=part_exp.assignments[part_exp.progress].\
-                           activity_id)
+        next_url = url_for("experiments.read_assignment", exp_id=exp_id,
+                           a_id=part_exp.assignments[part_exp.progress].id)
     else:
         next_url = url_for("experiments.donedone")
 
@@ -214,7 +228,7 @@ def update_question(exp_id, q_id):
         "next_url": next_url})
 
 @experiments.route("/<int:exp_id>/modification_form")
-@login_required
+@roles_required("experimenter")
 def experiment_modification_form_html(exp_id):
     """Get an HTML representation of a modification form for the given
     experiment.
@@ -235,10 +249,12 @@ def experiment_modification_form_html(exp_id):
 
 #Complete page
 @experiments.route('/donedone')
+@roles_required("participant")
 def donedone():
     return render_template('experiments/done.html')
 
 #Complete page
+@roles_required("participant")
 @experiments.route('/done')
 def done():
     questions = Question.query.join(StudentTest).\

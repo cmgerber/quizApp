@@ -1,13 +1,13 @@
 from flask import Flask
 from flask_wtf.csrf import CsrfProtect
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+from flask_security import Security, SQLAlchemyUserDatastore
 import os
 import config
 
-login_manager = LoginManager()
 db = SQLAlchemy()
 csrf = CsrfProtect()
+security = Security()
 
 def create_app(config_name, overrides=None):
     global login_manager
@@ -21,8 +21,11 @@ def create_app(config_name, overrides=None):
     print "Using config: " + config_name
 
     db.init_app(app)
-    login_manager.init_app(app)
     csrf.init_app(app)
+
+    from quizApp.models import User, Role
+    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    security.init_app(app, user_datastore)
 
     from quizApp.views.admin import admin
     from quizApp.views.core import core

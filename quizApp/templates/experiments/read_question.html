@@ -20,8 +20,8 @@ Quiz
 
 <div id='question'>
   <h3>{{ question.question }}</h3>
-  <form action="{{ url_for('experiments.update_question', exp_id=exp.id,
-        q_id=question.id)}}" method="post" id="question-submit-form">
+  <form action="{{ url_for('experiments.update_assignment', exp_id=exp.id,
+        a_id=assignment.id)}}" method="post" id="question-submit-form">
     {{ mc_form.answers() }}
     {% if question.needs_reflection %}
         <p>Why do you think this is the correct choice?</p>
