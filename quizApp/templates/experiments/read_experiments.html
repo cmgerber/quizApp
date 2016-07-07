@@ -4,6 +4,7 @@
 <link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
 <script src="{{ url_for('static', filename='js/moment.min.js')}}"></script>
 <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}
@@ -13,7 +14,6 @@ Experiment List
 {% import "experiments/experiment_macros.html" as exp_macros %}
 
 {% block content %}
-<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 <table class="table table-striped" id="exp_table">
   <thead>
     <tr>
@@ -32,10 +32,12 @@ Experiment List
       <td class="stop">{{exp.stop|datetime_format}}</td>
     </tr>
     {% endfor %}
-    <tr>
-      {{ exp_macros.create_row(create_form, url_for('experiments.create_experiment'),
-      "create-form") }}
-    </tr>
+    {% if current_user.has_role("experimenter") %}
+      <tr>
+        {{ exp_macros.create_row(create_form, url_for('experiments.create_experiment'),
+        "create-form") }}
+      </tr>
+    {% endif %}
   </tbody>
 </table>
 {% endblock %}

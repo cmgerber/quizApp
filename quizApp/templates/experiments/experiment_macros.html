@@ -1,5 +1,15 @@
 {% import 'macros.html' as macros %}
 
+{% macro experiment_row(exp) -%}
+<tr>
+  <td class="name">
+    <a href="{{ url_for('experiments.read_experiment', exp_id=exp.id) }}">{{exp.name}}</a>
+  </td>
+  <td class="start">{{exp.start|datetime_format}}</td>
+  <td class="stop">{{exp.stop|datetime_format}}</td>
+</tr>
+{%- endmacro %}
+
 {% macro create_row(form, action, id, name="", start="",
 stop="",submit="Create", class_="") -%}
 <form action="{{ action }}" id="{{ id }}" class="{{ class_ }}" method="post">

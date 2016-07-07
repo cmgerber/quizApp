@@ -8,11 +8,10 @@ from sqlalchemy.orm.exc import NoResultFound
 import os
 from quizApp import db
 import json
-import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
-@experiments.route('/', methods=["GET"])
+@experiments.route('', methods=["GET"])
 @login_required
 def read_experiments():
     """List experiments.
@@ -24,6 +23,26 @@ def read_experiments():
     return render_template("experiments/read_experiments.html",
                            experiments=exps, create_form=create_form,
                            delete_form=delete_form)
+
+@experiments.route("", methods=["POST"])
+@roles_required("experimenter")
+def create_experiment():
+    """Create an experiment and save it to the database.
+    """
+    form = CreateExperimentForm()
+    if not form.validate_on_submit():
+        abort(400)
+
+    exp = Experiment(
+        name=form.name.data,
+        start=form.start.data,
+        stop=form.stop.data,
+        created=datetime.now())
+
+    exp.save()
+
+    return render_template("experiments/create_experiment_response.html", exp=exp,
+                           delete_form=DeleteExperimentForm())
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
 @login_required
@@ -50,25 +69,6 @@ def read_experiment(exp_id):
     return render_template("experiments/read_experiment.html", experiment=exp,
                           assignment=assignment)
 
-@experiments.route("", methods=["POST"])
-@roles_required("experimenter")
-def create_experiment():
-    """Create an experiment and save it to the database.
-    """
-    form = CreateExperimentForm()
-    if not form.validate_on_submit():
-        abort(400)
-
-    exp = Experiment(
-        name=form.name.data,
-        start=form.start.data,
-        stop=form.stop.data,
-        created=datetime.now())
-
-    exp.save()
-
-    return render_template("experiments/create_experiment_response.html", exp=exp,
-                           delete_form=DeleteExperimentForm())
 
 @experiments.route("/<int:exp_id>", methods=["DELETE"])
 @roles_required("experimenter")
