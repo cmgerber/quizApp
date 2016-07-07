@@ -8,6 +8,8 @@ from sqlalchemy.orm.exc import NoResultFound
 import os
 from quizApp import db
 import json
+from datetime import datetime
+import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
@@ -59,15 +61,18 @@ def read_experiment(exp_id):
                 filter_by(participant_id=current_user.id).\
                 filter_by(experiment_id=exp_id).one()
     except NoResultFound:
-        abort(400)
+        part_exp = None
 
     try:
         assignment = part_exp.assignments[part_exp.progress]
-    except IndexError:
+    except (IndexError, AttributeError):
         assignment = None
 
+    update_experiment_form = CreateExperimentForm()
+
     return render_template("experiments/read_experiment.html", experiment=exp,
-                          assignment=assignment)
+                           assignment=assignment,
+                           update_experiment_form=update_experiment_form)
 
 
 @experiments.route("/<int:exp_id>", methods=["DELETE"])
@@ -92,29 +97,28 @@ def delete_experiment(exp_id):
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
 @roles_required("experimenter")
-def update_experiment():
+def update_experiment(exp_id):
     """Modify an experiment's properties.
     """
-    try:
-        name = request.args["name"]
-        start = request.args["start"]
-        stop = request.args["stop"]
-    except KeyError:
-        return 000;
+    pdb.set_trace()
+
+    experiment_update_form = CreateExperimentForm()
+
+    if not experiment_update_form.validate():
+        abort(400)
 
     try:
-        exp = Experiment.query.filter_by(name=name).one()
-    except NoResultFoiund:
-        return 000
+        exp = Experiment.query.get(exp_id)
+    except NoResultFound:
+        abort(404)
 
-    if name:
-        exp.name = name
-    if start:
-        exp.start = start
-    if stop:
-        exp.stop = stop
+    exp.name = experiment_update_form.name.data
+    exp.start = experiment_update_form.start.data
+    exp.stop = experiment_update_form.stop.data
 
     exp.save()
+
+    return jsonify({"success": 1})
 
 @experiments.route('/<int:exp_id>/assignment/<int:a_id>')
 @roles_required("participant")
@@ -226,24 +230,6 @@ def update_assignment(exp_id, a_id):
     db.session.commit()
     return jsonify({"success": 1, "explanation": question.explanation,
         "next_url": next_url})
-
-@experiments.route("/<int:exp_id>/modification_form")
-@roles_required("experimenter")
-def experiment_modification_form_html(exp_id):
-    """Get an HTML representation of a modification form for the given
-    experiment.
-
-    I'm not really happy with this, but I can't think of another method that
-    minimizes repitition of code. I am open to suggestions...
-    """
-    exp = Experiment.query.get(exp_id)
-    modify_form = CreateExperimentForm()
-
-    if not exp:
-        abort(404)
-
-    return render_template("experiments/experiment_modification_form.html", exp=exp,
-                   modify_form=modify_form)
 
 #TODO: done vs donedone
 

@@ -18,8 +18,6 @@ from quizApp import db
 import pdb
 import random
 
-app = create_app("development")
-
 def clear_db():
     #https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
     inspector = reflection.Inspector.from_engine(db.engine)
@@ -66,8 +64,6 @@ def get_experiments():
     db.session.add(test)
     db.session.add(post_test)
     db.session.commit()
-
-
 
 DATA_ROOT = "quizApp/data/"
 
@@ -223,6 +219,8 @@ def get_students():
         roles=[experimenter_role]
     )
 
+    db.session.add(root)
+
     db.session.commit()
     return question_participant_id_list, heuristic_participant_id_list
 
@@ -345,7 +343,8 @@ def create_assignments(participants_question, participants_heuristic):
         create_participant_data(participants_heuristic,
                                 participant_question_list, test, 'heuristic')
 
-if __name__ == "__main__":
+def setup_db():
+    app = create_app("development")
     with app.app_context():
         clear_db()
         get_experiments()
@@ -353,3 +352,6 @@ if __name__ == "__main__":
         get_choices()
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
+
+if __name__ == "__main__":
+    setup_db()
