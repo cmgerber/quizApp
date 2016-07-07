@@ -4,6 +4,9 @@
 """
 
 from quizApp import create_app
+from sqlalchemy.engine import reflection
+from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
+        ForeignKeyConstraint
 from sqlalchemy import and_
 from datetime import datetime, timedelta
 import os
@@ -17,35 +20,62 @@ import random
 
 app = create_app("development")
 
-with app.app_context():
-    db.drop_all()
+def clear_db():
+    #https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
+    inspector = reflection.Inspector.from_engine(db.engine)
+    metadata = MetaData()
+    tbs = []
+    all_fks = []
+
+    for table_name in inspector.get_table_names():
+        fks = []
+        for fk in inspector.get_foreign_keys(table_name):
+            if not fk['name']:
+                continue
+            fks.append(ForeignKeyConstraint((),(), name=fk['name']))
+        t = Table(table_name, metadata, *fks)
+        tbs.append(t)
+        all_fks.extend(fks)
+
+    conn = db.engine.connect()
+    trans = conn.begin()
+    for fkc in all_fks:
+        conn.execute(DropConstraint(fkc))
+
+    for table in tbs:
+        conn.execute(DropTable(table))
+    trans.commit()
+
     db.create_all()
+
+def get_experiments():
+    pre_test = Experiment(name="pre_test",
+                          start=datetime.now(),
+                          stop=datetime.now() + timedelta(days=3))
+
+    test = Experiment(name="test",
+                      start=datetime.now(),
+                      stop=datetime.now() + timedelta(days=5))
+
+    post_test = Experiment(name="post_test",
+                           start=datetime.now() + timedelta(days=-3),
+                           stop=datetime.now())
+
+
+    db.session.add(pre_test)
+    db.session.add(test)
+    db.session.add(post_test)
+    db.session.commit()
+
+
+
+DATA_ROOT = "quizApp/data/"
 
 question_type_mapping = {"multiple_choice": "question_mc_singleselect",
                          "heuristic": "question_mc_singleselect_scale",
                          "rating": "question_mc_singleselect_scale",
                          "pre_test": "question"}
 
-pre_test = Experiment(name="pre_test",
-                      start=datetime.now(),
-                      stop=datetime.now() + timedelta(days=3))
-
-test = Experiment(name="test",
-                  start=datetime.now(),
-                  stop=datetime.now() + timedelta(days=5))
-
-post_test = Experiment(name="post_test",
-                       start=datetime.now() + timedelta(days=-3),
-                       stop=datetime.now())
-
-
-with app.app_context():
-    db.session.add(pre_test)
-    db.session.add(test)
-    db.session.add(post_test)
-    db.session.commit()
-
-DATA_ROOT = "quizApp/data/"
 
 def get_questions():
     with open(os.path.join(DATA_ROOT, "questions.csv")) as questions_csv:
@@ -303,6 +333,8 @@ def create_assignments(participants_question, participants_heuristic):
 
 if __name__ == "__main__":
     with app.app_context():
+        clear_db()
+        get_experiments()
         get_questions()
         get_choices()
         questions, heuristics = get_students()

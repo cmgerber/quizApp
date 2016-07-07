@@ -38,6 +38,7 @@ class TextAreaWidget(Input):
                           self.html_params(name=field.name, **kwargs))
 
 class LikertWidget(object):
+    input_type = "likert"
     def __call__(self, field, **kwargs):
         # Likert widget from Pete Fectau's example
         output = "<ul class='likert'>\n"
