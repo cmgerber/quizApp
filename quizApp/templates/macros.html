@@ -9,17 +9,27 @@
         {{ macros.render_field(form.email, placeholder='Input email', type='email') }}
 #}
 
-{% macro render_field(field, label_visible=true) -%}
+{% macro render_field(field) -%}
 	{% if field.type == 'BooleanField' %}
-	    {{ render_checkbox_field(f) }}
+    {{ render_checkbox_field(field, **kwargs) }}
 	{% elif field.type == 'RadioField' %}
-	    {{ render_radio_field(f) }}
-	{% elif field.type == 'StringField' %}
-	    {{ render_field(f) }}
+    {% if field.widget.input_type == "likert" %}
+      {{ field(**kwargs) }}
+    {% else %}
+      {{ render_radio_field(field, **kwargs) }}
+    {% endif %}
+  {% elif field.type == 'SubmitField' %}
+    {{ render_submit_field(field, **kwargs) }}
+  {% elif field.type == 'StringField' %}
+    {{ render_string_field(field, **kwargs) }}
 	{% endif %}
 {% endmacro %}
 
-{% macro render_string_field -%}
+{% macro render_submit_field(field) -%}
+  {{ field(class_=kwargs.pop('class_', 'btn-primary') + ' btn') }}
+{%- endmacro %}
+
+{% macro render_string_field(field) -%}
     <div class="form-group {% if field.errors %}has-error{% endif %} {{ kwargs.pop('class_', '') }}">
         {% if field.type != 'HiddenField' and field.type !='CSRFTokenField' and label_visible %}
             <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
@@ -85,23 +95,16 @@
         action_text - text of submit button
         class_ - sets a class for form
     #}
-{% macro render_form(form, action_url='', action_text='Submit', class_='', btn_class='btn btn-default') -%}
-
-    <form method="POST" action="{{ action_url }}" role="form" class="{{ class_ }}">
-        {{ form.hidden_tag() if form.hidden_tag }}
-        {% if caller %}
-            {{ caller() }}
-        {% else %}
-            {% for f in form %}
-                {% if f.type == 'BooleanField' %}
-                    {{ render_checkbox_field(f) }}
-                {% elif f.type == 'RadioField' %}
-                    {{ render_radio_field(f) }}
-                {% else %}
-                    {{ render_field(f) }}
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-        <button type="submit" class="{{ btn_class }}">{{ action_text }} </button>
-    </form>
+{% macro render_form(form, action_url='', method='POST', action_text='Submit',
+      class_='') -%}
+  <form method="{{ method }}" action="{{ action_url }}" role="form" class="{{ class_ }}">
+    {{ form.hidden_tag() if form.hidden_tag }}
+    {% if caller %}
+        {{ caller() }}
+    {% else %}
+        {% for f in form %}
+            {{ render_field(f) }}
+        {% endfor %}
+    {% endif %}
+</form>
 {%- endmacro %}

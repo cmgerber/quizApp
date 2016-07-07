@@ -21,6 +21,7 @@ import random
 app = create_app("development")
 
 def clear_db():
+    #https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
     inspector = reflection.Inspector.from_engine(db.engine)
     metadata = MetaData()
     tbs = []
