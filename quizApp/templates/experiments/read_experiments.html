@@ -20,13 +20,17 @@ Experiment List
       <th class="col-md-3">Name</th>
       <th class="col-md-2">Start time</th>
       <th class="col-md-2">End time</th>
-      <th class="col-md-1">Modify</th>
-      <th class="col-md=1">Delete</th>
     </tr>
   </thead>
   <tbody>
     {% for exp in experiments %}
-    {{ exp_macros.experiment_row(exp, delete_form) }}
+    <tr>
+      <td class="name">
+        <a href="{{ url_for('experiments.read_experiment', exp_id=exp.id) }}">{{exp.name}}</a>
+      </td>
+      <td class="start">{{exp.start|datetime_format}}</td>
+      <td class="stop">{{exp.stop|datetime_format}}</td>
+    </tr>
     {% endfor %}
     <tr>
       {{ exp_macros.create_row(create_form, url_for('experiments.create_experiment'),
