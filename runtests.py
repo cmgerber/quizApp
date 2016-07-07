@@ -7,6 +7,8 @@ import sys
 def runtests():
     os.environ["APP_CONFIG"] = "testing"
     return pytest.main(["--cov=quizApp",
+                        "--flake8",
+                        "--pylint",
                         "tests/"] + sys.argv)
 
 if __name__ == "__main__":

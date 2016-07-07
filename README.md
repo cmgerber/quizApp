@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/PlasmaSheep/quizApp/badge.svg?branch=test)](https://coveralls.io/github/PlasmaSheep/quizApp?branch=test)
+
 Platform for asking questions based on visualizations.
 
 ## Installation
