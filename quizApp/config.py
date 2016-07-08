@@ -16,12 +16,14 @@ class Config(object):
     SECRET_KEY = "---"
     WTF_CSRF_METHODS=["POST","PUT","PATCH","DELETE"]
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    EXPERIMENTS_PLACEHOLDER_GRAPH = "missing.png"
 
 class Production(Config):
     """Configuration for production environments.
     """
     DEBUG = False
     TESTING = False
+    #SECURITY_PASSWORD_HASH = "bcrypt"
 
 class Development(Config):
     """Configuration for development environments.
@@ -30,6 +32,8 @@ class Development(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"
     SECRET_KEY = "Foobar"
+    SECURITY_REGISTERABLE = True
+    SECURITY_SEND_REGISTER_EMAIL = False
 
 class Testing(Config):
     """Config used for testing.

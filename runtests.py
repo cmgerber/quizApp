@@ -9,7 +9,8 @@ def runtests():
     return pytest.main(["--cov=quizApp",
                         "--flake8",
                         "--pylint",
-                        "tests/"] + sys.argv)
+                        "--ignore=venv",
+                        "./"] + sys.argv)
 
 if __name__ == "__main__":
     exit(runtests())

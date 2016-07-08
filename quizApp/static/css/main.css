@@ -6,8 +6,10 @@
     src: local('Raleway'), local('Raleway-Regular'), url(/static/fonts/Raleway-Regular.ttf) format('truetype');
 }
 
-img {
-    width: 100%;
+.graph-container img {
+    max-width: 100%;
+    margin: auto;
+    display: block;
 }
 
 
@@ -248,4 +250,8 @@ body {
 
 ul#answers {
   list-style-type: none;
+}
+
+#explanation-container {
+  display: none;
 }

@@ -15,7 +15,7 @@ things.
 
 1. Set the `APP_CONFIG` environment variable to `production`
 
-2. Copy the `instance/config.py.ex` file to `instance/config.py` and modify
+2. Copy the `instance/instance_config.py.ex` file to `instance/instance_config.py` and modify
     the `SECRET_KEY` and `SQLALCHEMY_DATABASE_URI` to suitable values.
 
 ## Running
