@@ -1,10 +1,17 @@
 #!/usr/bin/env python
-import pytest
+"""Run py.test on this project.
+"""
+
 import os
 import sys
 
+import pytest
+
 
 def runtests():
+    """Set the app config to testing and run pytest, passing along command
+    line args.
+    """
     os.environ["APP_CONFIG"] = "testing"
     return pytest.main(["--cov=quizApp",
                         "--flake8",

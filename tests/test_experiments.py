@@ -1,9 +1,14 @@
-from quizApp.models import Experiment, Activity
-import json
+"""Test the Experiments blueprint.
+"""
+
+from quizApp.models import Experiment
 
 from tests import conftest
 
+
 def test_experiments(client):
+    """Make sure that the blueprint is inaccessible to users not logged in.
+    """
     response = client.get("/experiments")
     assert response.status_code == 401
 
@@ -12,9 +17,6 @@ def test_experiments(client):
 
     response = client.get("/experiments/" + str(exp.id))
     assert response.status_code == 401
-
-    #response = client.put("/experiments/" + str(exp.id))
-    #assert response.status_code == 401
 
     response = client.delete("/experiments/" + str(exp.id))
     assert response.status_code == 401

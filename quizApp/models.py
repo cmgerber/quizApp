@@ -4,11 +4,14 @@
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
 
+
 class Base(db.Model):
     """All models have an identical id field.
     """
     __abstract__ = True
+
     id = db.Column(db.Integer, primary_key=True)
+
     def save(self, commit=True):
         """Save this model to the database.
 
@@ -25,9 +28,13 @@ roles_users = db.Table('roles_users',
                        db.Column('role_id', db.Integer(),
                                  db.ForeignKey('role.id')))
 
+
 class Role(Base, RoleMixin):
+    """A Role describes what a User can and can't do.
+    """
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
+
 
 class User(Base, UserMixin):
     """A User is used for authentication.
@@ -46,13 +53,10 @@ class User(Base, UserMixin):
     roles = db.relationship("Role", secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
-
-    #authenticated = db.Column(db.Boolean, default=False)
     type = db.Column(db.String(50))
-    #name = db.Column(db.String(50))
 
     __mapper_args__ = {
-        'polymorphic_identity':'user',
+        'polymorphic_identity': 'user',
         'polymorphic_on': type
     }
 
@@ -62,6 +66,7 @@ participant_dataset_table = db.Table(
     db.Column('participant_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('dataset_id', db.Integer, db.ForeignKey('dataset.id'))
 )
+
 
 class Participant(User):
     """A User that takes Experiments.
@@ -77,7 +82,6 @@ class Participant(User):
     """
 
     opt_in = db.Column(db.Boolean)
-    progress = db.Column(db.String(50)) #TODO: remove this, just transitional
 
     designed_datasets = db.relationship("Dataset",
                                         secondary=participant_dataset_table)
@@ -87,6 +91,7 @@ class Participant(User):
     __mapper_args__ = {
         'polymorphic_identity': 'participant',
     }
+
 
 class ParticipantExperiment(Base):
     """An Association Object that relates a User to an Experiment and also
@@ -110,12 +115,14 @@ class ParticipantExperiment(Base):
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
     assignments = db.relationship("Assignment")
 
+
 assignment_graph_table = db.Table(
     "assignment_graph", db.metadata,
     db.Column("assignment_id", db.Integer,
               db.ForeignKey("assignment.id")),
     db.Column("graph_id", db.Integer, db.ForeignKey("graph.id"))
 )
+
 
 class Assignment(Base):
     """For a given Activity, determine which Graphs, if any, a particular
@@ -127,10 +134,10 @@ class Assignment(Base):
                          otherwise
         reflection - string: A reflection on why this participant answered this
             question in this way.
-        choice_order - string: A JSON object in string form that represents the order
-            of choices that this participant was presented with when answering
-            this question, e.g. {[1, 50, 9, 3]} where the numbers are the IDs
-            of those choices.
+        choice_order - string: A JSON object in string form that represents the
+            order of choices that this participant was presented with when
+            answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
+            the IDs of those choices.
 
     Relationships:
         M2M with Graph
@@ -154,11 +161,13 @@ class Assignment(Base):
         db.Integer,
         db.ForeignKey("participant_experiment.id"))
 
+
 activity_experiment_table = db.Table(
     "activity_experiment", db.metadata,
     db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
     db.Column('experiment_id', db.Integer, db.ForeignKey('experiment.id'))
 )
+
 
 class Activity(Base):
     """An Activity is essentially a screen that a User sees while doing an
@@ -185,7 +194,7 @@ class Activity(Base):
     assignments = db.relationship("Assignment")
 
     __mapper_args__ = {
-        'polymorphic_identity':'activity',
+        'polymorphic_identity': 'activity',
         'polymorphic_on': type
     }
 
@@ -195,6 +204,7 @@ question_dataset_table = db.Table(
     db.Column("dataset_id", db.Integer, db.ForeignKey("dataset.id"))
 )
 
+
 class Question(Activity):
     """A Question is related to one or more Graphs and has one or more Choices,
     and is a part of one or more Experiments.
@@ -203,8 +213,8 @@ class Question(Activity):
         question - string: This question as a string
         explantion - string: The explanation for why the correct answer is
             correct.
-        needs_reflection - bool: True if the participant should be asked why they
-            picked what they did after they answer the question.
+        needs_reflection - bool: True if the participant should be asked why
+            they picked what they did after they answer the question.
         duration - int: If nonzero, how long (in milliseconds) to display the
             graphs before hiding them again.
 
@@ -221,31 +231,35 @@ class Question(Activity):
     duration = db.Column(db.Integer)
 
     __mapper_args__ = {
-        'polymorphic_identity':'question',
+        'polymorphic_identity': 'question',
     }
+
 
 class MultipleChoiceQuestion(Question):
     """A MultipleChoiceQuestion has one or more choices that are correct.
     """
     __mapper_args__ = {
-        'polymorphic_identity':'question_mc',
+        'polymorphic_identity': 'question_mc',
     }
+
 
 class SingleSelectQuestion(MultipleChoiceQuestion):
     """A SingleSelectQuestion allows only one Choice to be selected.
     """
 
     __mapper_args__ = {
-        'polymorphic_identity':'question_mc_singleselect',
+        'polymorphic_identity': 'question_mc_singleselect',
     }
+
 
 class MultiSelectQuestion(MultipleChoiceQuestion):
     """A MultiSelectQuestion allows any number of Choices to be selected.
     """
 
     __mapper_args__ = {
-        'polymorphic_identity':'question_mc_multiselect',
+        'polymorphic_identity': 'question_mc_multiselect',
     }
+
 
 class ScaleQuestion(SingleSelectQuestion):
     """A ScaleQuestion is like a SingleSelectQuestion, but it displays
@@ -254,16 +268,18 @@ class ScaleQuestion(SingleSelectQuestion):
     """
 
     __mapper_args__ = {
-        'polymorphic_identity':'question_mc_singleselect_scale',
+        'polymorphic_identity': 'question_mc_singleselect_scale',
     }
+
 
 class FreeAnswerQuestion(Question):
     """A FreeAnswerQuestion allows a Participant to enter an arbitrary answer.
     """
 
     __mapper_args__ = {
-        'polymorphic_identity':'question_freeanswer',
+        'polymorphic_identity': 'question_freeanswer',
     }
+
 
 class Choice(Base):
     """ A Choice is a string that is a possible answer for a Question.
@@ -284,6 +300,7 @@ class Choice(Base):
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     assignments = db.relationship("Assignment")
 
+
 class Graph(Base):
     """A Graph is an image file located on the server that may be shown in
     conjunction with a Question.
@@ -301,6 +318,7 @@ class Graph(Base):
         "Assignment",
         secondary=assignment_graph_table)
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
+
 
 class Experiment(Base):
     """An Experiment contains a list of Activities.

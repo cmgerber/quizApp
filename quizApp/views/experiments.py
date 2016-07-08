@@ -1,19 +1,23 @@
-from flask import Blueprint, render_template, url_for, Markup, jsonify, \
-        abort, current_app
-from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
-        User, Assignment, ParticipantExperiment, Activity
-from quizApp.forms.experiments import CreateExperimentForm, \
-        DeleteExperimentForm, MultipleChoiceForm, ScaleForm
-from flask_security import login_required, current_user, roles_required
-from sqlalchemy.orm.exc import NoResultFound
+"""Views that handle CRUD for experiments and rendering questions for
+participants.
+"""
 import os
-from quizApp import db
-from quizApp.config import basedir
 import json
 from datetime import datetime
-import pdb
+
+from flask import Blueprint, render_template, url_for, Markup, jsonify, \
+        abort, current_app, request
+from flask_security import login_required, current_user, roles_required
+from sqlalchemy.orm.exc import NoResultFound
+
+from quizApp.models import Question, Choice, Experiment, \
+        Assignment, ParticipantExperiment, Activity
+from quizApp.forms.experiments import CreateExperimentForm, \
+        DeleteExperimentForm, MultipleChoiceForm, ScaleForm
+from quizApp import db
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
+
 
 @experiments.route('', methods=["GET"])
 @login_required
@@ -27,6 +31,7 @@ def read_experiments():
     return render_template("experiments/read_experiments.html",
                            experiments=exps, create_form=create_form,
                            delete_form=delete_form)
+
 
 @experiments.route("", methods=["POST"])
 @roles_required("experimenter")
@@ -45,8 +50,9 @@ def create_experiment():
 
     exp.save()
 
-    return render_template("experiments/create_experiment_response.html", exp=exp,
-                           delete_form=DeleteExperimentForm())
+    return render_template("experiments/create_experiment_response.html",
+                           exp=exp, delete_form=DeleteExperimentForm())
+
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
 @login_required
@@ -97,6 +103,7 @@ def delete_experiment(exp_id):
 
     return jsonify({"success": 1, "id": request.json["id"]})
 
+
 @experiments.route("/<int:exp_id>", methods=["PUT"])
 @roles_required("experimenter")
 def update_experiment(exp_id):
@@ -121,9 +128,13 @@ def update_experiment(exp_id):
 
     return jsonify({"success": 1})
 
+
 @experiments.route('/<int:exp_id>/assignment/<int:a_id>')
 @roles_required("participant")
 def read_assignment(exp_id, a_id):
+    """Given an assignment ID, retrieve it from the database and display it to
+    the user.
+    """
     assignment = Assignment.query.get(a_id)
 
     if not assignment:
@@ -139,12 +150,24 @@ def read_assignment(exp_id, a_id):
 
     abort(404)
 
+
+def get_question_form(question):
+    """Given a question type, return the proper form.
+    """
+    if "scale" in question.type:
+        return ScaleForm()
+    else:
+        return MultipleChoiceForm()
+
+
 def read_question(exp_id, question):
+    """Retrieve a question from the database and render its template.
+    """
     experiment = Experiment.query.get(exp_id)
     participant = current_user
     assignment = Assignment.query.filter_by(participant_id=participant.id).\
-            filter_by(activity_id=question.id).\
-            filter_by(experiment_id=experiment.id).one()
+        filter_by(activity_id=question.id).\
+        filter_by(experiment_id=experiment.id).one()
 
     if assignment.choice_id:
         abort(400)
@@ -152,13 +175,8 @@ def read_question(exp_id, question):
     if not experiment or not question:
         abort(404)
 
-    if "scale" in question.type:
-        question_form = ScaleForm()
-    else:
-        question_form = MultipleChoiceForm()
-
-    question_form.answers.choices = [(str(c.id), c.choice) for c in
-                               question.choices]
+    question_form = get_question_form(question)
+    question_form.populate_answers(question.choices)
 
     choice_order = [c.id for c in question.choices]
     assignment.choice_order = json.dumps(choice_order)
@@ -167,6 +185,7 @@ def read_question(exp_id, question):
     return render_template("experiments/read_question.html", exp=experiment,
                            question=question, assignment=assignment,
                            mc_form=question_form)
+
 
 @experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["POST"])
 def update_assignment(exp_id, a_id):
@@ -178,17 +197,12 @@ def update_assignment(exp_id, a_id):
     if not question:
         abort(404)
 
-    if "question" not in activity:
+    if "question" not in assignment.activity.type:
         # Pass for now
         return jsonify({"success": 1})
 
-    #TODO: factor this code out
-    if "scale" in question.type:
-        question_form = ScaleForm()
-    else:
-        question_form = MultipleChoiceForm()
-    question_form.answers.choices = [(str(c.id), c.choice) for c in
-                               question.choices]
+    question_form = get_question_form(question)
+    question_form.populate_answers(question.choices)
 
     if not question_form.validate():
         return jsonify({"success": 0})
@@ -214,7 +228,7 @@ def update_assignment(exp_id, a_id):
         # This choice does not exist
         abort(400)
 
-    #TODO: sqlalchemy validators
+    # TODO: sqlalchemy validators
     assignment.choice_id = selected_choice.id
     assignment.reflection = question_form.reflection.data
     part_exp.progress += 1
@@ -234,34 +248,36 @@ def update_assignment(exp_id, a_id):
     db.session.add(part_exp)
     db.session.commit()
     return jsonify({"success": 1, "explanation": question.explanation,
-        "next_url": next_url})
+                    "next_url": next_url})
 
-#TODO: done vs donedone
 
-#Complete page
 @experiments.route('/donedone')
 @roles_required("participant")
 def donedone():
+    """Render a final done page.
+    """
     return render_template('experiments/done.html')
 
-#Complete page
+
 @roles_required("participant")
 @experiments.route('/done')
 def done():
-    questions = Question.query.join(StudentTest).\
-            filter(StudentTest.student_id == flask.session['userid']).\
-            all()
+    """Collect some feedback before finalizing the experiment.
+    """
+    pass
 
-    question_types = [q.question_type for q in questions]
+    # questions = Question.query.join(StudentTest).\
+    #         filter(StudentTest.student_id == flask.session['userid']).\
+    #         all()
 
-    #TODO: enum
-    if 'multiple_choice' in question_types:
-        return render_template('experiments/doneA.html')
-    elif 'heuristic' in question_types:
-        return render_template('experiments/doneB.html')
-    else:
-        #TODO: proper logging
-        print "Unknown question types"
+    # question_types = [q.question_type for q in questions]
+
+    # if 'multiple_choice' in question_types:
+    #     return render_template('experiments/doneA.html')
+    # elif 'heuristic' in question_types:
+    #     return render_template('experiments/doneB.html')
+    # else:
+    #     print "Unknown question types"
 
 
 @experiments.app_template_filter("datetime_format")
@@ -269,6 +285,7 @@ def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
     """Format the value (a datetime) according to fmt with strftime.
     """
     return value.strftime(fmt)
+
 
 @experiments.app_template_filter("graph_to_img")
 def graph_to_img_filter(graph):
@@ -282,4 +299,4 @@ def graph_to_img_filter(graph):
         filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
 
     graph_path = url_for('static', filename=os.path.join("graphs", filename))
-    return Markup("<img src='" + graph_path + "' \>")
+    return Markup("<img src='" + graph_path + "'>")

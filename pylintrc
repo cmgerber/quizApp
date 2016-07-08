@@ -1,0 +1,9 @@
+[MASTER]
+ignore=populate_db.py
+
+[TYPECHECK]
+generated-members=query,delete,commit,add
+ignored-modules=flask_sqlalchemy
+
+[MESSAGES CONTROL]
+disable=too-few-public-methods,invalid-name
