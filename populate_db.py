@@ -270,6 +270,8 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     participant_experiment_id=participant_experiment.id,
                     graphs=[Graph.query.get(graph_id)])
 
+                experiments[test].activities.append(
+                    Question.query.get(question_id))
                 db.session.add(assignment)
 
             else: #training
@@ -292,6 +294,9 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                             participant_experiment_id=participant_experiment.id,
                             graphs=[Graph.query.get(graph_id)])
 
+                        experiments[test].activities.append(
+                            Question.query.get(question_id))
+
                         db.session.add(assignment)
                 else:
                     #multiple choice questions
@@ -309,6 +314,9 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                             participant_experiment_id=participant_experiment.id,
                             graphs=[Graph.query.get(graph_id)])
 
+                        experiments[test].activities.append(
+                            Question.query.get(question_id))
+
                         db.session.add(assignment)
 
                 #only have rating question for training
@@ -325,6 +333,9 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     experiment_id=experiments[test].id,
                     participant_experiment_id=participant_experiment.id,
                     graphs=[Graph.query.get(graph_id)])
+
+                experiments[test].activities.append(
+                    Question.query.get(question_id))
 
                 db.session.add(assignment)
 

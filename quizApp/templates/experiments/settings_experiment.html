@@ -1,0 +1,43 @@
+{% extends 'header.html' %}
+{% import "experiments/experiment_macros.html" as exp_macros %}
+{% import "macros.html" as macros %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/moment.min.js')}}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}{{ experiment.name }} - Settings{% endblock %}
+
+{% block content %}
+<h3>General settings</h2>
+<form action="{{ url_for('experiments.update_experiment',
+exp_id=experiment.id) }}" method="put" id="create-form">
+  {{ macros.render_field(update_experiment_form.name, value=experiment.name) }}
+  {{ macros.render_field(update_experiment_form.start, value=experiment.start) }}
+  {{ macros.render_field(update_experiment_form.stop, value=experiment.stop) }}
+  {{ macros.render_field(update_experiment_form.submit, value="Save",
+  class_="btn-success") }}
+</form>
+
+<h3>Activities in this experiment</h3>
+<form action="{{ url_for('experiments.update_experiment_activities',
+  exp_id=experiment.id) }}" method="put" id="activity-remove-form">
+{{ exp_macros.activity_table(remove_activities_form, remove_activities_mapping) }}
+{{ macros.render_field(remove_activities_form.submit,
+value="Remove from experiment", class_="btn-danger") }}
+</form>
+
+<h3>Activities not in this experiment</h3>
+<form action="{{ url_for('experiments.update_experiment_activities',
+  exp_id=experiment.id) }}" method="put" id="activity-add-form">
+{{ exp_macros.activity_table(add_activities_form, add_activities_mapping) }}
+{{ macros.render_field(add_activities_form.submit,
+value="Add to experiment") }}
+</form>
+<h4>Delete experiment</h4>
+<p>Delete stuff goes here...</p>
+{% endblock %}

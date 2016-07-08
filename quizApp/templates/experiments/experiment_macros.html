@@ -20,3 +20,46 @@ stop="",submit="Create", class_="") -%}
   <td></td>
 </form>
 {%- endmacro %}
+
+{% import "macros.html" as macros %}
+
+{% macro activity_table(form, mapping) %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Datasets</th>
+      <th>Text</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for activity_field in form.activities %}
+    {{ activity_row(mapping[activity_field.data], activity_field) }}
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{% macro activity_row(activity, field) %}
+  <tr>
+    <td>{{ activity.type }}</td>
+    <td>
+      {% if activity.datasets %}
+      {% for dataset in activity.datasets %}
+      {{ dataset.id }}
+      {% endfor %}
+      {% else %}
+      -
+      {% endif %}
+    </td>
+    <td>
+      {% if "question" in activity.type %}
+      {{ activity.question }}
+      {% else %}
+      -
+      {% endif %}
+    </td>
+    <td>{{ field }}</td>
+  </tr>
+{% endmacro %}
