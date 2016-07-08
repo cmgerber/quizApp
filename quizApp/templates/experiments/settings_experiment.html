@@ -22,7 +22,7 @@ exp_id=experiment.id) }}" method="put" id="create-form">
   {{ macros.render_field(update_experiment_form.submit, value="Save",
   class_="btn-success") }}
 </form>
-
+{#
 <h3>Activities in this experiment</h3>
 <form action="{{ url_for('experiments.update_experiment_activities',
   exp_id=experiment.id) }}" method="put" id="activity-remove-form">
@@ -38,6 +38,7 @@ value="Remove from experiment", class_="btn-danger") }}
 {{ macros.render_field(add_activities_form.submit,
 value="Add to experiment") }}
 </form>
+#}
 <h4>Delete experiment</h4>
 <p>Delete stuff goes here...</p>
 {% endblock %}
