@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, url_for, Markup, jsonify, abort
+from flask import Blueprint, render_template, url_for, Markup, jsonify, \
+        abort, current_app
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
         User, Assignment, ParticipantExperiment, Activity
 from quizApp.forms.experiments import CreateExperimentForm, \
@@ -7,6 +8,7 @@ from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 import os
 from quizApp import db
+from quizApp.config import basedir
 import json
 from datetime import datetime
 import pdb
@@ -100,7 +102,6 @@ def delete_experiment(exp_id):
 def update_experiment(exp_id):
     """Modify an experiment's properties.
     """
-    pdb.set_trace()
 
     experiment_update_form = CreateExperimentForm()
 
@@ -269,7 +270,12 @@ def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
 def graph_to_img_filter(graph):
     """Given a graph, return html to display it.
     """
-    graph_path = url_for('static', filename=os.path.join("graphs/",
-                                                         graph.filename))
+    absolute_path = os.path.join(current_app.static_folder, "graphs/",
+                                 graph.filename)
+    if os.path.isfile(absolute_path):
+        filename = graph.filename
+    else:
+        filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
 
+    graph_path = url_for('static', filename=os.path.join("graphs", filename))
     return Markup("<img src='" + graph_path + "' \>")

@@ -16,6 +16,7 @@ class Config(object):
     SECRET_KEY = "---"
     WTF_CSRF_METHODS=["POST","PUT","PATCH","DELETE"]
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    EXPERIMENTS_PLACEHOLDER_GRAPH = "missing.png"
 
 class Production(Config):
     """Configuration for production environments.
