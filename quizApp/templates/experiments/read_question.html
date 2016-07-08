@@ -13,10 +13,8 @@ Quiz
 
 {% block content %}
   {% for graph in assignment.graphs %}
-  <div class="row">
-    <div class='col-sm-12 col-md-12'>
+  <div class="row graph-container">
       {{ graph|graph_to_img }}
-    </div>
   </div>
   {% endfor %}
 
