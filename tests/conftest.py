@@ -14,25 +14,27 @@ from quizApp import db
 def app(request):
     """Create an app fixture that has a special context for easy rollback.
     """
-    app = create_app("testing")
+    app_ = create_app("testing")
 
-    ctx = app.app_context()
+    ctx = app_.app_context()
     ctx.push()
 
     def teardown():
+        """After this app is used, remove the context.
+        """
         ctx.pop()
 
     request.addfinalizer(teardown)
 
-    return app
+    return app_
 
 
 @pytest.yield_fixture(scope="session")
 def client(request, app):
     """Get a testing client from the app.
     """
-    with app.test_client() as client:
-        yield client
+    with app.test_client() as client_:
+        yield client_
 
 
 @pytest.fixture(scope="session", autouse=True)

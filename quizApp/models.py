@@ -1,6 +1,5 @@
 """Models for the quizApp.
 """
-import pdb
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
 
@@ -86,7 +85,8 @@ class Participant(User):
     designed_datasets = db.relationship("Dataset",
                                         secondary=participant_dataset_table)
     assignments = db.relationship("Assignment", backref="participant")
-    experiments = db.relationship("ParticipantExperiment", backref="participant")
+    experiments = db.relationship("ParticipantExperiment",
+                                  backref="participant")
 
     __mapper_args__ = {
         'polymorphic_identity': 'participant',
@@ -118,12 +118,12 @@ class ParticipantExperiment(Base):
                                   backref="participant_experiment")
 
     @db.validates('assignments')
-    def validate_assignments(self, key, assignment):
+    def validate_assignments(self, _, assignment):
         """The Assignments in this model must be related to the same Experiment
         as this model is."""
-        assert(assignment.experiment_id == self.experiment_id)
-        assert(assignment.participant_id == self.participant_id)
-        assert(assignment.activity in self.experiment.activities)
+        assert assignment.experiment_id == self.experiment_id
+        assert assignment.participant_id == self.participant_id
+        assert assignment.activity in self.experiment.activities
         return assignment
 
 
@@ -173,14 +173,14 @@ class Assignment(Base):
         db.ForeignKey("participant_experiment.id"))
 
     @db.validates("activity")
-    def validate_activity(self, key, activity):
+    def validate_activity(self, _, activity):
         """Make sure that the activity is part of this experiment.
         """
-        assert(self.experiment in activity.experiments)
+        assert self.experiment in activity.experiments
         return activity
 
     @db.validates("choice_id")
-    def validate_choice_id(self, key, choice_id):
+    def validate_choice_id(self, _, choice_id):
         """This must be a valid choice, i.e. contained in the question (if any)
         """
         if "question" in self.activity.type:
@@ -370,7 +370,7 @@ class Experiment(Base):
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table)
     participant_experiments = db.relationship("ParticipantExperiment",
-        backref="experiment")
+                                              backref="experiment")
     assignment = db.relationship("Assignment", backref="experiment")
 
 

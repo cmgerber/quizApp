@@ -113,28 +113,30 @@ def update_experiment_activities(exp_id):
     except NoResultFound:
         abort(404)
 
-    activities_update_form = ActivityListForm()
+    abort(404)
+    return exp
+    # activities_update_form = ActivityListForm()
 
-    activities_pool = Activity.query.all()
+    # activities_pool = Activity.query.all()
 
-    activities_mapping = activities_update_form.\
-        populate_activities(activities_pool)
+    # activities_mapping = activities_update_form.\
+    #     populate_activities(activities_pool)
 
-    if not activities_update_form.validate():
-        abort(400)
+    # if not activities_update_form.validate():
+    #     abort(400)
 
-    selected_activities = [int(a) for a in
-                           activities_update_form.activities.data]
+    # selected_activities = [int(a) for a in
+    #                        activities_update_form.activities.data]
 
-    for activity_id in selected_activities:
-        activity = Activity.query.get(activity_id)
-        if exp in activity.experiments:
-            activity.experiments.remove(exp)
-        else:
-            activity.experiments.append(exp)
+    # for activity_id in selected_activities:
+    #     activity = Activity.query.get(activity_id)
+    #     if exp in activity.experiments:
+    #         activity.experiments.remove(exp)
+    #     else:
+    #         activity.experiments.append(exp)
 
-    db.session.commit()
-    return jsonify({"success": 1})
+    # db.session.commit()
+    # return jsonify({"success": 1})
 
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
@@ -259,8 +261,6 @@ def update_assignment(exp_id, a_id):
     if not selected_choice:
         # This choice does not exist
         abort(400)
-
-    # TODO: sqlalchemy validators
     assignment.choice_id = selected_choice.id
     assignment.reflection = question_form.reflection.data
     part_exp.progress += 1

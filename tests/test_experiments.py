@@ -4,7 +4,6 @@
 from quizApp.models import Experiment
 
 
-
 def test_experiments(client):
     """Make sure that the blueprint is inaccessible to users not logged in.
     """
