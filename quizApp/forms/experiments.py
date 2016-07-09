@@ -1,8 +1,12 @@
 from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, HiddenField, \
-        RadioField, PasswordField
+        RadioField, PasswordField, SelectMultipleField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString, Input
+from wtforms.widgets.core import HTMLString, Input, CheckboxInput, ListWidget
+
+class MultiCheckboxField(SelectMultipleField):
+    widget = ListWidget(prefix_label=False)
+    option_widget = CheckboxInput()
 
 class TextAreaWidget(Input):
     input_type = "text"
@@ -28,16 +32,6 @@ class LikertWidget(object):
         output += "</ul>\n"
         return HTMLString(output)
 
-class CreateExperimentForm(Form):
-    name = StringField("Name", validators=[DataRequired()])
-    start = DateTimeField("Start time", validators=[DataRequired()])
-    stop = DateTimeField("Stop time", validators=[DataRequired()])
-    submit = SubmitField("Submit")
-
-class DeleteExperimentForm(Form):
-    exp_id = HiddenField()
-    submit = SubmitField("Submit")
-
 class QuestionForm(Form):
     submit = SubmitField("Submit")
     reflection = StringField(widget=TextAreaWidget())
@@ -48,7 +42,27 @@ class MultipleChoiceForm(QuestionForm):
 class ScaleForm(QuestionForm):
     answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
 
-class LoginForm(Form):
+class CreateExperimentForm(Form):
     name = StringField("Name", validators=[DataRequired()])
-    password = PasswordField("Password")
-    submit = SubmitField("Login")
+    start = DateTimeField("Start time", validators=[DataRequired()])
+    stop = DateTimeField("Stop time", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class DeleteExperimentForm(Form):
+    exp_id = HiddenField()
+    submit = SubmitField("Submit")
+
+class ActivityListForm(Form):
+    activities = MultiCheckboxField(validators=[DataRequired()], choices=[])
+    submit = SubmitField("Submit")
+
+    def populate_activities(self, activities_set):
+        activities_mapping = {}
+        for activity in activities_set:
+            activities_mapping[str(activity.id)] = activity
+            if "question" in activity.type:
+                choice_tuple = (str(activity.id), activity.question)
+            else:
+                choice_tuple = (str(activity.id), "-")
+            self.activities.choices.append(choice_tuple)
+        return activities_mapping

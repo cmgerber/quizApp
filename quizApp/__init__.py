@@ -27,11 +27,9 @@ def create_app(config_name, overrides=None):
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security.init_app(app, user_datastore)
 
-    from quizApp.views.admin import admin
     from quizApp.views.core import core
     from quizApp.views.experiments import experiments
 
-    app.register_blueprint(admin)
     app.register_blueprint(core)
     app.register_blueprint(experiments)
 

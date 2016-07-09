@@ -3,15 +3,15 @@ from flask import Blueprint, render_template, url_for, Markup, jsonify, \
 from quizApp.models import Question, Choice, Participant, Graph, Experiment, \
         User, Assignment, ParticipantExperiment, Activity
 from quizApp.forms.experiments import CreateExperimentForm, \
-        DeleteExperimentForm, MultipleChoiceForm, ScaleForm
+        DeleteExperimentForm, MultipleChoiceForm, ScaleForm, ActivityListForm
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import not_
 import os
 from quizApp import db
 from quizApp.config import basedir
 import json
 from datetime import datetime
-import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
@@ -22,11 +22,9 @@ def read_experiments():
     """
     exps = Experiment.query.all()
     create_form = CreateExperimentForm()
-    delete_form = DeleteExperimentForm()
 
     return render_template("experiments/read_experiments.html",
-                           experiments=exps, create_form=create_form,
-                           delete_form=delete_form)
+                           experiments=exps, create_form=create_form)
 
 @experiments.route("", methods=["POST"])
 @roles_required("experimenter")
@@ -97,12 +95,44 @@ def delete_experiment(exp_id):
 
     return jsonify({"success": 1, "id": request.json["id"]})
 
+@experiments.route("/<int:exp_id>/activities", methods=["PUT"])
+@roles_required("experimenter")
+def update_experiment_activities(exp_id):
+    """Change what activities are contained in an experiment.
+    """
+    try:
+        exp = Experiment.query.get(exp_id)
+    except NoResultFound:
+        abort(404)
+
+    activities_update_form = ActivityListForm()
+
+    activities_pool = Activity.query.all()
+
+    activities_mapping = activities_update_form.\
+            populate_activities(activities_pool)
+
+    if not activities_update_form.validate():
+        abort(400)
+
+    selected_activities = [int(a) for a in
+                           activities_update_form.activities.data]
+
+    for activity_id in selected_activities:
+        activity = Activity.query.get(activity_id)
+        if exp in activity.experiments:
+            activity.experiments.remove(exp)
+        else:
+            activity.experiments.append(exp)
+
+    db.session.commit()
+    return jsonify({"success": 1})
+
 @experiments.route("/<int:exp_id>", methods=["PUT"])
 @roles_required("experimenter")
 def update_experiment(exp_id):
     """Modify an experiment's properties.
     """
-
     experiment_update_form = CreateExperimentForm()
 
     if not experiment_update_form.validate():
@@ -279,3 +309,31 @@ def graph_to_img_filter(graph):
 
     graph_path = url_for('static', filename=os.path.join("graphs", filename))
     return Markup("<img src='" + graph_path + "' \>")
+
+@experiments.route('/<int:exp_id>/settings', methods=["GET"])
+@roles_required("experimenter")
+def settings_experiment(exp_id):
+    """Give information on an experiment and its activities.
+    """
+    experiment = Experiment.query.get(exp_id)
+
+    if not experiment:
+        abort(404)
+
+    update_experiment_form = CreateExperimentForm()
+    remove_activities_form = ActivityListForm(prefix="remove")
+    add_activities_form = ActivityListForm(prefix="add")
+
+    remove_activities_mapping = remove_activities_form.populate_activities(
+        experiment.activities)
+
+    add_activities_mapping = add_activities_form.populate_activities(
+        Activity.query.\
+            filter(not_(Activity.experiments.any(id=experiment.id))).all())
+    return render_template("experiments/settings_experiment.html",
+                           experiment=experiment,
+                           update_experiment_form=update_experiment_form,
+                           remove_activities_form=remove_activities_form,
+                           add_activities_form=add_activities_form,
+                           add_activities_mapping=add_activities_mapping,
+                           remove_activities_mapping=remove_activities_mapping)
