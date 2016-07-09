@@ -1,6 +1,6 @@
 """Models for the quizApp.
 """
-
+import pdb
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
 
@@ -108,10 +108,11 @@ class ParticipantExperiment(Base):
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
-    
-    assignments = db.relationship("Assignment", backref="participant_experiment"))
 
-    @validates('assignments')
+    assignments = db.relationship("Assignment",
+                                  backref="participant_experiment")
+
+    @db.validates('assignments')
     def validate_assignments(self, key, assignment):
         """The Assignments in this model must be related to the same Experiment
         as this model is."""
@@ -164,21 +165,21 @@ class Assignment(Base):
         db.Integer,
         db.ForeignKey("participant_experiment.id"))
 
-    @validates("activity")
+    @db.validates("activity")
     def validate_activity(self, key, activity):
         """Make sure that the activity is part of this experiment.
         """
         assert(self.experiment in activity.experiments)
         return activity
-    
-    @validates("choice_id")
-    def validate_choice(self, key, choice):
+
+    @db.validates("choice_id")
+    def validate_choice_id(self, key, choice_id):
         """This must be a valid choice, i.e. contained in the question (if any)
         """
         if "question" in self.activity.type:
-            assert(choice in self.activity.choices)
+            assert(choice_id in [c.id for c in self.activity.choices])
 
-        return choice
+        return choice_id
 
 activity_experiment_table = db.Table(
     "activity_experiment", db.metadata,
