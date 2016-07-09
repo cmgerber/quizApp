@@ -12,7 +12,6 @@ from quizApp import db
 from quizApp.config import basedir
 import json
 from datetime import datetime
-import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
@@ -101,7 +100,6 @@ def delete_experiment(exp_id):
 def update_experiment_activities(exp_id):
     """Change what activities are contained in an experiment.
     """
-    pdb.set_trace()
     try:
         exp = Experiment.query.get(exp_id)
     except NoResultFound:
@@ -329,7 +327,6 @@ def settings_experiment(exp_id):
     remove_activities_mapping = remove_activities_form.populate_activities(
         experiment.activities)
 
-    pdb.set_trace()
     add_activities_mapping = add_activities_form.populate_activities(
         Activity.query.\
             filter(not_(Activity.experiments.any(id=experiment.id))).all())
