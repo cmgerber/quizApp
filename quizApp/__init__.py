@@ -1,16 +1,21 @@
+"""Handle creating the app and configuring it.
+"""
+
 from flask import Flask
 from flask_wtf.csrf import CsrfProtect
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore
-import os
-import config
+from quizApp import config
+
 
 db = SQLAlchemy()
 csrf = CsrfProtect()
 security = Security()
 
+
 def create_app(config_name, overrides=None):
-    global login_manager
+    """Create and return an instance of this application.
+    """
     app = Flask(__name__, instance_relative_config=True)
 
     app.config.from_object(config.configs[config_name])

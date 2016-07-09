@@ -2,51 +2,24 @@
 
 """Using excel files, populate the database with some placeholder data.
 """
+from datetime import datetime, timedelta
+import os
+import csv
+import random
 
-from quizApp import create_app
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
         ForeignKeyConstraint
-from sqlalchemy import and_
-from datetime import datetime, timedelta
-import os
-from sqlalchemy.orm.exc import NoResultFound
-import csv
+
+from clear_db import clear_db
+from quizApp import create_app
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice, Role
 from quizApp import db
-import pdb
-import random
-
-def clear_db():
-    #https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
-    inspector = reflection.Inspector.from_engine(db.engine)
-    metadata = MetaData()
-    tbs = []
-    all_fks = []
-
-    for table_name in inspector.get_table_names():
-        fks = []
-        for fk in inspector.get_foreign_keys(table_name):
-            if not fk['name']:
-                continue
-            fks.append(ForeignKeyConstraint((),(), name=fk['name']))
-        t = Table(table_name, metadata, *fks)
-        tbs.append(t)
-        all_fks.extend(fks)
-
-    conn = db.engine.connect()
-    trans = conn.begin()
-    for fkc in all_fks:
-        conn.execute(DropConstraint(fkc))
-
-    for table in tbs:
-        conn.execute(DropTable(table))
-    trans.commit()
-
-    db.create_all()
 
 def get_experiments():
+    """Populate the database with initial experiments.
+    """
     pre_test = Experiment(name="pre_test",
                           start=datetime.now(),
                           stop=datetime.now() + timedelta(days=3))
@@ -63,17 +36,18 @@ def get_experiments():
     db.session.add(pre_test)
     db.session.add(test)
     db.session.add(post_test)
-    db.session.commit()
 
 DATA_ROOT = "quizApp/data/"
 
-question_type_mapping = {"multiple_choice": "question_mc_singleselect",
+QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
                          "heuristic": "question_mc_singleselect_scale",
                          "rating": "question_mc_singleselect_scale",
                          "pre_test": "question"}
 
 
 def get_questions():
+    """Populate the database with questions based on csv files.
+    """
     with open(os.path.join(DATA_ROOT, "questions.csv")) as questions_csv:
         question_reader = csv.DictReader(questions_csv)
         for row in question_reader:
@@ -97,7 +71,7 @@ def get_questions():
                 id=row["question_id"],
                 datasets=[dataset],
                 question=row["question_text"],
-                type=question_type_mapping[row["question_type"]],
+                type=QUESTION_TYPE_MAPPING[row["question_type"]],
                 explanation=explanation,
                 needs_reflection=needs_reflection)
 
@@ -108,9 +82,10 @@ def get_questions():
                                                    correct=True))
 
             db.session.add(question)
-    db.session.commit()
 
 def get_choices():
+    """Populate the database with choices based on csv files.
+    """
     with open(os.path.join(DATA_ROOT, "choices.csv")) as choices_csv:
         choice_reader = csv.DictReader(choices_csv)
         for row in choice_reader:
@@ -129,7 +104,6 @@ def get_choices():
                 dataset_id=int(graph["dataset"])+1,
                 filename=graph["graph_location"])
             db.session.add(graph)
-    db.session.commit()
 
 # In this list, each list is associated with a participant (one to one).  The
 # first three tuples in each list are associated with training questions.  The
@@ -141,7 +115,7 @@ def get_choices():
 # dataset - this means the relationship between participant test and dataset is
 # many to one.
 
-participant_question_list = \
+PARTICIPANT_QUESTION_LIST = \
 [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
  [(1, 2), (0, 2), (5, 1), (2, 0), (3, 0), (4, 1)],
  [(3, 0), (2, 1), (4, 0), (5, 1), (0, 0), (1, 2)],
@@ -173,8 +147,29 @@ participant_question_list = \
  [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
  [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
+def create_participant(pid, experiments, roles):
+    """Given an ID number, create a participant record, adding them to each
+    of the given experiments.
+    """
+    participant = Participant(
+        id=pid,
+        email=str(pid),
+        password=str(pid),
+        opt_in=False,
+        active=True,
+        roles=roles
+    )
+    for exp in experiments:
+        part_exp = ParticipantExperiment(
+            progress=0,
+            participant_id=pid,
+            experiment_id=exp.id)
+        db.session.add(part_exp)
+    db.session.add(participant)
+
 def get_students():
-    combined_id_list = []
+    """Get a list of students from csv files.
+    """
     question_participant_id_list = []
     heuristic_participant_id_list = []
     experiments = Experiment.query.all()
@@ -187,30 +182,16 @@ def get_students():
         for row in participant_reader:
             questions_id = row["Questions"]
             heuristics_id = row["Heuristics"]
+
             if questions_id:
                 question_participant_id_list.append(questions_id)
-                combined_id_list.append(questions_id)
+                create_participant(questions_id, experiments,
+                                   [participant_role])
+
             if heuristics_id:
                 heuristic_participant_id_list.append(heuristics_id)
-                combined_id_list.append(heuristics_id)
-
-    for pid in combined_id_list:
-        participant = Participant(
-            id=pid,
-            email=str(pid),
-            password=str(pid),
-            opt_in=False,
-            progress="pre_test",
-            active=True,
-            roles=[participant_role]
-        )
-        for exp in experiments:
-            part_exp = ParticipantExperiment(
-                progress=0,
-                participant_id=pid,
-                experiment_id=exp.id)
-            db.session.add(part_exp)
-        db.session.add(participant)
+                create_participant(heuristics_id, experiments,
+                                   [participant_role])
 
     root = User(
         email="experimenter@example.com",
@@ -221,7 +202,6 @@ def get_students():
 
     db.session.add(root)
 
-    db.session.commit()
     return question_participant_id_list, heuristic_participant_id_list
 
 def create_participant_data(pid_list, participant_question_list, test, group):
@@ -236,11 +216,13 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                    "test": Experiment.query.filter_by(name="test").one(),
                    "post_test": Experiment.query.filter_by(name="post_test").one()}
     missing_qs = set()
+
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in participant_question_list]
     else:
         #pick last three
         question_list = [x[3:] for x in participant_question_list]
+
     for n, participant in enumerate(question_list):
         #n is the nth participant
         participant_id = pid_list[n]
@@ -249,13 +231,11 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                 filter_by(experiment_id=experiments[test].id).one()
         #count the order for each participant per test
         order = 0
-        for ix, graph in enumerate(participant):
-            participant_test_id = int(str(participant_id)+str(ix))
+        for graph in participant:
             dataset = graph[0]
             graph_id = int(str(dataset)+str(graph[1]+1))
             if test == 'pre_test' or test == 'post_test':
                 order += 1
-                #TODO: why +5
                 question_id = int(str(dataset)+str(5))
 
                 if not Question.query.get(question_id):
@@ -339,7 +319,6 @@ def create_participant_data(pid_list, participant_question_list, test, group):
 
                 db.session.add(assignment)
 
-    db.session.commit()
     print "Completed storing {} {} tests".format(test, group)
     if missing_qs:
         print "Failed to find the following questions:"
@@ -350,9 +329,9 @@ def create_participant_data(pid_list, participant_question_list, test, group):
 def create_assignments(participants_question, participants_heuristic):
     for test in ['pre_test', 'test', 'post_test']:
         create_participant_data(participants_question,
-                                participant_question_list, test, 'question')
+                                PARTICIPANT_QUESTION_LIST, test, 'question')
         create_participant_data(participants_heuristic,
-                                participant_question_list, test, 'heuristic')
+                                PARTICIPANT_QUESTION_LIST, test, 'heuristic')
 
 def setup_db():
     app = create_app("development")
@@ -363,6 +342,7 @@ def setup_db():
         get_choices()
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
+        db.session.commit()
 
 if __name__ == "__main__":
     setup_db()
