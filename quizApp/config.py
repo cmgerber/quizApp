@@ -12,7 +12,6 @@ class Config(object):
     WTF_CSRF_ENABLED = True
     DEBUG = False
     TESTING = False
-    SQLALCHEMY_ECHO = True
     SECRET_KEY = "---"
     WTF_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -36,6 +35,7 @@ class Development(Config):
     SECRET_KEY = "Foobar"
     SECURITY_REGISTERABLE = True
     SECURITY_SEND_REGISTER_EMAIL = False
+    SQLALCHEMY_ECHO = True
 
 
 class Testing(Config):

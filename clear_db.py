@@ -1,13 +1,18 @@
+"""Completely erase and drop all tables in the database. Useful for testing
+or after changes in models.
+"""
+
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
         ForeignKeyConstraint
 
 from quizApp import db
 
+
 def clear_db():
     """Reset the state of the database.
     """
-    #https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
+    # https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
     inspector = reflection.Inspector.from_engine(db.engine)
     metadata = MetaData()
     tables = []

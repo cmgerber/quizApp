@@ -3,11 +3,14 @@
 
 from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, HiddenField, \
-        RadioField, PasswordField, SelectMultipleField
+        RadioField, SelectMultipleField
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import HTMLString, Input, CheckboxInput, ListWidget
 
+
 class MultiCheckboxField(SelectMultipleField):
+    """Like a SelectMultipleField, but use checkboxes instead,
+    """
     widget = ListWidget(prefix_label=False)
     option_widget = CheckboxInput()
 
@@ -43,8 +46,7 @@ class LikertWidget(object):
         output += "</ul>\n"
         return HTMLString(output)
 
-<<<<<<< HEAD
-=======
+
 class QuestionForm(Form):
     """Form for rendering a general Question.
     """
@@ -56,6 +58,7 @@ class QuestionForm(Form):
         """
         pass
 
+
 class MultipleChoiceForm(QuestionForm):
     """Form for rendering a multiple choice question with radio buttons.
     """
@@ -65,6 +68,7 @@ class MultipleChoiceForm(QuestionForm):
         """Given a pool of choices, populate the answers field.
         """
         self.answers.choices = [(str(c.id), c.choice) for c in choice_pool]
+
 
 class ScaleForm(QuestionForm):
     """Form for rendering a likert scale question.

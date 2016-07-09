@@ -3,16 +3,20 @@
 
 from quizApp.models import Experiment
 
-from tests import conftest
 
-
-def test_example():
-    exp = Experiment(name="notaname")
+def test_db_rollback1():
+    """Along with test_db_rollback2, ensure rollbacks are working correctly.
+    """
+    exp = Experiment(name="notaname-1")
     exp.save()
-    print "test 1"
-    assert Experiment.query.filter_by(name="notaname").count() == 1
+    assert Experiment.query.filter_by(name="notaname-1").count() == 1
+    assert Experiment.query.filter_by(name="notaname-2").count() == 0
 
 
-def test_part2():
-    print "test 2"
-    assert Experiment.query.filter_by(name="notaname").count() == 0
+def test_db_rollback2():
+    """Along with test_db_rollback1, ensure rollbacks are working correctly.
+    """
+    exp = Experiment(name="notaname-2")
+    exp.save()
+    assert Experiment.query.filter_by(name="notaname-1").count() == 0
+    assert Experiment.query.filter_by(name="notaname-2").count() == 1
