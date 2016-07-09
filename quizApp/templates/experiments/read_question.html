@@ -1,0 +1,39 @@
+{% extends 'header.html' %}
+
+{% import 'macros.html' as macros %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}
+Quiz
+{% endblock %}
+
+{% block content %}
+  {% for graph in assignment.graphs %}
+  <div class="row graph-container">
+      {{ graph|graph_to_img }}
+  </div>
+  {% endfor %}
+
+<div id='question'>
+  <h3>{{ question.question }}</h3>
+  <form action="{{ url_for('experiments.update_assignment', exp_id=exp.id,
+        a_id=assignment.id)}}" method="post" id="question-submit-form">
+    {{ macros.render_field(mc_form.answers) }}
+    {% if question.needs_reflection %}
+        <p>Why do you think this is the correct choice?</p>
+        {{ macros.render_field(mc_form.reflection, rows="5") }}
+        <br />
+    {% endif %}
+    {{ macros.render_field(mc_form.submit) }}
+  </form>
+</div>
+<div id="explanation-container">
+  <p id="explanation-text"></p>
+  <a href="#" role="button" id="continue-link"
+    class="btn btn-primary">Continue</a>
+</div>
+{% endblock %}
