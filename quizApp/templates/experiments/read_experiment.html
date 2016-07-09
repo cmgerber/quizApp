@@ -23,4 +23,8 @@
   {% elif current_user.has_role("participant") %}
     <p>You are done with this experiment.</p>
   {% endif %}
+  {% if current_user.has_role("experimenter") %}
+    <a href="{{ url_for('experiments.settings_experiment',
+    exp_id=experiment.id) }}">Settings</a>
+  {% endif %}
 {% endblock %}
