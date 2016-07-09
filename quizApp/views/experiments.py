@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from quizApp.models import Question, Choice, Experiment, \
         Assignment, ParticipantExperiment, Activity
 from quizApp.forms.experiments import CreateExperimentForm, \
-        DeleteExperimentForm, MultipleChoiceForm, ScaleForm
+        DeleteExperimentForm, MultipleChoiceForm, ScaleForm, ActivityListForm
 from quizApp import db
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
@@ -22,86 +22,118 @@ experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 @experiments.route('', methods=["GET"])
 @login_required
 def read_experiments():
-    """List experiments.
-    """
-    exps = Experiment.query.all()
-    create_form = CreateExperimentForm()
-    delete_form = DeleteExperimentForm()
+"""List experiments.
+"""
+exps = Experiment.query.all()
+create_form = CreateExperimentForm()
 
-    return render_template("experiments/read_experiments.html",
-                           experiments=exps, create_form=create_form,
-                           delete_form=delete_form)
+return render_template("experiments/read_experiments.html",
+                       experiments=exps, create_form=create_form)
 
 
 @experiments.route("", methods=["POST"])
 @roles_required("experimenter")
 def create_experiment():
-    """Create an experiment and save it to the database.
-    """
-    form = CreateExperimentForm()
-    if not form.validate_on_submit():
-        abort(400)
+"""Create an experiment and save it to the database.
+"""
+form = CreateExperimentForm()
+if not form.validate_on_submit():
+    abort(400)
 
-    exp = Experiment(
-        name=form.name.data,
-        start=form.start.data,
-        stop=form.stop.data,
-        created=datetime.now())
+exp = Experiment(
+    name=form.name.data,
+    start=form.start.data,
+    stop=form.stop.data,
+    created=datetime.now())
 
-    exp.save()
+exp.save()
 
-    return render_template("experiments/create_experiment_response.html",
-                           exp=exp, delete_form=DeleteExperimentForm())
+return render_template("experiments/create_experiment_response.html",
+                       exp=exp, delete_form=DeleteExperimentForm())
 
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
 @login_required
 def read_experiment(exp_id):
-    """View the landing page of an experiment, along with the ability to start.
-    """
-    exp = Experiment.query.get(exp_id)
+"""View the landing page of an experiment, along with the ability to start.
+"""
+exp = Experiment.query.get(exp_id)
 
-    if not exp:
-        abort(404)
+if not exp:
+    abort(404)
 
-    try:
-        part_exp = ParticipantExperiment.query.\
-                filter_by(participant_id=current_user.id).\
-                filter_by(experiment_id=exp_id).one()
-    except NoResultFound:
-        part_exp = None
+try:
+    part_exp = ParticipantExperiment.query.\
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=exp_id).one()
+except NoResultFound:
+    part_exp = None
 
-    try:
-        assignment = part_exp.assignments[part_exp.progress]
-    except (IndexError, AttributeError):
-        assignment = None
+try:
+    assignment = part_exp.assignments[part_exp.progress]
+except (IndexError, AttributeError):
+    assignment = None
 
-    update_experiment_form = CreateExperimentForm()
+update_experiment_form = CreateExperimentForm()
 
-    return render_template("experiments/read_experiment.html", experiment=exp,
-                           assignment=assignment,
-                           update_experiment_form=update_experiment_form)
+return render_template("experiments/read_experiment.html", experiment=exp,
+                       assignment=assignment,
+                       update_experiment_form=update_experiment_form)
 
 
 @experiments.route("/<int:exp_id>", methods=["DELETE"])
 @roles_required("experimenter")
 def delete_experiment(exp_id):
-    """Delete an experiment.
+"""Delete an experiment.
+"""
+form = DeleteExperimentForm()
+
+if not form.validate():
+    return jsonify({"success": 0})
+
+exp = Experiment.query.get(exp_id)
+
+if not exp:
+    return jsonify({"success": 0})
+
+db.session.delete(exp)
+db.session.commit()
+
+return jsonify({"success": 1, "id": request.json["id"]})
+
+
+@experiments.route("/<int:exp_id>/activities", methods=["PUT"])
+@roles_required("experimenter")
+def update_experiment_activities(exp_id):
+    """Change what activities are contained in an experiment.
     """
-    form = DeleteExperimentForm()
+    try:
+        exp = Experiment.query.get(exp_id)
+    except NoResultFound:
+        abort(404)
 
-    if not form.validate():
-        return jsonify({"success": 0})
+    activities_update_form = ActivityListForm()
 
-    exp = Experiment.query.get(exp_id)
+    activities_pool = Activity.query.all()
 
-    if not exp:
-        return jsonify({"success": 0})
+    activities_mapping = activities_update_form.\
+            populate_activities(activities_pool)
 
-    db.session.delete(exp)
+    if not activities_update_form.validate():
+        abort(400)
+
+    selected_activities = [int(a) for a in
+                           activities_update_form.activities.data]
+
+    for activity_id in selected_activities:
+        activity = Activity.query.get(activity_id)
+        if exp in activity.experiments:
+            activity.experiments.remove(exp)
+        else:
+            activity.experiments.append(exp)
+
     db.session.commit()
-
-    return jsonify({"success": 1, "id": request.json["id"]})
+    return jsonify({"success": 1})
 
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
@@ -109,7 +141,6 @@ def delete_experiment(exp_id):
 def update_experiment(exp_id):
     """Modify an experiment's properties.
     """
-
     experiment_update_form = CreateExperimentForm()
 
     if not experiment_update_form.validate():
@@ -278,6 +309,35 @@ def done():
     #     return render_template('experiments/doneB.html')
     # else:
     #     print "Unknown question types"
+
+
+@experiments.route('/<int:exp_id>/settings', methods=["GET"])
+@roles_required("experimenter")
+def settings_experiment(exp_id):
+    """Give information on an experiment and its activities.
+    """
+    experiment = Experiment.query.get(exp_id)
+
+    if not experiment:
+        abort(404)
+
+    update_experiment_form = CreateExperimentForm()
+    remove_activities_form = ActivityListForm(prefix="remove")
+    add_activities_form = ActivityListForm(prefix="add")
+
+    remove_activities_mapping = remove_activities_form.populate_activities(
+        experiment.activities)
+
+    add_activities_mapping = add_activities_form.populate_activities(
+        Activity.query.\
+            filter(not_(Activity.experiments.any(id=experiment.id))).all())
+    return render_template("experiments/settings_experiment.html",
+                           experiment=experiment,
+                           update_experiment_form=update_experiment_form,
+                           remove_activities_form=remove_activities_form,
+                           add_activities_form=add_activities_form,
+                           add_activities_mapping=add_activities_mapping,
+                           remove_activities_mapping=remove_activities_mapping)
 
 
 @experiments.app_template_filter("datetime_format")

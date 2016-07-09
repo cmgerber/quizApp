@@ -3,9 +3,13 @@
 
 from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, HiddenField, \
-        RadioField, PasswordField
+        RadioField, PasswordField, SelectMultipleField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString, Input
+from wtforms.widgets.core import HTMLString, Input, CheckboxInput, ListWidget
+
+class MultiCheckboxField(SelectMultipleField):
+    widget = ListWidget(prefix_label=False)
+    option_widget = CheckboxInput()
 
 
 class TextAreaWidget(Input):
@@ -39,6 +43,34 @@ class LikertWidget(object):
         output += "</ul>\n"
         return HTMLString(output)
 
+<<<<<<< HEAD
+=======
+class QuestionForm(Form):
+    """Form for rendering a general Question.
+    """
+    submit = SubmitField("Submit")
+    reflection = StringField(widget=TextAreaWidget())
+
+    def populate_answers(self, answer_pool):
+        """Child classes should implement this themselves for choice selection.
+        """
+        pass
+
+class MultipleChoiceForm(QuestionForm):
+    """Form for rendering a multiple choice question with radio buttons.
+    """
+    answers = RadioField(validators=[DataRequired()])
+
+    def populate_answers(self, choice_pool):
+        """Given a pool of choices, populate the answers field.
+        """
+        self.answers.choices = [(str(c.id), c.choice) for c in choice_pool]
+
+class ScaleForm(QuestionForm):
+    """Form for rendering a likert scale question.
+    """
+    answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
+
 
 class CreateExperimentForm(Form):
     """Form for creating or updating an experiment's properties.
@@ -56,38 +88,22 @@ class DeleteExperimentForm(Form):
     submit = SubmitField("Submit")
 
 
-class QuestionForm(Form):
-    """Form for rendering a general Question.
+class ActivityListForm(Form):
+    """Form to show a selectable list of Activities.
     """
+    activities = MultiCheckboxField(validators=[DataRequired()], choices=[])
     submit = SubmitField("Submit")
-    reflection = StringField(widget=TextAreaWidget())
 
-    def populate_answers(self, answer_pool):
-        """Child classes should implement this themselves for choice selection.
+    def populate_activities(self, activities_set):
+        """Given a list of Activities, populate the activities field with
+        choices.
         """
-        pass
-
-
-class MultipleChoiceForm(QuestionForm):
-    """Form for rendering a multiple choice question with radio buttons.
-    """
-    answers = RadioField(validators=[DataRequired()])
-
-    def populate_answers(self, choice_pool):
-        """Given a pool of choices, populate the answers field.
-        """
-        self.answers.choices = [(str(c.id), c.choice) for c in choice_pool]
-
-
-class ScaleForm(MultipleChoiceForm):
-    """Form for rendering a likert scale question.
-    """
-    answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
-
-
-class LoginForm(Form):
-    """Form for logging in.
-    """
-    name = StringField("Name", validators=[DataRequired()])
-    password = PasswordField("Password")
-    submit = SubmitField("Login")
+        activities_mapping = {}
+        for activity in activities_set:
+            activities_mapping[str(activity.id)] = activity
+            if "question" in activity.type:
+                choice_tuple = (str(activity.id), activity.question)
+            else:
+                choice_tuple = (str(activity.id), "-")
+            self.activities.choices.append(choice_tuple)
+        return activities_mapping
