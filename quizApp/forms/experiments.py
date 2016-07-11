@@ -2,7 +2,7 @@
 """
 
 from flask_wtf import Form
-from wtforms import StringField, DateTimeField, SubmitField, HiddenField, \
+from wtforms import StringField, DateTimeField, SubmitField, \
         RadioField, SelectMultipleField, TextAreaField
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import HTMLString, CheckboxInput, ListWidget
@@ -74,7 +74,6 @@ class CreateExperimentForm(Form):
 class DeleteExperimentForm(Form):
     """Form for deleting an experiment.
     """
-    exp_id = HiddenField()
     submit = SubmitField("Submit")
 
 
@@ -97,7 +96,6 @@ class ActivityListForm(Form):
                 choice_tuple = (str(activity.id), "-")
             self.activities.choices.append(choice_tuple)
         return activities_mapping
-
 
     def reset_activities(self):
         """Reset the list of activities - sometimes necessary in strange

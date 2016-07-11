@@ -8,7 +8,7 @@ import pdb
 from collections import defaultdict
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
-        abort, current_app, request
+        abort, current_app
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy import not_
 from sqlalchemy.orm.exc import NoResultFound
@@ -67,8 +67,8 @@ def read_experiment(exp_id):
 
     try:
         part_exp = ParticipantExperiment.query.\
-                filter_by(participant_id=current_user.id).\
-                filter_by(experiment_id=exp_id).one()
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=exp_id).one()
     except NoResultFound:
         part_exp = None
 
@@ -119,7 +119,7 @@ def update_experiment_activities(exp_id):
     activities_pool = Activity.query.all()
 
     activities_mapping = activities_update_form.\
-         populate_activities(activities_pool)
+        populate_activities(activities_pool)
 
     if not activities_update_form.validate():
         abort(400)
@@ -128,7 +128,7 @@ def update_experiment_activities(exp_id):
                            activities_update_form.activities.data]
 
     for activity_id in selected_activities:
-        activity = Activity.query.get(activity_id)
+        activity = activities_mapping[activity_id]
         if exp in activity.experiments:
             activity.experiments.remove(exp)
         else:
@@ -347,11 +347,13 @@ def settings_experiment(exp_id):
                            activities_form=activities_form,
                            add_activities_mapping=add_activities_mapping,
                            remove_activities_mapping=remove_activities_mapping,
-                           delete_experiment_form=delete_experiment_form
-                          )
+                           delete_experiment_form=delete_experiment_form)
 
 
 def get_question_stats(assignment, question_stats):
+    """Given an assignment of a question and a stats array, return statistics
+    about this question in the array.
+    """
     question = assignment.activity
     question_stats[question.id]["question_text"] = question.question
 
@@ -380,8 +382,9 @@ def results_experiment(exp_id):
 
     num_participants = Participant.query.count()
     num_finished = ParticipantExperiment.query.\
-            filter_by(experiment_id=experiment.id).\
-            filter_by(progress=-1).count()
+        filter_by(experiment_id=experiment.id).\
+        filter_by(progress=-1).count()
+
     percent_finished = num_finished / float(num_participants)
 
     # {"question_id": {"question": "question_text", "num_responses":
@@ -395,11 +398,12 @@ def results_experiment(exp_id):
             get_question_stats(assignment, question_stats)
 
     return render_template("experiments/results_experiment.html",
-                          experiment=experiment,
-                          num_participants=num_participants,
-                          num_finished=num_finished,
-                          percent_finished=percent_finished,
-                          question_stats=question_stats)
+                           experiment=experiment,
+                           num_participants=num_participants,
+                           num_finished=num_finished,
+                           percent_finished=percent_finished,
+                           question_stats=question_stats)
+
 
 @experiments.app_template_filter("datetime_format")
 def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
