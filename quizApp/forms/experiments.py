@@ -97,3 +97,10 @@ class ActivityListForm(Form):
                 choice_tuple = (str(activity.id), "-")
             self.activities.choices.append(choice_tuple)
         return activities_mapping
+
+
+    def reset_activities(self):
+        """Reset the list of activities - sometimes necessary in strange
+        situations
+        """
+        self.activities.choices = []

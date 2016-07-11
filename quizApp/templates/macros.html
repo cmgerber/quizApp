@@ -143,3 +143,8 @@ $(function () {
     {% endif %}
 </form>
 {%- endmacro %}
+
+
+{% macro render_glyphicon(name) -%}
+<span class="glyphicon glyphicon-{{ name }}" aria-hidden="true"></span>
+{%- endmacro %}

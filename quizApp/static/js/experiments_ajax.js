@@ -32,7 +32,7 @@ $(document).ready(function() {
     event.preventDefault();
   });
 
-  $('#activity-remove-form').submit(function(event) {
+  $('#activity-remove-form,#activity-add-form').submit(function(event) {
     event.preventDefault();
     checked_boxes = $('input:checked', this);
 
@@ -47,14 +47,41 @@ $(document).ready(function() {
     $("input:checked", this).each(function() {
       formData["activities"].push($(this).val());
     });
-          $.ajax({
-            type: this.getAttribute("method"),
-            contentType: "application/json",
-            url: this.getAttribute("action"),
-            data: JSON.stringify(formData),
-            dataType: 'json',
-            encode: true
-          })
+
+    $.ajax({
+      type: this.getAttribute("method"),
+      contentType: "application/json",
+      url: this.getAttribute("action"),
+      data: JSON.stringify(formData),
+      dataType: 'json',
+      encode: true
+    })
+
+    .done(function(data) {
+      console.log(data);
+      if(data.success) {
+        window.location.reload();
+      }
+    });
+  })
+
+  $('#experiment-delete-form').submit(function(event) {
+    event.preventDefault();
+
+    $.ajax({
+      type: this.getAttribute("method"),
+      contentType: "application/json",
+      url: this.getAttribute("action"),
+      dataType: 'json',
+      encode: true
+    })
+
+    .done(function(data) {
+      console.log(data);
+      if(data.success) {
+        window.location.href = data["next_url"];
+      }
+    });
   })
 
   $("#question-submit-form").submit(function(event) {
@@ -94,6 +121,5 @@ $(document).ready(function() {
         }
       }
     });
-
   })
 });

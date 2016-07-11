@@ -14,6 +14,7 @@
 
 {% block content %}
 <h3>General settings</h2>
+
 <form action="{{ url_for('experiments.update_experiment',
 exp_id=experiment.id) }}" method="put" id="create-form">
   {{ macros.render_field(update_experiment_form.name, value=experiment.name) }}
@@ -22,23 +23,61 @@ exp_id=experiment.id) }}" method="put" id="create-form">
   {{ macros.render_field(update_experiment_form.submit, value="Save",
   class_="btn-success") }}
 </form>
-{#
+
+<hr>
+
 <h3>Activities in this experiment</h3>
+<div class="alert alert-info" role="alert">
+  You must reassign participants (below) before any changes in activity
+  selection will take effect.
+</div>
+
 <form action="{{ url_for('experiments.update_experiment_activities',
-  exp_id=experiment.id) }}" method="put" id="activity-remove-form">
-{{ exp_macros.activity_table(remove_activities_form, remove_activities_mapping) }}
-{{ macros.render_field(remove_activities_form.submit,
-value="Remove from experiment", class_="btn-danger") }}
+exp_id=experiment.id) }}" method="put" id="activity-remove-form">
+  <div class="table-container">
+    {{ exp_macros.activity_table(activities_form, remove_activities_mapping) }}
+  </div>
+  {{ macros.render_field(activities_form.submit,
+  value="Remove from experiment", class_="btn-danger") }}
 </form>
 
+<hr>
+
 <h3>Activities not in this experiment</h3>
+<div class="alert alert-info" role="alert">
+  You must reassign participants (below) before any changes in activity
+  selection will take effect.
+</div>
+
 <form action="{{ url_for('experiments.update_experiment_activities',
-  exp_id=experiment.id) }}" method="put" id="activity-add-form">
-{{ exp_macros.activity_table(add_activities_form, add_activities_mapping) }}
-{{ macros.render_field(add_activities_form.submit,
-value="Add to experiment") }}
+exp_id=experiment.id) }}" method="put" id="activity-add-form">
+  <div class="table-container">
+    {{ exp_macros.activity_table(activities_form, add_activities_mapping) }}
+  </div>
+  {{ macros.render_field(activities_form.submit,
+  value="Add to experiment") }}
 </form>
-#}
-<h4>Delete experiment</h4>
-<p>Delete stuff goes here...</p>
+
+<hr>
+
+<h3>Reassign participants</h3>
+<p>If you have changed the activity assortment in this experiment, you must
+reassign participants before the changes take effect.</p>
+<p>This will delete all result records and participant progress in this
+experiment.</p>
+
+Button goes here...
+
+<hr>
+
+<h3>Delete experiment</h3>
+<div class="alert alert-danger" role="alert">
+  {{ macros.render_glyphicon("exclamation-sign") }}
+  Warning: this cannot be undone!
+</div>
+<form action="{{ url_for('experiments.delete_experiment', exp_id=experiment.id)
+}}" method="delete" id="experiment-delete-form">
+  {{ macros.render_field(delete_experiment_form.submit, value="Delete",
+  class_="btn-danger") }}
+</form>
 {% endblock %}

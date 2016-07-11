@@ -4,6 +4,7 @@ participants.
 import os
 import json
 from datetime import datetime
+import pdb
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
         abort, current_app, request
@@ -50,7 +51,7 @@ def create_experiment():
     exp.save()
 
     return render_template("experiments/create_experiment_response.html",
-                           exp=exp, delete_form=DeleteExperimentForm())
+                           exp=exp)
 
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
@@ -87,10 +88,7 @@ def read_experiment(exp_id):
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
-    form = DeleteExperimentForm()
-
-    if not form.validate():
-        return jsonify({"success": 0})
+    pdb.set_trace()
 
     exp = Experiment.query.get(exp_id)
 
@@ -100,7 +98,8 @@ def delete_experiment(exp_id):
     db.session.delete(exp)
     db.session.commit()
 
-    return jsonify({"success": 1, "id": request.json["id"]})
+    return jsonify({"success": 1, "next_url":
+                    url_for('experiments.read_experiments')})
 
 
 @experiments.route("/<int:exp_id>/activities", methods=["PUT"])
@@ -108,35 +107,34 @@ def delete_experiment(exp_id):
 def update_experiment_activities(exp_id):
     """Change what activities are contained in an experiment.
     """
+    pdb.set_trace()
     try:
         exp = Experiment.query.get(exp_id)
     except NoResultFound:
         abort(404)
 
-    abort(404)
-    return exp
-    # activities_update_form = ActivityListForm()
+    activities_update_form = ActivityListForm()
 
-    # activities_pool = Activity.query.all()
+    activities_pool = Activity.query.all()
 
-    # activities_mapping = activities_update_form.\
-    #     populate_activities(activities_pool)
+    activities_mapping = activities_update_form.\
+         populate_activities(activities_pool)
 
-    # if not activities_update_form.validate():
-    #     abort(400)
+    if not activities_update_form.validate():
+        abort(400)
 
-    # selected_activities = [int(a) for a in
-    #                        activities_update_form.activities.data]
+    selected_activities = [int(a) for a in
+                           activities_update_form.activities.data]
 
-    # for activity_id in selected_activities:
-    #     activity = Activity.query.get(activity_id)
-    #     if exp in activity.experiments:
-    #         activity.experiments.remove(exp)
-    #     else:
-    #         activity.experiments.append(exp)
+    for activity_id in selected_activities:
+        activity = Activity.query.get(activity_id)
+        if exp in activity.experiments:
+            activity.experiments.remove(exp)
+        else:
+            activity.experiments.append(exp)
 
-    # db.session.commit()
-    # return jsonify({"success": 1})
+    db.session.commit()
+    return jsonify({"success": 1})
 
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
@@ -322,24 +320,33 @@ def settings_experiment(exp_id):
     if not experiment:
         abort(404)
 
-    update_experiment_form = CreateExperimentForm()
-    remove_activities_form = ActivityListForm(prefix="remove")
-    add_activities_form = ActivityListForm(prefix="add")
+    # Due to an unfortunate quirk in wtforms, we can't use two separate forms
+    # for the two lists of activities on this page because they both will have
+    # the same set of choices. So what we do instead is have one form but two
+    # mappings, one mapping for activities in the exp and one for not in the
+    # exp. We then render two forms based on what is in each mapping.
 
-    remove_activities_mapping = remove_activities_form.populate_activities(
+    update_experiment_form = CreateExperimentForm()
+
+    activities_form = ActivityListForm()
+    activities_form.reset_activities()
+    remove_activities_mapping = activities_form.populate_activities(
         experiment.activities)
 
-    add_activities_mapping = add_activities_form.populate_activities(
+    add_activities_mapping = activities_form.populate_activities(
         Activity.query.
         filter(not_(Activity.experiments.any(id=experiment.id))).all())
+
+    delete_experiment_form = DeleteExperimentForm()
 
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
                            update_experiment_form=update_experiment_form,
-                           remove_activities_form=remove_activities_form,
-                           add_activities_form=add_activities_form,
+                           activities_form=activities_form,
                            add_activities_mapping=add_activities_mapping,
-                           remove_activities_mapping=remove_activities_mapping)
+                           remove_activities_mapping=remove_activities_mapping,
+                           delete_experiment_form=delete_experiment_form
+                          )
 
 
 @experiments.app_template_filter("datetime_format")

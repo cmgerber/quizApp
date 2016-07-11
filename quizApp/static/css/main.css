@@ -255,3 +255,13 @@ ul#answers {
 #explanation-container {
   display: none;
 }
+
+.table-container {
+  max-height: 25em;
+  margin-bottom: 20px;
+  overflow: auto;
+}
+
+.table-container table {
+  margin-bottom: 0px;
+}

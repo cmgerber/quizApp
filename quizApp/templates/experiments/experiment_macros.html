@@ -35,7 +35,9 @@ stop="",submit="Create", class_="") -%}
   </thead>
   <tbody>
     {% for activity_field in form.activities %}
-    {{ activity_row(mapping[activity_field.data], activity_field) }}
+    {% if mapping[activity_field.data] %}
+      {{ activity_row(mapping[activity_field.data], activity_field) }}
+    {% endif %}
     {% endfor %}
   </tbody>
 </table>
