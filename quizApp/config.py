@@ -16,6 +16,7 @@ class Config(object):
     WTF_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     EXPERIMENTS_PLACEHOLDER_GRAPH = "missing.png"
+    SECURITY_REGISTERABLE = True
 
 
 class Production(Config):
@@ -33,7 +34,6 @@ class Development(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"
     SECRET_KEY = "Foobar"
-    SECURITY_REGISTERABLE = True
     SECURITY_SEND_REGISTER_EMAIL = False
     SQLALCHEMY_ECHO = True
 

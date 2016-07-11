@@ -1,5 +1,5 @@
 [MASTER]
-ignore=populate_db.py,conftest.py
+ignore=populate_db.py,tests/
 
 [TYPECHECK]
 generated-members=query,delete,commit,add,flush
