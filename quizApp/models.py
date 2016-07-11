@@ -165,7 +165,10 @@ class Assignment(Base):
 
     graphs = db.relationship("Graph", secondary=assignment_graph_table)
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
+    activity = db.relationship("Activity", back_populates="assignments")
+
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
     participant_experiment_id = db.Column(
@@ -218,7 +221,7 @@ class Activity(Base):
     type = db.Column(db.String(50))
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table)
-    assignments = db.relationship("Assignment", backref="activity")
+    assignments = db.relationship("Assignment", back_populates="activity")
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -371,7 +374,7 @@ class Experiment(Base):
                                  secondary=activity_experiment_table)
     participant_experiments = db.relationship("ParticipantExperiment",
                                               backref="experiment")
-    assignment = db.relationship("Assignment", backref="experiment")
+    assignments = db.relationship("Assignment", backref="experiment")
 
 
 class Dataset(Base):

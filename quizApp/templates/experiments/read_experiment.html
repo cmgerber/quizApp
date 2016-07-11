@@ -26,5 +26,8 @@
   {% if current_user.has_role("experimenter") %}
     <a href="{{ url_for('experiments.settings_experiment',
     exp_id=experiment.id) }}">Settings</a>
+    <br />
+    <a href="{{ url_for('experiments.results_experiment',
+    exp_id=experiment.id) }}">Results</a>
   {% endif %}
 {% endblock %}

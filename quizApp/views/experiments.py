@@ -5,6 +5,7 @@ import os
 import json
 from datetime import datetime
 import pdb
+from collections import defaultdict
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
         abort, current_app, request
@@ -13,7 +14,7 @@ from sqlalchemy import not_
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp.models import Question, Choice, Experiment, \
-        Assignment, ParticipantExperiment, Activity
+        Assignment, ParticipantExperiment, Activity, Participant
 from quizApp.forms.experiments import CreateExperimentForm, \
         DeleteExperimentForm, MultipleChoiceForm, ScaleForm, ActivityListForm
 from quizApp import db
@@ -267,6 +268,7 @@ def update_assignment(exp_id, a_id):
         next_assignment = part_exp.assignments[part_exp.progress]
     except IndexError:
         next_assignment = None
+        part_exp.progress = -1
 
     if next_assignment:
         next_url = url_for("experiments.read_assignment", exp_id=exp_id,
@@ -348,6 +350,56 @@ def settings_experiment(exp_id):
                            delete_experiment_form=delete_experiment_form
                           )
 
+
+def get_question_stats(assignment, question_stats):
+    question = assignment.activity
+    question_stats[question.id]["question_text"] = question.question
+
+    if assignment.choice:
+        try:
+            question_stats[question.id]["num_responses"] += 1
+        except KeyError:
+            question_stats[question.id]["num_responses"] = 1
+
+        if assignment.choice.correct:
+            try:
+                question_stats[question.id]["num_crrect"] += 1
+            except KeyError:
+                question_stats[question.id]["num_correct"] = 1
+
+
+@experiments.route("/<int:exp_id>/results", methods=["GET"])
+@roles_required("experimenter")
+def results_experiment(exp_id):
+    """Render some results.
+    """
+    experiment = Experiment.query.get(exp_id)
+
+    if not experiment:
+        abort(404)
+
+    num_participants = Participant.query.count()
+    num_finished = ParticipantExperiment.query.\
+            filter_by(experiment_id=experiment.id).\
+            filter_by(progress=-1).count()
+    percent_finished = num_finished / float(num_participants)
+
+    # {"question_id": {"question": "question_text", "num_responses":
+    #   num_responses, "num_correct": num_correct], ...}
+    question_stats = defaultdict(dict)
+
+    for assignment in experiment.assignments:
+        activity = assignment.activity
+
+        if "question" in activity.type:
+            get_question_stats(assignment, question_stats)
+
+    return render_template("experiments/results_experiment.html",
+                          experiment=experiment,
+                          num_participants=num_participants,
+                          num_finished=num_finished,
+                          percent_finished=percent_finished,
+                          question_stats=question_stats)
 
 @experiments.app_template_filter("datetime_format")
 def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
