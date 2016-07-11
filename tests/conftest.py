@@ -9,6 +9,15 @@ from clear_db import clear_db
 from quizApp import create_app
 from quizApp import db
 
+from quizApp.models import User, Participant, Role
+
+EXPERIMENTER_EMAIL = "experimenter"
+PARTICIPANT_EMAIL = "participant"
+EXPERIMENTER_PASSWORD = EXPERIMENTER_EMAIL
+PARTICIPANT_PASSWORD = PARTICIPANT_EMAIL
+EXPERIMENTER_ROLE_NAME = "experimenter"
+PARTICIPANT_ROLE_NAME = "participant"
+
 
 @pytest.fixture(scope="session")
 def app(request):
@@ -53,3 +62,21 @@ def dbsession(request, monkeypatch):
 
     monkeypatch.setattr(db.session, "commit", db.session.flush)
     monkeypatch.setattr(db.session, "remove", lambda: None)
+
+
+@pytest.fixture
+def users(request):
+    """Create two demo users.
+    """
+    participant_role = Role(name=PARTICIPANT_ROLE_NAME)
+    experimenter_role = Role(name=EXPERIMENTER_ROLE_NAME)
+    participant = Participant(email=PARTICIPANT_EMAIL,
+                              password=PARTICIPANT_PASSWORD,
+                              active=True,
+                              roles=[participant_role])
+    experimenter = User(email=EXPERIMENTER_EMAIL,
+                        password=EXPERIMENTER_EMAIL,
+                        active=True,
+                        roles=[experimenter_role])
+    participant.save()
+    experimenter.save()
