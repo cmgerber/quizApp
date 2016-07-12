@@ -1,0 +1,61 @@
+{% import 'macros.html' as macros %}
+
+{% macro dataset_table(form, mapping) %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for dataset_field in form.objects %}
+    {% if mapping[dataset_field.data] %}
+      {{ dataset_row(mapping[dataset_field.data], dataset_field) }}
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{% macro dataset_row(dataset, field) %}
+  <tr>
+    <td>{{ dataset.id }}</td>
+    <td>{{ dataset.name }}</td>
+    <td>{{ field }}</td>
+  </tr>
+{% endmacro %}
+
+{# TODO: there has got to be a better way #}
+
+{% macro choice_table(form, mapping) %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Label</th>
+      <th>Choice</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for choice_field in form.objects %}
+    {% if mapping[choice_field.data] %}
+      {{ choice_row(mapping[choice_field.data], choice_field) }}
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{% macro choice_row(choice, field) %}
+  <tr>
+    <td>{{ choice.label }}</td>
+    <td>{{ choice.choice }}</td>
+    <td>{{ field }}</td>
+    <td><a href="#" class="update-choice" data-choice-id="{{ choice.id }}">
+        {{ macros.render_glyphicon("cog") }}</a>
+    </td>
+  </tr>
+{% endmacro %}

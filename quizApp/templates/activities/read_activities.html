@@ -1,0 +1,34 @@
+{% extends 'header.html' %}
+{% import 'macros.html' as macros %}
+
+{% block title %}
+Activity List
+{% endblock %}
+
+{% block content %}
+<div class="table-container">
+  <table class="table table-striped" id="activities-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Text</th>
+        <th>Settings</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for activity in activities %}
+      <tr>
+        <td><a href="{{ url_for('activities.read_activity',
+        activity_id=activity.id) }}">{{ activity.id }}</a></td>
+        <td>{{ activity.question }}</a>
+        </td>
+        <td>
+          <a href="{{ url_for('activities.settings_activity',
+          activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

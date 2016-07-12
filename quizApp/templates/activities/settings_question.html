@@ -1,0 +1,75 @@
+{% extends 'header.html' %}
+{% import "macros.html" as macros %}
+{% import "activities/activities_macros.html" as activities_macros %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}Activity {{ question.id }} - Settings{% endblock %}
+
+{% block content %}
+<h3>General</h3>
+
+<form action="{{ url_for('activities.update_activity', activity_id=question.id
+) }}" method="put" id="general-form">
+  {{ macros.render_field(general_form.question) }}
+  {{ macros.render_field(general_form.num_graphs) }}
+  {{ macros.render_field(general_form.explanation) }}
+  {{ macros.render_field(general_form.needs_reflection) }}
+  {{ macros.render_field(general_form.submit) }}
+</form>
+
+<hr>
+
+<h3>Datasets associated with this activity</h3>
+<div class="alert alert-info" role="alert">
+  If this activity is not associated with any datasets, it may use a graph
+  from any dataset.
+</div>
+
+<form action="{{ url_for('activities.update_activity', activity_id=question.id
+) }}" method="put" id="dataset-remove-form">
+  <div class="table-container">
+    {{ activities_macros.dataset_table(dataset_form, remove_dataset_mapping) }}
+    {{ macros.render_field(dataset_form.submit, value="Dissasociate datasets",
+    class_="btn-danger") }}
+  </div>
+</form>
+
+<hr>
+
+<h3>Datasets not associated with this activity</h3>
+<form action="{{ url_for('activities.update_activity', activity_id=question.id
+) }}" method="put" id="dataset-add-form">
+  <div class="table-container">
+    {{ activities_macros.dataset_table(dataset_form, add_dataset_mapping) }}
+    {{ macros.render_field(dataset_form.submit, value="Associate datasets") }}
+  </div>
+</form>
+
+<hr>
+
+<h3>Choices</h3>
+<form action="{{ url_for('activities.update_activity', activity_id=question.id
+) }}" method="put" id="dataset-add-form">
+  <div class="table-container">
+    {{ activities_macros.choice_table(choice_form, choice_mapping) }}
+    {{ macros.render_field(dataset_form.submit, class_="btn-danger",
+      value="Delete choices") }}
+  </div>
+</form>
+
+<hr>
+
+<h3>Delete activity</h3>
+<div class="alert alert-danger" role="alert">
+  {{ macros.render_glyphicon("exclamation-sign") }}
+  Warning: this cannot be undone!
+</div>
+<form action="{{ url_for('activities.delete_activity', activity_id=question.id
+) }}" method="delete" id="activity-delete-form">
+  {{ macros.render_field(delete_form.submit, class_="btn-danger") }}
+</form>
+{% endblock %}
