@@ -41,6 +41,7 @@ def read_experiments():
 def create_experiment():
     """Create an experiment and save it to the database.
     """
+    pdb.set_trace()
     form = CreateExperimentForm()
     if not form.validate_on_submit():
         abort(400)

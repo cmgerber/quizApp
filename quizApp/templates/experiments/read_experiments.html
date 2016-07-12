@@ -1,4 +1,5 @@
 {% extends 'header.html' %}
+{% import 'macros.html' as macros %}
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
@@ -15,6 +16,7 @@ Experiment List
 {% import "experiments/experiment_macros.html" as exp_macros %}
 
 {% block content %}
+<form id="create-experiment-form" method="post">
 <table class="table table-striped" id="exp_table">
   <thead>
     <tr>
@@ -35,10 +37,14 @@ Experiment List
     {% endfor %}
     {% if current_user.has_role("experimenter") %}
       <tr>
-        {{ exp_macros.create_row(create_form, url_for('experiments.create_experiment'),
-        "create-form") }}
+        <td>{{ macros.render_field(create_form.name, label_visible=false, value=name) }}</td>
+        <td>{{ macros.render_field(create_form.start, label_visible=false, value=start) }}</td>
+        <td>{{ macros.render_field(create_form.stop, label_visible=false, value=stop) }}</td>
+        <td>{{ macros.render_field(create_form.submit, value="Create") }}</td>
+        <td></td>
       </tr>
     {% endif %}
   </tbody>
 </table>
+</form>
 {% endblock %}

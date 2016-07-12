@@ -7,19 +7,14 @@ $.ajaxSetup({
   }
 })
 
-function form_ajax(selector, get_data, done_callback) {
+function form_ajax(selector, done_callback) {
   $(selector).submit(function(event) {
     event.preventDefault();
-    var formData = get_data(this);
-    if(formData == 0) {
-      return;
-    }
     $.ajax({
       type: this.getAttribute("method"),
-      contentType: "application/json",
       url: this.getAttribute("action"),
-      data: JSON.stringify(formData),
-      encode: true
+      data: $(this).serialize(),
+      encode: true,
     })
     .done(done_callback);
   });
