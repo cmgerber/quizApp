@@ -1,125 +1,87 @@
-$.ajaxSetup({
-  beforeSend: function(xhr, settings) {
-    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-      var csrftoken = $('meta[name=csrf-token]').attr('content')
-        xhr.setRequestHeader("X-CSRFToken", csrftoken)
-    }
-  }
-})
-
-$(document).ready(function() {
-  $('#create-form').submit(function(event) {
+function create_experiment_data(form) {
     var formData = {
       'name' : $('input[name=name]').val(),
       'start': $('input[name=start]').val(),
       'stop': $('input[name=stop]').val(),
     };
-    var form = $('form[id=create-form]');
-    $.ajax({
-      type: form.attr("method"),
-      contentType: "application/json",
-      url: form.attr("action"),
-      data: JSON.stringify(formData),
-      dataType: 'html',
-      encode: true
-    })
+    return formData;
+}
 
-    .done(function(data) {
-      console.log(data);
-      $('#exp_table tr:last').before(data);
-    });
+function create_experiment_done(data) {
+    console.log(data);
+    $('#exp_table tr:last').before(data);
+}
 
-    event.preventDefault();
+function add_remove_activity_data(form) {
+  checked_boxes = $('input:checked', form);
+
+  if(!checked_boxes.size()) {
+    alert("Please make a selection.");
+    return 0;
+  }
+
+  var formData = {'activities': []};
+
+  $("input:checked", form).each(function() {
+    formData["activities"].push($(this).val());
   });
+  return formData;
+}
 
-  $('#activity-remove-form,#activity-add-form').submit(function(event) {
-    event.preventDefault();
-    checked_boxes = $('input:checked', this);
+function add_remove_activity_done(data) {
+  console.log(data);
+  if(data.success) {
+    window.location.reload();
+  }
+}
 
-    if(!checked_boxes.size()) {
-      alert("Please make a selection.");
-      return;
+function delete_experiment_data(form) {
+  return {};
+}
+
+function delete_experiment_done(data) {
+  console.log(data);
+  if(data.success) {
+    window.location.href = data["next_url"];
+  }
+}
+
+function question_submit_data(form) {
+  checked_box = $('input:checked');
+
+  if(!checked_box.size()) {
+    alert("Please make a selection");
+    return 0;
+  }
+
+  var formData = {
+    'choices': checked_box[0].getAttribute("value"),
+    'reflection': $("#reflection").val()
+  };
+  return formData;
+}
+
+function question_submit_done(data) {
+  console.log(data);
+  if(data.success) {
+    if(data.explanation) {
+      $("#explanation-container").css("display", "block");
+      $("#explanation-text").text(data.explanation);
+      $("#continue-link").attr("href", data.next_url);
+      $("#submit").remove();
     }
-
-
-    var formData = {'activities': []};
-
-    $("input:checked", this).each(function() {
-      formData["activities"].push($(this).val());
-    });
-
-    $.ajax({
-      type: this.getAttribute("method"),
-      contentType: "application/json",
-      url: this.getAttribute("action"),
-      data: JSON.stringify(formData),
-      dataType: 'json',
-      encode: true
-    })
-
-    .done(function(data) {
-      console.log(data);
-      if(data.success) {
-        window.location.reload();
-      }
-    });
-  })
-
-  $('#experiment-delete-form').submit(function(event) {
-    event.preventDefault();
-
-    $.ajax({
-      type: this.getAttribute("method"),
-      contentType: "application/json",
-      url: this.getAttribute("action"),
-      dataType: 'json',
-      encode: true
-    })
-
-    .done(function(data) {
-      console.log(data);
-      if(data.success) {
-        window.location.href = data["next_url"];
-      }
-    });
-  })
-
-  $("#question-submit-form").submit(function(event) {
-    event.preventDefault();
-    checked_box = $('input:checked', this);
-
-    if(!checked_box.size()) {
-      alert("Please make a selection");
-      return;
+    else {
+      window.location.href = data["next_url"];
     }
+  }
+}
 
-    var formData = {
-      'answers': checked_box[0].getAttribute("value"),
-      'reflection': $("#reflection").val()
-    };
-
-    $.ajax({
-      type: this.getAttribute("method"),
-      contentType: "application/json",
-      url: this.getAttribute("action"),
-      data: JSON.stringify(formData),
-      dataType: 'json',
-      encode: true
-    })
-
-    .done(function(data) {
-      console.log(data);
-      if(data.success) {
-        if(data.explanation) {
-          $("#explanation-container").css("display", "block");
-          $("#explanation-text").text(data.explanation);
-          $("#continue-link").attr("href", data.next_url);
-          $("#submit").remove();
-        }
-        else {
-          window.location.href = data["next_url"];
-        }
-      }
-    });
-  })
+$(document).ready(function() {
+  form_ajax("#create-form", create_experiment_data, create_experiment_done);
+  form_ajax("#activity-remove-form,#activity-add-form",
+      add_remove_activity_data, add_remove_activity_done);
+  form_ajax("#experiment-delete-form", delete_experiment_data,
+      delete_experiment_done);
+  form_ajax("#question-submit-form", question_submit_data,
+      question_submit_done);
 });

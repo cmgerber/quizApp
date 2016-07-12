@@ -7,13 +7,15 @@ from wtforms import StringField, DateTimeField, SubmitField, \
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import HTMLString, CheckboxInput, ListWidget
 
+from quizApp.forms.common import MultiCheckboxField
 
-class MultiCheckboxField(SelectMultipleField):
-    """Like a SelectMultipleField, but use checkboxes instead,
+def get_question_form(question):
+    """Given a question type, return the proper form.
     """
-    widget = ListWidget(prefix_label=False)
-    option_widget = CheckboxInput()
-
+    if "scale" in question.type:
+        return ScaleForm()
+    else:
+        return MultipleChoiceForm()
 
 class LikertWidget(object):
     """A widget that displays a Likert scale of radio buttons.
@@ -39,7 +41,7 @@ class QuestionForm(Form):
     submit = SubmitField("Submit")
     reflection = TextAreaField()
 
-    def populate_answers(self, answer_pool):
+    def populate_choices(self, choice_pool):
         """Child classes should implement this themselves for choice selection.
         """
         pass
@@ -48,18 +50,18 @@ class QuestionForm(Form):
 class MultipleChoiceForm(QuestionForm):
     """Form for rendering a multiple choice question with radio buttons.
     """
-    answers = RadioField(validators=[DataRequired()], choices=[])
+    choices = RadioField(validators=[DataRequired()], choices=[])
 
-    def populate_answers(self, choice_pool):
-        """Given a pool of choices, populate the answers field.
+    def populate_choices(self, choice_pool):
+        """Given a pool of choices, populate the choices field.
         """
-        self.answers.choices = [(str(c.id), c.choice) for c in choice_pool]
+        self.choices.choices = [(str(c.id), c.choice) for c in choice_pool]
 
 
 class ScaleForm(MultipleChoiceForm):
     """Form for rendering a likert scale question.
     """
-    answers = RadioField(validators=[DataRequired()], widget=LikertWidget())
+    choices = RadioField(validators=[DataRequired()], widget=LikertWidget())
 
 
 class CreateExperimentForm(Form):
@@ -68,12 +70,6 @@ class CreateExperimentForm(Form):
     name = StringField("Name", validators=[DataRequired()])
     start = DateTimeField("Start time", validators=[DataRequired()])
     stop = DateTimeField("Stop time", validators=[DataRequired()])
-    submit = SubmitField("Submit")
-
-
-class DeleteExperimentForm(Form):
-    """Form for deleting an experiment.
-    """
     submit = SubmitField("Submit")
 
 

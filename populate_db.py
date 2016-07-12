@@ -59,7 +59,10 @@ def get_questions():
             needs_reflection = int(random.random() * 10) % 2
 
             if not dataset:
-                dataset = Dataset(id=dataset_id)
+                dataset = Dataset(
+                    id=dataset_id,
+                    name=row["Dataset Nickname"]
+                )
                 db.session.add(dataset)
 
             explanation = ""

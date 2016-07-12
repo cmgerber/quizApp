@@ -20,11 +20,10 @@
     {% endif %}
   {% elif field.type == 'SubmitField' %}
     {{ render_submit_field(field, label_visible, **kwargs) }}
-  {% elif field.type == 'StringField' or field.type == 'PasswordField' or
-      field.type == 'TextAreaField' %}
-    {{ render_string_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'DateTimeField' %}
     {{ render_date_time_field(field, label_visible, **kwargs) }}
+  {% else %}
+    {{ render_string_field(field, label_visible, **kwargs) }}
 	{% endif %}
 {% endmacro %}
 

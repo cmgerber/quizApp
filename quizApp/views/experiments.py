@@ -8,21 +8,23 @@ import pdb
 from collections import defaultdict
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
-        abort, current_app
+    abort, current_app
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy import not_
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp.models import Question, Choice, Experiment, \
-        Assignment, ParticipantExperiment, Activity, Participant
+    Assignment, ParticipantExperiment, Activity, Participant
 from quizApp.forms.experiments import CreateExperimentForm, \
-        DeleteExperimentForm, MultipleChoiceForm, ScaleForm, ActivityListForm
+    MultipleChoiceForm, ScaleForm, \
+    ActivityListForm, get_question_form
+from quizApp.forms.common import DeleteObjectForm
 from quizApp import db
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 
-@experiments.route('', methods=["GET"])
+@experiments.route('/', methods=["GET"])
 @login_required
 def read_experiments():
     """List experiments.
@@ -34,7 +36,7 @@ def read_experiments():
                            experiments=exps, create_form=create_form)
 
 
-@experiments.route("", methods=["POST"])
+@experiments.route("/", methods=["POST"])
 @roles_required("experimenter")
 def create_experiment():
     """Create an experiment and save it to the database.
@@ -124,7 +126,7 @@ def update_experiment_activities(exp_id):
     if not activities_update_form.validate():
         abort(400)
 
-    selected_activities = [int(a) for a in
+    selected_activities = [a for a in
                            activities_update_form.activities.data]
 
     for activity_id in selected_activities:
@@ -184,15 +186,6 @@ def read_assignment(exp_id, a_id):
     abort(404)
 
 
-def get_question_form(question):
-    """Given a question type, return the proper form.
-    """
-    if "scale" in question.type:
-        return ScaleForm()
-    else:
-        return MultipleChoiceForm()
-
-
 def read_question(exp_id, question):
     """Retrieve a question from the database and render its template.
     """
@@ -209,7 +202,7 @@ def read_question(exp_id, question):
         abort(404)
 
     question_form = get_question_form(question)
-    question_form.populate_answers(question.choices)
+    question_form.populate_choices(question.choices)
 
     choice_order = [c.id for c in question.choices]
     assignment.choice_order = json.dumps(choice_order)
@@ -235,7 +228,7 @@ def update_assignment(exp_id, a_id):
         return jsonify({"success": 1})
 
     question_form = get_question_form(question)
-    question_form.populate_answers(question.choices)
+    question_form.populate_choices(question.choices)
 
     if not question_form.validate():
         return jsonify({"success": 0})
@@ -255,7 +248,7 @@ def update_assignment(exp_id, a_id):
     # assignment
     assignment = part_exp.assignments[part_exp.progress]
 
-    selected_choice = Choice.query.get(int(question_form.answers.data))
+    selected_choice = Choice.query.get(int(question_form.choices.data))
 
     if not selected_choice:
         # This choice does not exist
@@ -279,6 +272,7 @@ def update_assignment(exp_id, a_id):
     db.session.add(assignment)
     db.session.add(part_exp)
     db.session.commit()
+    pdb.set_trace()
     return jsonify({"success": 1, "explanation": question.explanation,
                     "next_url": next_url})
 
@@ -339,7 +333,7 @@ def settings_experiment(exp_id):
         Activity.query.
         filter(not_(Activity.experiments.any(id=experiment.id))).all())
 
-    delete_experiment_form = DeleteExperimentForm()
+    delete_experiment_form = DeleteObjectForm()
 
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
