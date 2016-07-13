@@ -6,8 +6,8 @@ function (for example, questions are read by read_question rather than
 read_activity itself).
 """
 
-from flask import Blueprint, render_template, url_for, Markup, jsonify, abort
-from flask_security import login_required, current_user, roles_required
+from flask import Blueprint, render_template, url_for, jsonify, abort
+from flask_security import roles_required
 from sqlalchemy import not_
 
 from quizApp.models import Activity, Dataset, Question, Choice
@@ -19,18 +19,23 @@ from quizApp import db
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
+
 @activities.route('/', methods=["GET"])
 @roles_required("experimenter")
 def read_activities():
-    activities = Activity.query.all()
+    """Display a list of all activities.
+    """
+    activities_list = Activity.query.all()
 
     return render_template("activities/read_activities.html",
-                           activities=activities)
+                           activities=activities_list)
 
 
 @activities.route("/", methods=["PUT"])
 @roles_required("experimenter")
 def create_activity():
+    """Create an activity.
+    """
     abort(404)
 
 
@@ -103,13 +108,14 @@ def settings_question(question):
                            create_choice_form=create_choice_form,
                            delete_activity_form=delete_activity_form,
                            delete_choice_form=delete_choice_form,
-                           update_choice_form=update_choice_form
-                           )
+                           update_choice_form=update_choice_form)
 
 
 @activities.route("/<int:activity_id>", methods=["POST"])
 @roles_required("experimenter")
 def update_activity(activity_id):
+    """Update the activity based on transmitted form data.
+    """
     activity = Activity.query.get(activity_id)
 
     if not activity:
@@ -148,10 +154,11 @@ def update_question(question):
         return jsonify({"success": 1})
 
 
-
 @activities.route("/<int:activity_id>", methods=["DELETE"])
 @roles_required("experimenter")
 def delete_activity(activity_id):
+    """Delete the given activity.
+    """
     activity = Activity.query.get(activity_id)
 
     if not activity:
@@ -168,6 +175,8 @@ def delete_activity(activity_id):
 @activities.route("/<int:question_id>/choices/", methods=["PUT"])
 @roles_required("experimenter")
 def create_choice(question_id):
+    """Create a choice for the given question.
+    """
     question = Question.query.get(question_id)
 
     if not question:
@@ -193,6 +202,8 @@ def create_choice(question_id):
                   methods=["POST"])
 @roles_required("experimenter")
 def update_choice(question_id, choice_id):
+    """Update the given choice using form data.
+    """
     question = Question.query.get(question_id)
 
     if not question:
@@ -222,6 +233,8 @@ def update_choice(question_id, choice_id):
                   methods=["DELETE"])
 @roles_required("experimenter")
 def delete_choice(question_id, choice_id):
+    """Delete the given choice.
+    """
     question = Question.query.get(question_id)
 
     if not question:

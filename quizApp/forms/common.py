@@ -2,10 +2,9 @@
 """
 
 from flask_wtf import Form
-from wtforms import StringField, DateTimeField, SubmitField, \
-        RadioField, SelectMultipleField, TextAreaField
+from wtforms import SubmitField, SelectMultipleField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString, CheckboxInput, ListWidget
+from wtforms.widgets.core import CheckboxInput, ListWidget
 
 
 class MultiCheckboxField(SelectMultipleField):
@@ -13,6 +12,7 @@ class MultiCheckboxField(SelectMultipleField):
     """
     widget = ListWidget(prefix_label=False)
     option_widget = CheckboxInput()
+
 
 class ListObjectForm(Form):
     """A form that has a MultiCheckboxField of some objet.

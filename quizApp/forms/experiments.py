@@ -3,11 +3,12 @@
 
 from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, \
-        RadioField, SelectMultipleField, TextAreaField
+        RadioField, TextAreaField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString, CheckboxInput, ListWidget
+from wtforms.widgets.core import HTMLString
 
 from quizApp.forms.common import MultiCheckboxField
+
 
 def get_question_form(question):
     """Given a question type, return the proper form.
@@ -16,6 +17,7 @@ def get_question_form(question):
         return ScaleForm()
     else:
         return MultipleChoiceForm()
+
 
 class LikertWidget(object):
     """A widget that displays a Likert scale of radio buttons.

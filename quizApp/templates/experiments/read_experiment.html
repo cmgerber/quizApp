@@ -15,13 +15,14 @@
 {% import 'macros.html' as macros %}
 
 {% block content %}
-  {% if assignment %}
-  {% elif current_user.has_role("participant") %}
-    <p>Press the start button to begin.</p>
+  {% if current_user.has_role("participant") %}
+    {% if assignment %}
+      <p>Press the start button to begin.</p>
 
-    <a href="{{ url_for('experiments.read_assignment', exp_id=experiment.id,
-    a_id=assignment.id) }}" class="btn btn-primary">Start
-    </a>
-    <p>You are done with this experiment.</p>
+      <a href="{{ url_for('experiments.read_assignment', exp_id=experiment.id,
+      a_id=assignment.id) }}" class="btn btn-primary">Start</a>
+    {% else %}
+      <p>You are done with this experiment.</p>
+    {% endif %}
   {% endif %}
 {% endblock %}

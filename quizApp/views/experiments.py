@@ -1,23 +1,23 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-import os
-import json
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
+import json
+import os
+
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy import not_
 from sqlalchemy.orm.exc import NoResultFound
 
-from quizApp.models import Question, Choice, Experiment, \
-    Assignment, ParticipantExperiment, Activity, Participant
-from quizApp.forms.experiments import CreateExperimentForm, \
-    MultipleChoiceForm, ScaleForm, \
-    ActivityListForm, get_question_form
-from quizApp.forms.common import DeleteObjectForm
 from quizApp import db
+from quizApp.forms.common import DeleteObjectForm
+from quizApp.forms.experiments import CreateExperimentForm, ActivityListForm, \
+    get_question_form
+from quizApp.models import Question, Choice, Experiment, Assignment, \
+    ParticipantExperiment, Activity, Participant
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 

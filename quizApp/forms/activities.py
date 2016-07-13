@@ -2,14 +2,13 @@
 """
 
 from flask_wtf import Form
-from wtforms import StringField, DateTimeField, SubmitField, \
-    RadioField, SelectMultipleField, TextAreaField, IntegerField, \
+from wtforms import StringField, SubmitField, \
+    TextAreaField, IntegerField, \
     BooleanField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString, CheckboxInput, ListWidget
 
-from quizApp.forms.common import MultiCheckboxField, ListObjectForm
-import pdb
+from quizApp.forms.common import ListObjectForm
+
 
 class QuestionForm(Form):
     """Form that can be used for creating or updating questions.
@@ -47,6 +46,7 @@ class DatasetListForm(ListObjectForm):
     def get_choice_tuple(self, dataset):
         self.objects.choices.append((str(dataset.id), dataset.name))
 
+
 class ChoiceForm(Form):
     """Form for creating or updating choices.
     """
@@ -69,7 +69,7 @@ class ChoiceForm(Form):
         choice.choice = self.choice.data
         choice.correct = self.correct.data
 
-
-
     def get_choice_tuple(self, choice):
+        """Return the choice tuple for this choice.
+        """
         self.objects.choices.append((str(choice.id), choice.choice))
