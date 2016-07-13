@@ -270,6 +270,6 @@ ul#answers {
   margin-bottom: 0px;
 }
 
-.next-button {
-  text-align: right;
+.next-button input {
+  float: right;
 }

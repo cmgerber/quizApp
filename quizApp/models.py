@@ -102,6 +102,8 @@ class ParticipantExperiment(Base):
     Attributes:
         activities - set: Order of activities for this user in this experiment
         progress - int: Which question the user is currently working on.
+        complete - bool: True if the user has finalized their responses, False
+            otherwise
 
     Relationships:
         M2O with Participant (child)
@@ -110,6 +112,7 @@ class ParticipantExperiment(Base):
     """
 
     progress = db.Column(db.Integer)
+    complete = db.Column(db.Boolean)
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))

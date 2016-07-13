@@ -204,17 +204,29 @@ def read_question(exp_id, question):
 
     question_form.reflection.data = assignment.reflection
 
-    pdb.set_trace()
-
-    choice_order = [c.id for c in question.choices]
-    assignment.choice_order = json.dumps(choice_order)
-    assignment.save()
-
     part_exp = assignment.participant_experiment
-    try:
-        next_assignment = part_exp.assignments[part_exp.progress + 1]
-    except IndexError:
-        next_assignment = None
+   
+    if not part_exp.complete:
+        # If the participant is not done, then save the choice order
+        choice_order = [c.id for c in question.choices]
+        assignment.choice_order = json.dumps(choice_order)
+        assignment.save()
+    
+    # If the participant is done, have a link right to the next question
+    """
+    If the experiment is completed, only show next-prev
+    If the experiment is not completed, show submit-prev
+    """
+    if part_exp.complete:
+        try:
+            next_url = url_for(
+                "experiments.read_assignment",
+                exp_id=experiment.id,
+                a_id=part_exp.assignments[part_exp.progress + 1])
+        except IndexError:
+            next_url = url_for("experiments.donedone")
+    else:
+        next_url = None
 
     previous_assignment = None
     
@@ -224,7 +236,8 @@ def read_question(exp_id, question):
     return render_template("experiments/read_question.html", exp=experiment,
                            question=question, assignment=assignment,
                            mc_form=question_form,
-                           next_assignment=next_assignment,
+                           next_url=next_url,
+                           experiment_complete=part_exp.complete,
                            previous_assignment=previous_assignment)
 
 
@@ -233,10 +246,19 @@ def update_assignment(exp_id, a_id):
     """Record a user's answer to this assignment
     """
     assignment = Assignment.query.get(a_id)
+
+    if not assignment:
+        abort(404)
+    
     question = Question.query.get(assignment.activity_id)
 
-    if not assignment or not question:
+    if not question:
         abort(404)
+
+    part_exp = assignment.participant_experiment
+    
+    if part_exp.complete:
+        abort(400)
 
     if "question" not in assignment.activity.type:
         # Pass for now
@@ -273,7 +295,7 @@ def update_assignment(exp_id, a_id):
         next_assignment = part_exp.assignments[part_exp.progress]
     except IndexError:
         next_assignment = None
-        part_exp.progress = -1
+        part_exp.complete = True
 
     if next_assignment:
         next_url = url_for("experiments.read_assignment", exp_id=exp_id,
@@ -281,8 +303,6 @@ def update_assignment(exp_id, a_id):
     else:
         next_url = url_for("experiments.donedone")
 
-    db.session.add(assignment)
-    db.session.add(part_exp)
     db.session.commit()
     return jsonify({"success": 1, "next_url": next_url})
 

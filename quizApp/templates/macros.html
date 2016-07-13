@@ -14,7 +14,7 @@
     {{ render_checkbox_field(field, label_visible, **kwargs) }}
 	{% elif field.type == 'RadioField' %}
     {% if field.widget.input_type == "likert" %}
-      {{ field(**kwargs) }}
+      {{ render_likert_field(field, label_visible, **kwargs) }}
     {% else %}
       {{ render_radio_field(field, label_visible,  **kwargs) }}
     {% endif %}
@@ -25,6 +25,17 @@
   {% else %}
     {{ render_string_field(field, label_visible, **kwargs) }}
 	{% endif %}
+{% endmacro %}
+
+{% macro render_likert_field(field, label_visible=true) -%}
+<div class="form-group {% if field.errors %}has-error{% endif %}">
+  <ul class='likert'>
+    {% for value, label, _ in field.iter_choices() %} 
+    {{ field(value=value) }}
+    {{ label }}
+    {% endfor %}
+  </ul>
+</div>
 {% endmacro %}
 
 {% macro render_date_time_field(field, label_visible=true) -%}
