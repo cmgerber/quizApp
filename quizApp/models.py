@@ -158,7 +158,6 @@ class Assignment(Base):
         M2O with Participant (child)
         M2O with Activity (child)
         M2O with Choice (specifically, which answer this User chose) (child)
-        M2O with Experiment (child)
         M2O with ParticipantExperiment (child)
     """
 

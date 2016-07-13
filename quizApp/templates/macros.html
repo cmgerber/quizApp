@@ -14,7 +14,7 @@
     {{ render_checkbox_field(field, label_visible, **kwargs) }}
 	{% elif field.type == 'RadioField' %}
     {% if field.widget.input_type == "likert" %}
-      {{ render_likert_field(field, label_visible, **kwargs) }}
+      {{ field }}
     {% else %}
       {{ render_radio_field(field, label_visible,  **kwargs) }}
     {% endif %}
@@ -116,7 +116,7 @@ $(function () {
 <div class="radio">
   <label>
     <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{
-    value }}" {% if field.default %}checked{% endif %}
+    value }}" {% if field.default == value %}checked{% endif %}
     >
     {% if label_visible %}
     {{ label }}

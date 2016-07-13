@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import os
-import pdb
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
@@ -76,13 +75,14 @@ def read_experiment(exp_id):
     try:
         assignment = part_exp.assignments[part_exp.progress]
     except (IndexError, AttributeError):
-        assignment = None
-
-    update_experiment_form = CreateExperimentForm()
+        #TODO: is this ok?
+        try:
+            assignment = part_exp.assignments[0]
+        except IndexError:
+            assignment = None
 
     return render_template("experiments/read_experiment.html", experiment=exp,
-                           assignment=assignment,
-                           update_experiment_form=update_experiment_form)
+                           assignment=assignment)
 
 
 @experiments.route("/<int:exp_id>", methods=["DELETE"])
@@ -198,7 +198,6 @@ def read_question(exp_id, question):
 
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
-
     if assignment.choice_id:
         question_form.choices.default = str(assignment.choice_id)
 
@@ -217,12 +216,13 @@ def read_question(exp_id, question):
     If the experiment is completed, only show next-prev
     If the experiment is not completed, show submit-prev
     """
+    this_index = part_exp.assignments.index(assignment)
     if part_exp.complete:
         try:
             next_url = url_for(
                 "experiments.read_assignment",
                 exp_id=experiment.id,
-                a_id=part_exp.assignments[part_exp.progress + 1])
+                a_id=part_exp.assignments[this_index + 1])
         except IndexError:
             next_url = url_for("experiments.donedone")
     else:
@@ -230,8 +230,8 @@ def read_question(exp_id, question):
 
     previous_assignment = None
     
-    if part_exp.progress - 1 > -1:
-        previous_assignment = part_exp.assignments[part_exp.progress - 1]
+    if this_index - 1 > -1:
+        previous_assignment = part_exp.assignments[this_index - 1]
 
     return render_template("experiments/read_question.html", exp=experiment,
                            question=question, assignment=assignment,
@@ -287,9 +287,12 @@ def update_assignment(exp_id, a_id):
     except NoResultFound:
         abort(404)
 
+    this_index = part_exp.assignments.index(assignment)
     assignment.choice_id = selected_choice.id
     assignment.reflection = question_form.reflection.data
-    part_exp.progress += 1
+    
+    if this_index == part_exp.progress:
+        part_exp.progress += 1
 
     try:
         next_assignment = part_exp.assignments[part_exp.progress]
@@ -299,7 +302,7 @@ def update_assignment(exp_id, a_id):
 
     if next_assignment:
         next_url = url_for("experiments.read_assignment", exp_id=exp_id,
-                           a_id=part_exp.assignments[part_exp.progress].id)
+                           a_id=part_exp.assignments[this_index + 1].id)
     else:
         next_url = url_for("experiments.donedone")
 

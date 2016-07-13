@@ -32,7 +32,9 @@ Quiz
     <div class="row">
       <div class="col-md-6">
         {% if previous_assignment %}
-        <a href="{{ url_for('experiments.read_assignment', exp_id=exp.id, a_id=previous_assignment.id) }}" class="btn btn-primary" role="button">Previous question</a>
+        <a href="{{ url_for('experiments.read_assignment', exp_id=exp.id,
+          a_id=previous_assignment.id) }}" class="btn btn-primary"
+          role="button">Previous</a>
         {% endif %}
       </div>
       <div class="col-md-6 next-button">

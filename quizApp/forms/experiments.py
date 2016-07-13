@@ -28,10 +28,13 @@ class LikertWidget(object):
         # Likert widget from Pete Fectau's example
         output = "<ul class='likert'>\n"
         for choice in field.choices:
+            checked = ""
+            if field.default == choice[0]:
+                checked = "checked"
             output += ('<li>\n'
-                       '  <input type="radio" name="{}" value="{}">\n'
+                       '  <input type="radio" name="{}" value="{}" {}>\n'
                        '  <label>{}</label>\n'
-                       '</li>\n').format(field.name, choice[0], choice[1])
+                       '</li>\n').format(field.name, choice[0], checked, choice[1])
 
         output += "</ul>\n"
         return HTMLString(output)
