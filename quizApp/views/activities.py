@@ -5,7 +5,6 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
-import pdb
 from flask import Blueprint, render_template, url_for, jsonify, abort
 from flask_security import roles_required
 from sqlalchemy import not_
@@ -177,7 +176,6 @@ def delete_activity(activity_id):
 def create_choice(question_id):
     """Create a choice for the given question.
     """
-    pdb.set_trace()
     question = Question.query.get(question_id)
 
     if not question:
