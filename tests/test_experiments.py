@@ -10,7 +10,7 @@ from tests.auth import login_participant
 def test_experiments(client):
     """Make sure that the blueprint is inaccessible to users not logged in.
     """
-    response = client.get("/experiments")
+    response = client.get("/experiments/")
     assert response.status_code == 302
 
     exp = Experiment(name="foo")
@@ -37,7 +37,7 @@ def test_experiments_authed_participant(client, users):
 
     exp_url = "/experiments/" + str(exp.id)
 
-    response = client.get("/experiments")
+    response = client.get("/experiments/")
     assert response.status_code == 200
     assert "foo" in response.data
 

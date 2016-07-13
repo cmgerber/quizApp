@@ -6,6 +6,10 @@
     src: local('Raleway'), local('Raleway-Regular'), url(/static/fonts/Raleway-Regular.ttf) format('truetype');
 }
 
+form {
+  margin-bottom: 20px;
+}
+
 .graph-container img {
     max-width: 100%;
     margin: auto;
@@ -254,4 +258,14 @@ ul#answers {
 
 #explanation-container {
   display: none;
+}
+
+.table-container {
+  max-height: 25em;
+  margin-bottom: 20px;
+  overflow: auto;
+}
+
+.table-container table {
+  margin-bottom: 0px;
 }

@@ -1,26 +1,28 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-import os
-import json
+from collections import defaultdict
 from datetime import datetime
+import json
+import os
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
-        abort, current_app, request
+    abort, current_app
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy import not_
 from sqlalchemy.orm.exc import NoResultFound
 
-from quizApp.models import Question, Choice, Experiment, \
-        Assignment, ParticipantExperiment, Activity
-from quizApp.forms.experiments import CreateExperimentForm, \
-        DeleteExperimentForm, MultipleChoiceForm, ScaleForm, ActivityListForm
 from quizApp import db
+from quizApp.forms.common import DeleteObjectForm
+from quizApp.forms.experiments import CreateExperimentForm, ActivityListForm, \
+    get_question_form
+from quizApp.models import Question, Choice, Experiment, Assignment, \
+    ParticipantExperiment, Activity, Participant
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 
-@experiments.route('', methods=["GET"])
+@experiments.route('/', methods=["GET"])
 @login_required
 def read_experiments():
     """List experiments.
@@ -32,7 +34,7 @@ def read_experiments():
                            experiments=exps, create_form=create_form)
 
 
-@experiments.route("", methods=["POST"])
+@experiments.route("/", methods=["POST"])
 @roles_required("experimenter")
 def create_experiment():
     """Create an experiment and save it to the database.
@@ -50,7 +52,7 @@ def create_experiment():
     exp.save()
 
     return render_template("experiments/create_experiment_response.html",
-                           exp=exp, delete_form=DeleteExperimentForm())
+                           exp=exp)
 
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
@@ -65,8 +67,8 @@ def read_experiment(exp_id):
 
     try:
         part_exp = ParticipantExperiment.query.\
-                filter_by(participant_id=current_user.id).\
-                filter_by(experiment_id=exp_id).one()
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=exp_id).one()
     except NoResultFound:
         part_exp = None
 
@@ -87,10 +89,6 @@ def read_experiment(exp_id):
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
-    form = DeleteExperimentForm()
-
-    if not form.validate():
-        return jsonify({"success": 0})
 
     exp = Experiment.query.get(exp_id)
 
@@ -100,7 +98,8 @@ def delete_experiment(exp_id):
     db.session.delete(exp)
     db.session.commit()
 
-    return jsonify({"success": 1, "id": request.json["id"]})
+    return jsonify({"success": 1, "next_url":
+                    url_for('experiments.read_experiments')})
 
 
 @experiments.route("/<int:exp_id>/activities", methods=["PUT"])
@@ -113,30 +112,25 @@ def update_experiment_activities(exp_id):
     except NoResultFound:
         abort(404)
 
-    abort(404)
-    return exp
-    # activities_update_form = ActivityListForm()
+    activities_update_form = ActivityListForm()
 
-    # activities_pool = Activity.query.all()
+    activities_pool = Activity.query.all()
 
-    # activities_mapping = activities_update_form.\
-    #     populate_activities(activities_pool)
+    activities_mapping = activities_update_form.\
+        populate_activities(activities_pool)
 
-    # if not activities_update_form.validate():
-    #     abort(400)
+    if not activities_update_form.validate():
+        abort(400)
 
-    # selected_activities = [int(a) for a in
-    #                        activities_update_form.activities.data]
+    for activity_id in activities_update_form.activities.data:
+        activity = activities_mapping[activity_id]
+        if exp in activity.experiments:
+            activity.experiments.remove(exp)
+        else:
+            activity.experiments.append(exp)
 
-    # for activity_id in selected_activities:
-    #     activity = Activity.query.get(activity_id)
-    #     if exp in activity.experiments:
-    #         activity.experiments.remove(exp)
-    #     else:
-    #         activity.experiments.append(exp)
-
-    # db.session.commit()
-    # return jsonify({"success": 1})
+    db.session.commit()
+    return jsonify({"success": 1})
 
 
 @experiments.route("/<int:exp_id>", methods=["PUT"])
@@ -185,15 +179,6 @@ def read_assignment(exp_id, a_id):
     abort(404)
 
 
-def get_question_form(question):
-    """Given a question type, return the proper form.
-    """
-    if "scale" in question.type:
-        return ScaleForm()
-    else:
-        return MultipleChoiceForm()
-
-
 def read_question(exp_id, question):
     """Retrieve a question from the database and render its template.
     """
@@ -210,7 +195,7 @@ def read_question(exp_id, question):
         abort(404)
 
     question_form = get_question_form(question)
-    question_form.populate_answers(question.choices)
+    question_form.populate_choices(question.choices)
 
     choice_order = [c.id for c in question.choices]
     assignment.choice_order = json.dumps(choice_order)
@@ -236,7 +221,7 @@ def update_assignment(exp_id, a_id):
         return jsonify({"success": 1})
 
     question_form = get_question_form(question)
-    question_form.populate_answers(question.choices)
+    question_form.populate_choices(question.choices)
 
     if not question_form.validate():
         return jsonify({"success": 0})
@@ -256,7 +241,7 @@ def update_assignment(exp_id, a_id):
     # assignment
     assignment = part_exp.assignments[part_exp.progress]
 
-    selected_choice = Choice.query.get(int(question_form.answers.data))
+    selected_choice = Choice.query.get(int(question_form.choices.data))
 
     if not selected_choice:
         # This choice does not exist
@@ -269,6 +254,7 @@ def update_assignment(exp_id, a_id):
         next_assignment = part_exp.assignments[part_exp.progress]
     except IndexError:
         next_assignment = None
+        part_exp.progress = -1
 
     if next_assignment:
         next_url = url_for("experiments.read_assignment", exp_id=exp_id,
@@ -322,24 +308,87 @@ def settings_experiment(exp_id):
     if not experiment:
         abort(404)
 
-    update_experiment_form = CreateExperimentForm()
-    remove_activities_form = ActivityListForm(prefix="remove")
-    add_activities_form = ActivityListForm(prefix="add")
+    # Due to an unfortunate quirk in wtforms, we can't use two separate forms
+    # for the two lists of activities on this page because they both will have
+    # the same set of choices. So what we do instead is have one form but two
+    # mappings, one mapping for activities in the exp and one for not in the
+    # exp. We then render two forms based on what is in each mapping.
 
-    remove_activities_mapping = remove_activities_form.populate_activities(
+    update_experiment_form = CreateExperimentForm()
+
+    activities_form = ActivityListForm()
+    activities_form.reset_activities()
+    remove_activities_mapping = activities_form.populate_activities(
         experiment.activities)
 
-    add_activities_mapping = add_activities_form.populate_activities(
+    add_activities_mapping = activities_form.populate_activities(
         Activity.query.
         filter(not_(Activity.experiments.any(id=experiment.id))).all())
+
+    delete_experiment_form = DeleteObjectForm()
 
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
                            update_experiment_form=update_experiment_form,
-                           remove_activities_form=remove_activities_form,
-                           add_activities_form=add_activities_form,
+                           activities_form=activities_form,
                            add_activities_mapping=add_activities_mapping,
-                           remove_activities_mapping=remove_activities_mapping)
+                           remove_activities_mapping=remove_activities_mapping,
+                           delete_experiment_form=delete_experiment_form)
+
+
+def get_question_stats(assignment, question_stats):
+    """Given an assignment of a question and a stats array, return statistics
+    about this question in the array.
+    """
+    question = assignment.activity
+    question_stats[question.id]["question_text"] = question.question
+
+    if assignment.choice:
+        try:
+            question_stats[question.id]["num_responses"] += 1
+        except KeyError:
+            question_stats[question.id]["num_responses"] = 1
+
+        if assignment.choice.correct:
+            try:
+                question_stats[question.id]["num_crrect"] += 1
+            except KeyError:
+                question_stats[question.id]["num_correct"] = 1
+
+
+@experiments.route("/<int:exp_id>/results", methods=["GET"])
+@roles_required("experimenter")
+def results_experiment(exp_id):
+    """Render some results.
+    """
+    experiment = Experiment.query.get(exp_id)
+
+    if not experiment:
+        abort(404)
+
+    num_participants = Participant.query.count()
+    num_finished = ParticipantExperiment.query.\
+        filter_by(experiment_id=experiment.id).\
+        filter_by(progress=-1).count()
+
+    percent_finished = num_finished / float(num_participants)
+
+    # {"question_id": {"question": "question_text", "num_responses":
+    #   num_responses, "num_correct": num_correct], ...}
+    question_stats = defaultdict(dict)
+
+    for assignment in experiment.assignments:
+        activity = assignment.activity
+
+        if "question" in activity.type:
+            get_question_stats(assignment, question_stats)
+
+    return render_template("experiments/results_experiment.html",
+                           experiment=experiment,
+                           num_participants=num_participants,
+                           num_finished=num_finished,
+                           percent_finished=percent_finished,
+                           question_stats=question_stats)
 
 
 @experiments.app_template_filter("datetime_format")

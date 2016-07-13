@@ -1,7 +1,9 @@
 {% extends 'header.html' %}
+{% import 'macros.html' as macros %}
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/moment.min.js')}}"></script>
 <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.js') }}"></script>
@@ -14,12 +16,14 @@ Experiment List
 {% import "experiments/experiment_macros.html" as exp_macros %}
 
 {% block content %}
+<form id="create-experiment-form" method="post">
 <table class="table table-striped" id="exp_table">
   <thead>
     <tr>
       <th class="col-md-3">Name</th>
       <th class="col-md-2">Start time</th>
       <th class="col-md-2">End time</th>
+      <th class="col-md-1"></th>
     </tr>
   </thead>
   <tbody>
@@ -30,14 +34,25 @@ Experiment List
       </td>
       <td class="start">{{exp.start|datetime_format}}</td>
       <td class="stop">{{exp.stop|datetime_format}}</td>
+      <td>
+        <a href="{{ url_for('experiments.settings_experiment', exp_id=exp.id) }}">
+           {{ macros.render_glyphicon('cog') }}
+        </a>
+        <a href="{{ url_for('experiments.results_experiment', exp_id=exp.id) }}">
+        {{ macros.render_glyphicon('signal') }}
+        </a>
+      </td>
     </tr>
     {% endfor %}
     {% if current_user.has_role("experimenter") %}
       <tr>
-        {{ exp_macros.create_row(create_form, url_for('experiments.create_experiment'),
-        "create-form") }}
+        <td>{{ macros.render_field(create_form.name, label_visible=false, value=name) }}</td>
+        <td>{{ macros.render_field(create_form.start, label_visible=false, value=start) }}</td>
+        <td>{{ macros.render_field(create_form.stop, label_visible=false, value=stop) }}</td>
+        <td>{{ macros.render_field(create_form.submit, value="Create") }}</td>
       </tr>
     {% endif %}
   </tbody>
 </table>
+</form>
 {% endblock %}

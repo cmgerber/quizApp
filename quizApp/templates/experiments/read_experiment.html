@@ -4,6 +4,7 @@
 <link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
 <script src="{{ url_for('static', filename='js/moment.min.js')}}"></script>
 <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {% endblock %}
 
@@ -14,17 +15,14 @@
 {% import 'macros.html' as macros %}
 
 {% block content %}
-  {% if assignment %}
-    <p>Press the start button to begin.</p>
+  {% if current_user.has_role("participant") %}
+    {% if assignment %}
+      <p>Press the start button to begin.</p>
 
-    <a href="{{ url_for('experiments.read_assignment', exp_id=experiment.id,
-    a_id=assignment.id) }}" class="btn btn-primary">Start
-    </a>
-  {% elif current_user.has_role("participant") %}
-    <p>You are done with this experiment.</p>
-  {% endif %}
-  {% if current_user.has_role("experimenter") %}
-    <a href="{{ url_for('experiments.settings_experiment',
-    exp_id=experiment.id) }}">Settings</a>
+      <a href="{{ url_for('experiments.read_assignment', exp_id=experiment.id,
+      a_id=assignment.id) }}" class="btn btn-primary">Start</a>
+    {% else %}
+      <p>You are done with this experiment.</p>
+    {% endif %}
   {% endif %}
 {% endblock %}

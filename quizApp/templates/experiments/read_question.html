@@ -4,6 +4,7 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {% endblock %}
 
@@ -22,7 +23,7 @@ Quiz
   <h3>{{ question.question }}</h3>
   <form action="{{ url_for('experiments.update_assignment', exp_id=exp.id,
         a_id=assignment.id)}}" method="post" id="question-submit-form">
-    {{ macros.render_field(mc_form.answers) }}
+    {{ macros.render_field(mc_form.choices) }}
     {% if question.needs_reflection %}
         <p>Why do you think this is the correct choice?</p>
         {{ macros.render_field(mc_form.reflection, rows="5") }}

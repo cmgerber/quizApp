@@ -165,7 +165,10 @@ class Assignment(Base):
 
     graphs = db.relationship("Graph", secondary=assignment_graph_table)
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
+    activity = db.relationship("Activity", back_populates="assignments")
+
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
     participant_experiment_id = db.Column(
@@ -218,7 +221,8 @@ class Activity(Base):
     type = db.Column(db.String(50))
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table)
-    assignments = db.relationship("Assignment", backref="activity")
+    assignments = db.relationship("Assignment", back_populates="activity",
+                                  cascade="all")
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -244,6 +248,8 @@ class Question(Activity):
             they picked what they did after they answer the question.
         duration - int: If nonzero, how long (in milliseconds) to display the
             graphs before hiding them again.
+        num_graphs - int: How many graphs should be shown when displaying this
+            question
 
     Relationships:
        O2M with Choice (parent)
@@ -254,6 +260,7 @@ class Question(Activity):
     choices = db.relationship("Choice", backref="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
     explanation = db.Column(db.String(200))
+    num_graphs = db.Column(db.Integer)
     needs_reflection = db.Column(db.Boolean())
     duration = db.Column(db.Integer)
 
@@ -371,7 +378,7 @@ class Experiment(Base):
                                  secondary=activity_experiment_table)
     participant_experiments = db.relationship("ParticipantExperiment",
                                               backref="experiment")
-    assignment = db.relationship("Assignment", backref="experiment")
+    assignments = db.relationship("Assignment", backref="experiment")
 
 
 class Dataset(Base):
