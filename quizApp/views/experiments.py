@@ -184,11 +184,12 @@ def read_question(exp_id, question):
     """
     experiment = Experiment.query.get(exp_id)
     participant = current_user
-    assignment = Assignment.query.filter_by(participant_id=participant.id).\
-        filter_by(activity_id=question.id).\
-        filter_by(experiment_id=experiment.id).one()
 
-    if assignment.choice_id:
+    try:
+        assignment = Assignment.query.filter_by(participant_id=participant.id).\
+            filter_by(activity_id=question.id).\
+            filter_by(experiment_id=experiment.id).one()
+    except NoResultFound:
         abort(400)
 
     if not experiment or not question:
@@ -197,13 +198,30 @@ def read_question(exp_id, question):
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
 
+    if assignment.choice_id:
+        question_form.choices.default = str(question.choice_id)
+
     choice_order = [c.id for c in question.choices]
     assignment.choice_order = json.dumps(choice_order)
     assignment.save()
 
+    part_exp = assignment.participant_experiment
+
+    try:
+        next_assignment = part_exp.assignments[part_exp.progress + 1]
+    except IndexError:
+        next_assignment = None
+
+    try:
+        previous_assignmnet = part_exp.assignments[part_exp.progress - 1]
+    except IndexError:
+        previous_assignment = None
+
     return render_template("experiments/read_question.html", exp=experiment,
                            question=question, assignment=assignment,
-                           mc_form=question_form)
+                           mc_form=question_form,
+                           next_assignment=next_assignment,
+                           previous_assignment=previous_assignment)
 
 
 @experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["POST"])
@@ -213,7 +231,7 @@ def update_assignment(exp_id, a_id):
     assignment = Assignment.query.get(a_id)
     question = Question.query.get(assignment.activity_id)
 
-    if not question:
+    if not assignment or not question:
         abort(404)
 
     if "question" not in assignment.activity.type:
@@ -226,6 +244,12 @@ def update_assignment(exp_id, a_id):
     if not question_form.validate():
         return jsonify({"success": 0})
 
+    selected_choice = Choice.query.get(int(question_form.choices.data))
+
+    if not selected_choice:
+        # This choice does not exist
+        abort(400)
+
     # User has answered this question successfully
 
     participant_id = current_user.id
@@ -237,15 +261,6 @@ def update_assignment(exp_id, a_id):
     except NoResultFound:
         abort(404)
 
-    # Get the user's assignment, associate it with the choice, and get the next
-    # assignment
-    assignment = part_exp.assignments[part_exp.progress]
-
-    selected_choice = Choice.query.get(int(question_form.choices.data))
-
-    if not selected_choice:
-        # This choice does not exist
-        abort(400)
     assignment.choice_id = selected_choice.id
     assignment.reflection = question_form.reflection.data
     part_exp.progress += 1
@@ -265,8 +280,7 @@ def update_assignment(exp_id, a_id):
     db.session.add(assignment)
     db.session.add(part_exp)
     db.session.commit()
-    return jsonify({"success": 1, "explanation": question.explanation,
-                    "next_url": next_url})
+    return jsonify({"success": 1, "next_url": next_url})
 
 
 @experiments.route('/donedone')
