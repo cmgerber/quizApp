@@ -16,19 +16,12 @@
 
 {% block content %}
   {% if assignment %}
+  {% elif current_user.has_role("participant") %}
     <p>Press the start button to begin.</p>
 
     <a href="{{ url_for('experiments.read_assignment', exp_id=experiment.id,
     a_id=assignment.id) }}" class="btn btn-primary">Start
     </a>
-  {% elif current_user.has_role("participant") %}
     <p>You are done with this experiment.</p>
-  {% endif %}
-  {% if current_user.has_role("experimenter") %}
-    <a href="{{ url_for('experiments.settings_experiment',
-    exp_id=experiment.id) }}">Settings</a>
-    <br />
-    <a href="{{ url_for('experiments.results_experiment',
-    exp_id=experiment.id) }}">Results</a>
   {% endif %}
 {% endblock %}

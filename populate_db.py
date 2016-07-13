@@ -76,6 +76,7 @@ def get_questions():
                 question=row["question_text"],
                 type=QUESTION_TYPE_MAPPING[row["question_type"]],
                 explanation=explanation,
+                num_graphs=1,
                 needs_reflection=needs_reflection)
 
 

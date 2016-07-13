@@ -4,9 +4,7 @@ participants.
 import os
 import json
 from datetime import datetime
-import pdb
 from collections import defaultdict
-
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
 from flask_security import login_required, current_user, roles_required
@@ -41,7 +39,6 @@ def read_experiments():
 def create_experiment():
     """Create an experiment and save it to the database.
     """
-    pdb.set_trace()
     form = CreateExperimentForm()
     if not form.validate_on_submit():
         abort(400)
@@ -92,7 +89,6 @@ def read_experiment(exp_id):
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
-    pdb.set_trace()
 
     exp = Experiment.query.get(exp_id)
 
@@ -111,7 +107,6 @@ def delete_experiment(exp_id):
 def update_experiment_activities(exp_id):
     """Change what activities are contained in an experiment.
     """
-    pdb.set_trace()
     try:
         exp = Experiment.query.get(exp_id)
     except NoResultFound:
@@ -127,10 +122,7 @@ def update_experiment_activities(exp_id):
     if not activities_update_form.validate():
         abort(400)
 
-    selected_activities = [a for a in
-                           activities_update_form.activities.data]
-
-    for activity_id in selected_activities:
+    for activity_id in activities_update_form.activities.data:
         activity = activities_mapping[activity_id]
         if exp in activity.experiments:
             activity.experiments.remove(exp)
@@ -273,7 +265,6 @@ def update_assignment(exp_id, a_id):
     db.session.add(assignment)
     db.session.add(part_exp)
     db.session.commit()
-    pdb.set_trace()
     return jsonify({"success": 1, "explanation": question.explanation,
                     "next_url": next_url})
 

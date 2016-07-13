@@ -3,26 +3,6 @@ function create_experiment_done(data) {
   $('#exp_table tr:last').before(data);
 }
 
-function add_remove_activity_done(data) {
-  console.log(data);
-  if(data.success) {
-    window.location.reload();
-  }
-}
-
-function delete_experiment_data(form) {
-  return $(form).serialize()
-    var fields = get_fields(form);
-  return {};
-}
-
-function delete_experiment_done(data) {
-  console.log(data);
-  if(data.success) {
-    window.location.href = data["next_url"];
-  }
-}
-
 function question_submit_done(data) {
   console.log(data);
   if(data.success) {
@@ -40,8 +20,8 @@ function question_submit_done(data) {
 
 $(document).ready(function() {
   form_ajax("#create-experiment-form", create_experiment_done);
-  form_ajax("#activity-remove-form,#activity-add-form",
-      add_remove_activity_done);
-  form_ajax("#experiment-delete-form", delete_experiment_done);
+  form_ajax("#update-experiment-form", done_refresh);
+  form_ajax("#activity-remove-form, #activity-add-form", done_refresh);
+  form_ajax("#experiment-delete-form", done_redirect);
   form_ajax("#question-submit-form", question_submit_done);
 });

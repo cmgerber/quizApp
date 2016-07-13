@@ -221,7 +221,8 @@ class Activity(Base):
     type = db.Column(db.String(50))
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table)
-    assignments = db.relationship("Assignment", back_populates="activity")
+    assignments = db.relationship("Assignment", back_populates="activity",
+                                  cascade="all")
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -247,6 +248,8 @@ class Question(Activity):
             they picked what they did after they answer the question.
         duration - int: If nonzero, how long (in milliseconds) to display the
             graphs before hiding them again.
+        num_graphs - int: How many graphs should be shown when displaying this
+            question
 
     Relationships:
        O2M with Choice (parent)
@@ -257,6 +260,7 @@ class Question(Activity):
     choices = db.relationship("Choice", backref="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
     explanation = db.Column(db.String(200))
+    num_graphs = db.Column(db.Integer)
     needs_reflection = db.Column(db.Boolean())
     duration = db.Column(db.Integer)
 

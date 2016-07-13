@@ -19,3 +19,19 @@ function form_ajax(selector, done_callback) {
     .done(done_callback);
   });
 }
+
+// Some generic callbacks
+
+function done_redirect(data) {
+  console.log(data);
+  if(data.success) {
+    window.location.href = data["next_url"]
+  }
+}
+
+function done_refresh(data) {
+  console.log(data);
+  if(data.success) {
+    window.location.reload();
+  }
+}

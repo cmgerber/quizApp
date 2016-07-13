@@ -23,6 +23,7 @@ Experiment List
       <th class="col-md-3">Name</th>
       <th class="col-md-2">Start time</th>
       <th class="col-md-2">End time</th>
+      <th class="col-md-1"></th>
     </tr>
   </thead>
   <tbody>
@@ -33,6 +34,14 @@ Experiment List
       </td>
       <td class="start">{{exp.start|datetime_format}}</td>
       <td class="stop">{{exp.stop|datetime_format}}</td>
+      <td>
+        <a href="{{ url_for('experiments.settings_experiment', exp_id=exp.id) }}">
+           {{ macros.render_glyphicon('cog') }}
+        </a>
+        <a href="{{ url_for('experiments.results_experiment', exp_id=exp.id) }}">
+        {{ macros.render_glyphicon('signal') }}
+        </a>
+      </td>
     </tr>
     {% endfor %}
     {% if current_user.has_role("experimenter") %}
@@ -41,7 +50,6 @@ Experiment List
         <td>{{ macros.render_field(create_form.start, label_visible=false, value=start) }}</td>
         <td>{{ macros.render_field(create_form.stop, label_visible=false, value=stop) }}</td>
         <td>{{ macros.render_field(create_form.submit, value="Create") }}</td>
-        <td></td>
       </tr>
     {% endif %}
   </tbody>

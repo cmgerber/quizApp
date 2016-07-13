@@ -9,13 +9,13 @@ read_activity itself).
 from flask import Blueprint, render_template, url_for, Markup, jsonify, abort
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy import not_
-import pdb
 
-from quizApp.models import Activity, Dataset
+from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
 from quizApp.forms.activities import QuestionForm, DatasetListForm,\
-    ChoiceListForm
+    ChoiceForm
 from quizApp.forms.common import DeleteObjectForm
+from quizApp import db
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -87,12 +87,11 @@ def settings_question(question):
         Dataset.query.
         filter(not_(Dataset.questions.any(id=question.id))).all())
 
-    choice_form = ChoiceListForm()
-    choice_form.reset_objects()
-    pdb.set_trace()
-    choice_mapping = choice_form.populate_objects(question.choices)
+    create_choice_form = ChoiceForm(prefix="create")
+    update_choice_form = ChoiceForm(prefix="update")
 
-    delete_form = DeleteObjectForm()
+    delete_activity_form = DeleteObjectForm(prefix="activity")
+    delete_choice_form = DeleteObjectForm(prefix="choice")
 
     return render_template("activities/settings_question.html",
                            question=question,
@@ -100,19 +99,143 @@ def settings_question(question):
                            dataset_form=dataset_form,
                            remove_dataset_mapping=remove_dataset_mapping,
                            add_dataset_mapping=add_dataset_mapping,
-                           choice_form=choice_form,
-                           choice_mapping=choice_mapping,
-                           delete_form=delete_form
+                           choices=question.choices,
+                           create_choice_form=create_choice_form,
+                           delete_activity_form=delete_activity_form,
+                           delete_choice_form=delete_choice_form,
+                           update_choice_form=update_choice_form
                            )
 
 
 @activities.route("/<int:activity_id>", methods=["POST"])
 @roles_required("experimenter")
 def update_activity(activity_id):
-    abort(404)
+    activity = Activity.query.get(activity_id)
+
+    if not activity:
+        abort(404)
+
+    if "question" in activity.type:
+        return update_question(activity)
+
+
+def update_question(question):
+    """Given a question, update its settings.
+    """
+    general_form = QuestionForm()
+
+    if general_form.validate():
+        general_form.populate_question(question)
+        db.session.commit()
+
+        return jsonify({"success": 1})
+
+    dataset_form = DatasetListForm()
+    dataset_form.reset_objects()
+    dataset_mapping = dataset_form.populate_objects(Dataset.query.all())
+
+    if dataset_form.validate():
+        for dataset_id in dataset_form.objects.data:
+            dataset = dataset_mapping[dataset_id]
+
+            if dataset in question.datasets:
+                question.datasets.remove(dataset)
+            else:
+                question.datasets.append(dataset)
+
+        db.session.commit()
+
+        return jsonify({"success": 1})
+
 
 
 @activities.route("/<int:activity_id>", methods=["DELETE"])
 @roles_required("experimenter")
 def delete_activity(activity_id):
-    abort(404)
+    activity = Activity.query.get(activity_id)
+
+    if not activity:
+        abort(404)
+
+    db.session.delete(activity)
+    db.session.commit()
+
+    next_url = url_for("activities.read_activities")
+
+    return jsonify({"success": 1, "next_url": next_url})
+
+
+@activities.route("/<int:question_id>/choices/", methods=["PUT"])
+@roles_required("experimenter")
+def create_choice(question_id):
+    question = Question.query.get(question_id)
+
+    if not question:
+        abort(404)
+
+    create_choice_form = ChoiceForm()
+
+    if not create_choice_form.validate():
+        abort(400)
+
+    choice = Choice()
+
+    create_choice_form.populate_choice(choice)
+
+    choice.question_id = question.id
+
+    choice.save()
+
+    return jsonify({"success": 1})
+
+
+@activities.route("/<int:question_id>/choices/<int:choice_id>",
+                  methods=["POST"])
+@roles_required("experimenter")
+def update_choice(question_id, choice_id):
+    question = Question.query.get(question_id)
+
+    if not question:
+        abort(404)
+
+    choice = Choice.query.get(choice_id)
+
+    if not choice:
+        abort(404)
+
+    if choice not in question.choices:
+        abort(400)
+
+    update_choice_form = ChoiceForm(prefix="update")
+
+    if not update_choice_form.validate():
+        abort(400)
+
+    update_choice_form.populate_choice(choice)
+
+    db.session.commit()
+
+    return jsonify({"success": 1})
+
+
+@activities.route("/<int:question_id>/choices/<int:choice_id>",
+                  methods=["DELETE"])
+@roles_required("experimenter")
+def delete_choice(question_id, choice_id):
+    question = Question.query.get(question_id)
+
+    if not question:
+        abort(404)
+
+    choice = Choice.query.get(choice_id)
+
+    if not choice:
+        abort(404)
+
+    if choice not in question.choices:
+        abort(400)
+
+    db.session.delete(choice)
+    db.session.commit()
+
+    return jsonify({"success": 1})

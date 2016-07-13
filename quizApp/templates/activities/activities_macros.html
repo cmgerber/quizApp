@@ -29,33 +29,39 @@
 
 {# TODO: there has got to be a better way #}
 
-{% macro choice_table(form, mapping) %}
+{% macro choice_table(choices, create_form) %}
 <table class="table">
   <thead>
     <tr>
       <th>Label</th>
       <th>Choice</th>
+      <th>Correct?</th>
       <th></th>
       <th></th>
     </tr>
   </thead>
   <tbody>
-    {% for choice_field in form.objects %}
-    {% if mapping[choice_field.data] %}
-      {{ choice_row(mapping[choice_field.data], choice_field) }}
-    {% endif %}
+    {% for choice in choices %}
+      {{ choice_row(choice) }}
     {% endfor %}
+    <tr>
+      <td>{{ macros.render_field(create_form.label, label_visible=False) }}</td>
+      <td>{{ macros.render_field(create_form.choice, label_visible=False) }}</td>
+      <td>{{ macros.render_field(create_form.correct, label_visible=False) }}</td>
+      <td>{{ macros.render_field(create_form.submit, value="Create") }}</td>
   </tbody>
 </table>
 {% endmacro %}
 
-{% macro choice_row(choice, field) %}
-  <tr>
-    <td>{{ choice.label }}</td>
-    <td>{{ choice.choice }}</td>
-    <td>{{ field }}</td>
-    <td><a href="#" class="update-choice" data-choice-id="{{ choice.id }}">
-        {{ macros.render_glyphicon("cog") }}</a>
-    </td>
-  </tr>
+{% macro choice_row(choice) %}
+<tr data-update-action="{{ url_for('activities.update_choice',
+question_id=choice.question_id, choice_id=choice.id) }}">
+  <td class="choice-label">{{ choice.label }}</td>
+  <td class="choice-choice">{{ choice.choice }}</td>
+  <td class="choice-correct">{{ choice.correct }}</td>
+  <td><a href="#" class="update-choice" data-choice-id="{{ choice.id }}"
+                                        data-toggle="modal" data-target="#update-choice-modal">
+      {{ macros.render_glyphicon("cog") }}</a>
+  </td>
+</tr>
 {% endmacro %}
