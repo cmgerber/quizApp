@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import os
+import pdb
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
@@ -199,23 +200,26 @@ def read_question(exp_id, question):
     question_form.populate_choices(question.choices)
 
     if assignment.choice_id:
-        question_form.choices.default = str(question.choice_id)
+        question_form.choices.default = str(assignment.choice_id)
+
+    question_form.reflection.data = assignment.reflection
+
+    pdb.set_trace()
 
     choice_order = [c.id for c in question.choices]
     assignment.choice_order = json.dumps(choice_order)
     assignment.save()
 
     part_exp = assignment.participant_experiment
-
     try:
         next_assignment = part_exp.assignments[part_exp.progress + 1]
     except IndexError:
         next_assignment = None
 
-    try:
-        previous_assignmnet = part_exp.assignments[part_exp.progress - 1]
-    except IndexError:
-        previous_assignment = None
+    previous_assignment = None
+    
+    if part_exp.progress - 1 > -1:
+        previous_assignment = part_exp.assignments[part_exp.progress - 1]
 
     return render_template("experiments/read_question.html", exp=experiment,
                            question=question, assignment=assignment,

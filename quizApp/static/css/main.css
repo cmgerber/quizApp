@@ -269,3 +269,7 @@ ul#answers {
 .table-container table {
   margin-bottom: 0px;
 }
+
+.next-button {
+  text-align: right;
+}

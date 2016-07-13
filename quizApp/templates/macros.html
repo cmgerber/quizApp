@@ -101,16 +101,18 @@ $(function () {
         {{ macros.render_radio_field(form.answers) }}
  #}
 {% macro render_radio_field(field, label_visible=true) -%}
-    {% for value, label, _ in field.iter_choices() %}
-        <div class="radio">
-            <label>
-                <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">
-                {% if label_visible %}
-                  {{ label }}
-                {% endif %}
-            </label>
-        </div>
-    {% endfor %}
+{% for value, label, _ in field.iter_choices() %}
+<div class="radio">
+  <label>
+    <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{
+    value }}" {% if field.default %}checked{% endif %}
+    >
+    {% if label_visible %}
+    {{ label }}
+    {% endif %}
+  </label>
+</div>
+{% endfor %}
 {%- endmacro %}
 
 {# Renders WTForm in bootstrap way. There are two ways to call function:
