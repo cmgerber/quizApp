@@ -2,9 +2,9 @@
 """
 from datetime import datetime
 
-from quizApp.models import Experiment
+from quizApp.models import Experiment, ParticipantExperiment
 
-from tests.auth import login_participant
+from tests.auth import login_participant, get_participant
 
 
 def test_experiments(client):
@@ -32,8 +32,12 @@ def test_experiments_authed_participant(client, users):
     response = client.get("/")
     assert "Hello participant" in response.data
 
+    participant = get_participant()
     exp = Experiment(name="foo", start=datetime.now(), stop=datetime.now())
     exp.save()
+    part_exp = ParticipantExperiment(experiment_id=exp.id,
+                                     participant_id=participant.id)
+    part_exp.save()
 
     exp_url = "/experiments/" + str(exp.id)
 
