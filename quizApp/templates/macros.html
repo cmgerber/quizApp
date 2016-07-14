@@ -12,12 +12,10 @@
 {% macro render_field(field, label_visible=true) -%}
 	{% if field.type == 'BooleanField' %}
     {{ render_checkbox_field(field, label_visible, **kwargs) }}
+  {% elif field.type == "LikertField" %}
+    {{ render_likert_field(field, label_visible, **kwargs) }}
 	{% elif field.type == 'RadioField' %}
-    {% if field.widget.input_type == "likert" %}
-      {{ field }}
-    {% else %}
-      {{ render_radio_field(field, label_visible,  **kwargs) }}
-    {% endif %}
+    {{ render_radio_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'SubmitField' %}
     {{ render_submit_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'DateTimeField' %}
@@ -30,9 +28,11 @@
 {% macro render_likert_field(field, label_visible=true) -%}
 <div class="form-group {% if field.errors %}has-error{% endif %}">
   <ul class='likert'>
-    {% for value, label, _ in field.iter_choices() %} 
-    {{ field(value=value) }}
-    {{ label }}
+    {% for choice in field %}
+    <li>
+    {{ choice(**kwargs) }}
+    {{ choice.label }}
+    </li>
     {% endfor %}
   </ul>
 </div>
@@ -112,14 +112,12 @@ $(function () {
         {{ macros.render_radio_field(form.answers) }}
  #}
 {% macro render_radio_field(field, label_visible=true) -%}
-{% for value, label, _ in field.iter_choices() %}
+{% for value in field %}
 <div class="radio">
   <label>
-    <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{
-    value }}" {% if field.default == value %}checked{% endif %}
-    >
+    {{ value(**kwargs) }}
     {% if label_visible %}
-    {{ label }}
+    {{ value.label }}
     {% endif %}
   </label>
 </div>

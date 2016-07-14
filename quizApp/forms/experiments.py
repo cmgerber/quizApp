@@ -5,10 +5,10 @@ from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, \
         RadioField, TextAreaField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString
+from wtforms.widgets.core import HTMLString, html_params
 
 from quizApp.forms.common import MultiCheckboxField
-
+import pdb
 
 def get_question_form(question):
     """Given a question type, return the proper form.
@@ -19,25 +19,11 @@ def get_question_form(question):
         return MultipleChoiceForm()
 
 
-class LikertWidget(object):
-    """A widget that displays a Likert scale of radio buttons.
+class LikertField(RadioField):
+    """Field for displaying a Likert scale. The only difference from a
+    RadioField is how its rendered, so this class is for rendering purposes.
     """
-    input_type = "likert"
-
-    def __call__(self, field, **kwargs):
-        # Likert widget from Pete Fectau's example
-        output = "<ul class='likert'>\n"
-        for choice in field.choices:
-            checked = ""
-            if field.default == choice[0]:
-                checked = "checked"
-            output += ('<li>\n'
-                       '  <input type="radio" name="{}" value="{}" {}>\n'
-                       '  <label>{}</label>\n'
-                       '</li>\n').format(field.name, choice[0], checked, choice[1])
-
-        output += "</ul>\n"
-        return HTMLString(output)
+    pass
 
 
 class QuestionForm(Form):
@@ -66,7 +52,7 @@ class MultipleChoiceForm(QuestionForm):
 class ScaleForm(MultipleChoiceForm):
     """Form for rendering a likert scale question.
     """
-    choices = RadioField(validators=[DataRequired()], widget=LikertWidget())
+    choices = LikertField(validators=[DataRequired()])
 
 
 class CreateExperimentForm(Form):

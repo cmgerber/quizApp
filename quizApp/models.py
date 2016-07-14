@@ -112,7 +112,7 @@ class ParticipantExperiment(Base):
     """
 
     progress = db.Column(db.Integer)
-    complete = db.Column(db.Boolean)
+    complete = db.Column(db.Boolean, default=False)
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))

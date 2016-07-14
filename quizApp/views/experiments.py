@@ -5,6 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import os
+import pdb
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
@@ -20,6 +21,12 @@ from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
+
+def validate_model_id(func, model, id):
+    def decorator(func):
+        return func
+    return decorator
+
 
 
 @experiments.route('/', methods=["GET"])
@@ -55,6 +62,7 @@ def create_experiment():
                            exp=exp)
 
 
+@validate_model_id(exp_id, Experiment)
 @experiments.route('/<int:exp_id>', methods=["GET"])
 @login_required
 def read_experiment(exp_id):
@@ -200,36 +208,33 @@ def read_question(exp_id, question):
     question_form.populate_choices(question.choices)
     if assignment.choice_id:
         question_form.choices.default = str(assignment.choice_id)
+        question_form.process()
 
     question_form.reflection.data = assignment.reflection
 
     part_exp = assignment.participant_experiment
-   
+
     if not part_exp.complete:
         # If the participant is not done, then save the choice order
         choice_order = [c.id for c in question.choices]
         assignment.choice_order = json.dumps(choice_order)
         assignment.save()
-    
+
     # If the participant is done, have a link right to the next question
-    """
-    If the experiment is completed, only show next-prev
-    If the experiment is not completed, show submit-prev
-    """
+
     this_index = part_exp.assignments.index(assignment)
+
     if part_exp.complete:
-        try:
-            next_url = url_for(
-                "experiments.read_assignment",
-                exp_id=experiment.id,
-                a_id=part_exp.assignments[this_index + 1])
-        except IndexError:
-            next_url = url_for("experiments.donedone")
+        next_url = get_next_assignment_url(experiment, part_exp,
+                                           this_index)
+        if not next_url:
+            next_url = url_for("experiments.confirm_done_experiment",
+                               exp_id=experiment.id)
     else:
         next_url = None
 
     previous_assignment = None
-    
+
     if this_index - 1 > -1:
         previous_assignment = part_exp.assignments[this_index - 1]
 
@@ -249,14 +254,14 @@ def update_assignment(exp_id, a_id):
 
     if not assignment:
         abort(404)
-    
+
     question = Question.query.get(assignment.activity_id)
 
     if not question:
         abort(404)
 
     part_exp = assignment.participant_experiment
-    
+
     if part_exp.complete:
         abort(400)
 
@@ -290,53 +295,29 @@ def update_assignment(exp_id, a_id):
     this_index = part_exp.assignments.index(assignment)
     assignment.choice_id = selected_choice.id
     assignment.reflection = question_form.reflection.data
-    
+
     if this_index == part_exp.progress:
         part_exp.progress += 1
 
-    try:
-        next_assignment = part_exp.assignments[part_exp.progress]
-    except IndexError:
-        next_assignment = None
-        part_exp.complete = True
+    next_url = get_next_assignment_url(experiment, part_exp,
+                                       this_index)
 
-    if next_assignment:
-        next_url = url_for("experiments.read_assignment", exp_id=exp_id,
-                           a_id=part_exp.assignments[this_index + 1].id)
-    else:
-        next_url = url_for("experiments.donedone")
+    if not next__url:
+        next_url = url_for("experiments.confirm_done_experiment",
+                           exp_id=exp_id)
 
     db.session.commit()
     return jsonify({"success": 1, "next_url": next_url})
 
 
-@experiments.route('/donedone')
-@roles_required("participant")
-def donedone():
-    """Render a final done page.
-    """
-    return render_template('experiments/done.html')
-
-
-@roles_required("participant")
-@experiments.route('/done')
-def done():
-    """Collect some feedback before finalizing the experiment.
-    """
-    pass
-
-    # questions = Question.query.join(StudentTest).\
-    #         filter(StudentTest.student_id == flask.session['userid']).\
-    #         all()
-
-    # question_types = [q.question_type for q in questions]
-
-    # if 'multiple_choice' in question_types:
-    #     return render_template('experiments/doneA.html')
-    # elif 'heuristic' in question_types:
-    #     return render_template('experiments/doneB.html')
-    # else:
-    #     print "Unknown question types"
+def get_next_assignment_url(experiment, participant_experiment, current_index):
+    try:
+        return url_for(
+            "experiments.read_assignment",
+            exp_id=experiment.id,
+            a_id=part_experiment.assignments[current_index + 1].id)
+    except IndexError:
+        return None
 
 
 @experiments.route('/<int:exp_id>/settings', methods=["GET"])
@@ -430,6 +411,40 @@ def results_experiment(exp_id):
                            num_finished=num_finished,
                            percent_finished=percent_finished,
                            question_stats=question_stats)
+
+
+@experiments.route("/<int:exp_id>/confirm_done", methods=["GET"])
+@roles_required("participant")
+def confirm_done_experiment(exp_id):
+    """Show the user a page before finalizing their quiz answers.
+    """
+    experiment = Experiment.query.get(exp_id)
+
+    if not experiment:
+        abort(404)
+
+    return render_template("experiments/experiment_confirm_done.html",
+                           experiment=experiment)
+
+
+@experiments.route("/<int:exp_id>/finalize", methods=["GET"])
+@roles_required("participant")
+def finalize_experiment(exp_id):
+    experiment = Experiment.query.get(exp_id)
+
+    if not experiment:
+        abort(404)
+
+    try:
+        part_exp = ParticipantExperiment.query.\
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=exp_id).one()
+    except NoResultFound:
+        abort(400)
+
+    part_exp.complete = True
+
+    return render_template("experiments/experiment_experiment.html")
 
 
 @experiments.app_template_filter("datetime_format")

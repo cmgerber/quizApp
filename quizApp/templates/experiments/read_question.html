@@ -23,10 +23,12 @@ Quiz
   <h3>{{ question.question }}</h3>
   <form action="{{ url_for('experiments.update_assignment', exp_id=exp.id,
   a_id=assignment.id)}}" method="post" id="question-submit-form">
-    {{ macros.render_field(mc_form.choices) }}
+    {{ experiment_complete }}
+    {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
     {% if question.needs_reflection %}
     <p>Why do you think this is the correct choice?</p>
-    {{ macros.render_field(mc_form.reflection, rows="5") }}
+    {{ macros.render_field(mc_form.reflection, rows="5",
+    disabled=experiment_complete) }}
     <br />
     {% endif %}
     <div class="row">
@@ -47,10 +49,5 @@ Quiz
     </div>
   </form>
 </div>
-<div id="explanation-container">
   <p id="explanation-text"></p>
-  <a href="#" role="button" id="continue-link"
-                            class="btn btn-primary">Continue</a>
-</div>
 {% endblock %}
-
