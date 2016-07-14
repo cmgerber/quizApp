@@ -269,3 +269,10 @@ ul#answers {
 .table-container table {
   margin-bottom: 0px;
 }
+
+.previous-button {
+  float: left;
+}
+.next-button {
+  float: right;
+}

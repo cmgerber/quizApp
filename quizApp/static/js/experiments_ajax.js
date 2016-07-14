@@ -23,5 +23,5 @@ $(document).ready(function() {
   form_ajax("#update-experiment-form", done_refresh);
   form_ajax("#activity-remove-form, #activity-add-form", done_refresh);
   form_ajax("#experiment-delete-form", done_redirect);
-  form_ajax("#question-submit-form", question_submit_done);
+  form_ajax("#question-submit-form", done_redirect);
 });

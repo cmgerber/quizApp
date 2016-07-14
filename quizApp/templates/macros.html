@@ -12,12 +12,10 @@
 {% macro render_field(field, label_visible=true) -%}
 	{% if field.type == 'BooleanField' %}
     {{ render_checkbox_field(field, label_visible, **kwargs) }}
+  {% elif field.type == "LikertField" %}
+    {{ render_likert_field(field, label_visible, **kwargs) }}
 	{% elif field.type == 'RadioField' %}
-    {% if field.widget.input_type == "likert" %}
-      {{ field(**kwargs) }}
-    {% else %}
-      {{ render_radio_field(field, label_visible,  **kwargs) }}
-    {% endif %}
+    {{ render_radio_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'SubmitField' %}
     {{ render_submit_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'DateTimeField' %}
@@ -25,6 +23,19 @@
   {% else %}
     {{ render_string_field(field, label_visible, **kwargs) }}
 	{% endif %}
+{% endmacro %}
+
+{% macro render_likert_field(field, label_visible=true) -%}
+<div class="form-group {% if field.errors %}has-error{% endif %}">
+  <ul class='likert'>
+    {% for choice in field %}
+    <li>
+    {{ choice(**kwargs) }}
+    {{ choice.label }}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
 {% endmacro %}
 
 {% macro render_date_time_field(field, label_visible=true) -%}
@@ -101,16 +112,16 @@ $(function () {
         {{ macros.render_radio_field(form.answers) }}
  #}
 {% macro render_radio_field(field, label_visible=true) -%}
-    {% for value, label, _ in field.iter_choices() %}
-        <div class="radio">
-            <label>
-                <input type="radio" name="{{ field.id }}" id="{{ field.id }}" value="{{ value }}">
-                {% if label_visible %}
-                  {{ label }}
-                {% endif %}
-            </label>
-        </div>
-    {% endfor %}
+{% for value in field %}
+<div class="radio">
+  <label>
+    {{ value(**kwargs) }}
+    {% if label_visible %}
+    {{ value.label }}
+    {% endif %}
+  </label>
+</div>
+{% endfor %}
 {%- endmacro %}
 
 {# Renders WTForm in bootstrap way. There are two ways to call function:
