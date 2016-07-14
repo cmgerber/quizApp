@@ -1,18 +1,23 @@
 {% extends 'header.html' %}
 {% import 'macros.html' as macros %}
 
+{% block head %}
+{{ macros.import_datatables() }}
+{% endblock %}
+
 {% block title %}
 Activity List
 {% endblock %}
 
 {% block content %}
-<div class="table-container">
-  <table class="table table-striped" id="activities-table">
+  <table class="table table-striped data-table" id="activities-table">
     <thead>
       <tr>
         <th>ID</th>
+        <th>Type</th>
         <th>Text</th>
-        <th>Settings</th>
+        <th>Category</th>
+        <th data-orderable="false"></th>
       </tr>
     </thead>
     <tbody>
@@ -20,8 +25,10 @@ Activity List
       <tr>
         <td><a href="{{ url_for('activities.read_activity',
         activity_id=activity.id) }}">{{ activity.id }}</a></td>
+        <td>{{ activity.type }}</a>
         <td>{{ activity.question }}</a>
         </td>
+        <td>{{ activity.category }}</a>
         <td>
           <a href="{{ url_for('activities.settings_activity',
           activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
@@ -30,5 +37,4 @@ Activity List
       {% endfor %}
     </tbody>
   </table>
-</div>
 {% endblock %}

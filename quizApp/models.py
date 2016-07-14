@@ -152,6 +152,8 @@ class Assignment(Base):
             order of choices that this participant was presented with when
             answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
             the IDs of those choices.
+        category - string: A description of this assignment's category, for the
+            users' convenience.
 
     Relationships:
         M2M with Graph
@@ -164,6 +166,7 @@ class Assignment(Base):
     skipped = db.Column(db.Boolean)
     reflection = db.Column(db.String(200))
     choice_order = db.Column(db.String(80))
+    category = db.Column(db.String(100))
 
     graphs = db.relationship("Graph", secondary=assignment_graph_table)
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
