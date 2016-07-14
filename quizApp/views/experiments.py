@@ -22,11 +22,29 @@ from quizApp.models import Question, Choice, Experiment, Assignment, \
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
-def validate_model_id(func, model, id):
-    def decorator(func):
-        return func
-    return decorator
 
+def validate_model_id(model, id, code=404):
+    """Given a model and id, retrieve and return that model from the database
+    or abort with the given code.
+    """
+    obj = model.query.get(id)
+
+    if not obj:
+        abort(code)
+
+    return obj
+
+
+def get_participant_experiment_or_abort(exp_id, code=400):
+    """Return the ParticipantExperiment object corresponding to the current
+    user and exp_id or abort with the given code.
+    """
+    try:
+        return ParticipantExperiment.query.\
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=exp_id).one()
+    except NoResultFound:
+        abort(code)
 
 
 @experiments.route('/', methods=["GET"])
@@ -62,16 +80,12 @@ def create_experiment():
                            exp=exp)
 
 
-@validate_model_id(exp_id, Experiment)
 @experiments.route('/<int:exp_id>', methods=["GET"])
 @login_required
 def read_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
-    exp = Experiment.query.get(exp_id)
-
-    if not exp:
-        abort(404)
+    exp = validate_model_id(Experiment, exp_id)
 
     try:
         part_exp = ParticipantExperiment.query.\
@@ -98,11 +112,7 @@ def read_experiment(exp_id):
 def delete_experiment(exp_id):
     """Delete an experiment.
     """
-
-    exp = Experiment.query.get(exp_id)
-
-    if not exp:
-        return jsonify({"success": 0})
+    exp = validate_model_id(Experiment, exp_id)
 
     db.session.delete(exp)
     db.session.commit()
@@ -116,10 +126,7 @@ def delete_experiment(exp_id):
 def update_experiment_activities(exp_id):
     """Change what activities are contained in an experiment.
     """
-    try:
-        exp = Experiment.query.get(exp_id)
-    except NoResultFound:
-        abort(404)
+    exp = validate_model_id(Experiment, exp_id)
 
     activities_update_form = ActivityListForm()
 
@@ -147,15 +154,12 @@ def update_experiment_activities(exp_id):
 def update_experiment(exp_id):
     """Modify an experiment's properties.
     """
+    exp = validate_model_id(Experiment, exp_id)
+
     experiment_update_form = CreateExperimentForm()
 
     if not experiment_update_form.validate():
         abort(400)
-
-    try:
-        exp = Experiment.query.get(exp_id)
-    except NoResultFound:
-        abort(404)
 
     exp.name = experiment_update_form.name.data
     exp.start = experiment_update_form.start.data
@@ -172,40 +176,33 @@ def read_assignment(exp_id, a_id):
     """Given an assignment ID, retrieve it from the database and display it to
     the user.
     """
-    assignment = Assignment.query.get(a_id)
+    experiment = validate_model_id(Experiment, exp_id)
+    assignment = validate_model_id(Assignment, a_id)
 
-    if not assignment:
-        abort(404)
+    part_exp = get_participant_experiment_or_abort(exp_id)
 
-    activity = Activity.query.get(assignment.activity_id)
+    if assignment not in part_exp.assignments:
+        abort(400)
 
-    if not activity:
-        abort(404)
+    activity = validate_model_id(Activity, assignment.activity_id)
 
     if "question" in activity.type:
-        return read_question(exp_id, activity)
+        return read_question(experiment, activity, assignment)
 
     abort(404)
 
 
-def read_question(exp_id, question):
+def read_question(experiment, question, assignment):
     """Retrieve a question from the database and render its template.
+
+    This function assumes that all necessary error checking has been done on
+    its parameters.
     """
-    experiment = Experiment.query.get(exp_id)
     participant = current_user
-
-    try:
-        assignment = Assignment.query.filter_by(participant_id=participant.id).\
-            filter_by(activity_id=question.id).\
-            filter_by(experiment_id=experiment.id).one()
-    except NoResultFound:
-        abort(400)
-
-    if not experiment or not question:
-        abort(404)
 
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
+
     if assignment.choice_id:
         question_form.choices.default = str(assignment.choice_id)
         question_form.process()
@@ -250,15 +247,9 @@ def read_question(exp_id, question):
 def update_assignment(exp_id, a_id):
     """Record a user's answer to this assignment
     """
-    assignment = Assignment.query.get(a_id)
+    assignment = validate_model_id(Assignment, a_id)
 
-    if not assignment:
-        abort(404)
-
-    question = Question.query.get(assignment.activity_id)
-
-    if not question:
-        abort(404)
+    question = validate_model_id(Question, assignment.activity_id)
 
     part_exp = assignment.participant_experiment
 
@@ -283,14 +274,7 @@ def update_assignment(exp_id, a_id):
 
     # User has answered this question successfully
 
-    participant_id = current_user.id
-
-    try:
-        part_exp = ParticipantExperiment.query.\
-                filter_by(experiment_id=exp_id).\
-                filter_by(participant_id=participant_id).one()
-    except NoResultFound:
-        abort(404)
+    part_exp = get_participant_experiment_or_abort(exp_id)
 
     this_index = part_exp.assignments.index(assignment)
     assignment.choice_id = selected_choice.id
@@ -325,10 +309,7 @@ def get_next_assignment_url(experiment, participant_experiment, current_index):
 def settings_experiment(exp_id):
     """Give information on an experiment and its activities.
     """
-    experiment = Experiment.query.get(exp_id)
-
-    if not experiment:
-        abort(404)
+    experiment = validate_model_id(Experiment, exp_id)
 
     # Due to an unfortunate quirk in wtforms, we can't use two separate forms
     # for the two lists of activities on this page because they both will have
@@ -383,10 +364,7 @@ def get_question_stats(assignment, question_stats):
 def results_experiment(exp_id):
     """Render some results.
     """
-    experiment = Experiment.query.get(exp_id)
-
-    if not experiment:
-        abort(404)
+    experiment = validate_model_id(Experiment, exp_id)
 
     num_participants = Participant.query.count()
     num_finished = ParticipantExperiment.query.\
@@ -418,10 +396,7 @@ def results_experiment(exp_id):
 def confirm_done_experiment(exp_id):
     """Show the user a page before finalizing their quiz answers.
     """
-    experiment = Experiment.query.get(exp_id)
-
-    if not experiment:
-        abort(404)
+    experiment = validate_model_id(Experiment, exp_id)
 
     return render_template("experiments/experiment_confirm_done.html",
                            experiment=experiment)
@@ -430,17 +405,9 @@ def confirm_done_experiment(exp_id):
 @experiments.route("/<int:exp_id>/finalize", methods=["GET"])
 @roles_required("participant")
 def finalize_experiment(exp_id):
-    experiment = Experiment.query.get(exp_id)
+    experiment = validate_model_id(Experiment, exp_id)
 
-    if not experiment:
-        abort(404)
-
-    try:
-        part_exp = ParticipantExperiment.query.\
-            filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=exp_id).one()
-    except NoResultFound:
-        abort(400)
+    part_exp = get_participant_experiment_or_abort(exp_id)
 
     part_exp.complete = True
 
