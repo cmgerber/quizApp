@@ -5,7 +5,6 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
-
 from flask import Blueprint, render_template, url_for, jsonify, abort
 from flask_security import roles_required
 from sqlalchemy import not_
@@ -182,7 +181,7 @@ def create_choice(question_id):
     if not question:
         abort(404)
 
-    create_choice_form = ChoiceForm()
+    create_choice_form = ChoiceForm(prefix="create")
 
     if not create_choice_form.validate():
         abort(400)

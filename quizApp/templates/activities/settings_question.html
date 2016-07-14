@@ -89,7 +89,7 @@ button goes here...
 
 <h3>Choices</h3>
 <form action="{{ url_for('activities.create_choice', question_id=question.id
-) }}" method="put" id="choice-create-form">
+) }}" method="put" id="create-choice-form">
   <div class="table-container">
     {{ activities_macros.choice_table(choices, create_choice_form) }}
   </div>
