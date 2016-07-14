@@ -26,12 +26,12 @@ salient.",,heuristic
 salient.",,heuristic
 4,,44,This visualization uses visual components appropriately.,,heuristic
 5,,54,This visualization successfully presents multiple relevant facts into a single visual pattern.,,heuristic
-0,,5,Rate the graph on a scale of 0 to 5,,rating
-1,,15,Rate the graph on a scale of 0 to 5,,rating
-2,,25,Rate the graph on a scale of 0 to 5,,rating
-3,,35,Rate the graph on a scale of 0 to 5,,rating
-4,,45,Rate the graph on a scale of 0 to 5,,rating
-5,,55,Rate the graph on a scale of 0 to 5,,rating
+0,,5,Rate the graph on a scale of 1 to 5,,rating
+1,,15,Rate the graph on a scale of 1 to 5,,rating
+2,,25,Rate the graph on a scale of 1 to 5,,rating
+3,,35,Rate the graph on a scale of 1 to 5,,rating
+4,,45,Rate the graph on a scale of 1 to 5,,rating
+5,,55,Rate the graph on a scale of 1 to 5,,rating
 0,,6,Rank the graphs above from best to worst,,pre_test
 1,,16,Rank the graphs above from best to worst,,pre_test
 2,,26,Rank the graphs above from best to worst,,pre_test

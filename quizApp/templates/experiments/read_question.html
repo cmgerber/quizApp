@@ -23,7 +23,6 @@ Quiz
   <h3>{{ question.question }}</h3>
   <form action="{{ url_for('experiments.update_assignment', exp_id=exp.id,
   a_id=assignment.id)}}" method="post" id="question-submit-form">
-    {{ experiment_complete }}
     {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
     {% if question.needs_reflection %}
     <p>Why do you think this is the correct choice?</p>
