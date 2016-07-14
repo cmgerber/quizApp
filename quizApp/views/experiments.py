@@ -9,7 +9,6 @@ import os
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
 from flask_security import login_required, current_user, roles_required
-from sqlalchemy import not_
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp import db
@@ -18,7 +17,6 @@ from quizApp.forms.experiments import CreateExperimentForm, get_question_form
 from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
-import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 

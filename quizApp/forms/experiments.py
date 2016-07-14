@@ -6,8 +6,6 @@ from wtforms import StringField, DateTimeField, SubmitField, \
         RadioField, TextAreaField
 from wtforms.validators import DataRequired
 
-from quizApp.forms.common import MultiCheckboxField
-
 
 def get_question_form(question):
     """Given a question type, return the proper form.

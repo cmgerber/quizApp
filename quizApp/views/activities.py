@@ -132,6 +132,8 @@ def update_question(question):
 @activities.route("/<int:activity_id>/datasets", methods=["PATCH"])
 @roles_required("experimenter")
 def update_question_datasets(activity_id):
+    """Change the datasets that this question is associated with.
+    """
     question = validate_model_id(Question, activity_id)
     dataset_form = DatasetListForm()
     dataset_form.reset_objects()
@@ -151,7 +153,6 @@ def update_question_datasets(activity_id):
     db.session.commit()
 
     return jsonify({"success": 1})
-
 
 
 @activities.route("/<int:activity_id>", methods=["DELETE"])

@@ -1,6 +1,6 @@
 """Test the Experiments blueprint.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from quizApp.models import Experiment, ParticipantExperiment
 
@@ -33,7 +33,8 @@ def test_experiments_authed_participant(client, users):
     assert "Hello participant" in response.data
 
     participant = get_participant()
-    exp = Experiment(name="foo", start=datetime.now(), stop=datetime.now())
+    exp = Experiment(name="foo", start=datetime.now(),
+                     stop=datetime.now() + timedelta(days=5))
     exp.save()
     part_exp = ParticipantExperiment(experiment_id=exp.id,
                                      participant_id=participant.id)
@@ -57,7 +58,4 @@ def test_experiments_authed_participant(client, users):
     assert response.status_code == 302
 
     response = client.put(exp_url)
-    assert response.status_code == 302
-
-    response = client.put(exp_url + "/activities")
     assert response.status_code == 302
