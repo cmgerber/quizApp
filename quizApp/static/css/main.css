@@ -270,6 +270,9 @@ ul#answers {
   margin-bottom: 0px;
 }
 
-.next-button input {
+.previous-button {
+  float: left;
+}
+.next-button {
   float: right;
 }

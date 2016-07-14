@@ -205,24 +205,19 @@ def read_question(experiment, question, assignment):
     question_form.reflection.data = assignment.reflection
 
     part_exp = assignment.participant_experiment
+    this_index = part_exp.assignments.index(assignment)
 
     if not part_exp.complete:
         # If the participant is not done, then save the choice order
         choice_order = [c.id for c in question.choices]
         assignment.choice_order = json.dumps(choice_order)
         assignment.save()
-
-    # If the participant is done, have a link right to the next question
-
-    this_index = part_exp.assignments.index(assignment)
-
-    if part_exp.complete:
-        next_url = get_next_assignment_url(part_exp, this_index)
-        if not next_url:
-            next_url = url_for("experiments.confirm_done_experiment",
-                               exp_id=experiment.id)
-    else:
         next_url = None
+        explanation = ""
+    else:
+        # If the participant is done, have a link right to the next question
+        next_url = get_next_assignment_url(part_exp, this_index)
+        explanation = question.explanation
 
     previous_assignment = None
 
@@ -233,6 +228,7 @@ def read_question(experiment, question, assignment):
                            question=question, assignment=assignment,
                            mc_form=question_form,
                            next_url=next_url,
+                           explanation=explanation,
                            experiment_complete=part_exp.complete,
                            previous_assignment=previous_assignment)
 
@@ -272,10 +268,6 @@ def update_assignment(exp_id, a_id):
 
     next_url = get_next_assignment_url(part_exp, this_index)
 
-    if not next_url:
-        next_url = url_for("experiments.confirm_done_experiment",
-                           exp_id=exp_id)
-
     db.session.commit()
     return jsonify({"success": 1, "next_url": next_url})
 
@@ -284,14 +276,28 @@ def get_next_assignment_url(participant_experiment, current_index):
     """Given an experiment, a participant_experiment, and the current index,
     find the url of the next assignment in the sequence.
     """
+    experiment_id = participant_experiment.experiment.id
     try:
-        return url_for(
+        # If there is a next assignment, return its url
+        next_url = url_for(
             "experiments.read_assignment",
-            exp_id=participant_experiment.experiment.id,
+            exp_id=experiment_id,
             a_id=participant_experiment.assignments[current_index + 1].id)
     except IndexError:
-        return None
+        next_url = None
 
+    if not next_url:
+        # We've reached the end of the experiment
+        if not participant_experiment.complete:
+            # The experiment needs to be submitted
+            next_url = url_for("experiments.confirm_done_experiment",
+                               exp_id=experiment_id)
+        else:
+            # Experiment has already been submitted
+            next_url = url_for("experiments.read_experiment",
+                               exp_id=experiment_id)
+
+    return next_url
 
 @experiments.route('/<int:exp_id>/settings', methods=["GET"])
 @roles_required("experimenter")
@@ -402,7 +408,9 @@ def finalize_experiment(exp_id):
 
     part_exp.complete = True
 
-    return render_template("experiments/experiment_experiment.html")
+    db.session.commit()
+
+    return render_template("experiments/experiment_finalize.html")
 
 
 @experiments.app_template_filter("datetime_format")
