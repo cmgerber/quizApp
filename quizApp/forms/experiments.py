@@ -82,3 +82,17 @@ class CreateExperimentForm(Form):
         self.start.data = experiment.start
         self.stop.data = experiment.stop
         self.blurb.data = experiment.blurb
+
+    def validate(self):
+        """Validate the start and stop times, then do the rest as usual.
+        """
+        if not super(CreateExperimentForm, self).validate():
+            return False
+
+        valid = True
+
+        if self.start < self.stop:
+            self.start.errors.append("Start time must be after stop time.")
+            valid = False
+
+        return valid

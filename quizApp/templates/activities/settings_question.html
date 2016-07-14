@@ -56,8 +56,8 @@
   from any dataset.
 </div>
 
-<form action="{{ url_for('activities.update_activity', activity_id=question.id
-) }}" method="post" id="remove-dataset-form">
+<form action="{{ url_for('activities.update_activity_datasets',
+activity_id=question.id) }}" method="patch" id="remove-dataset-form">
   <div class="table-container">
     {{ activities_macros.dataset_table(dataset_form, remove_dataset_mapping) }}
   </div>
@@ -68,8 +68,8 @@
 <hr>
 
 <h3>Datasets not associated with this activity</h3>
-<form action="{{ url_for('activities.update_activity', activity_id=question.id
-) }}" method="post" id="add-dataset-form">
+<form action="{{ url_for('activities.update_activity_datasets',
+activity_id=question.id) }}" method="patch" id="add-dataset-form">
   <div class="table-container">
     {{ activities_macros.dataset_table(dataset_form, add_dataset_mapping) }}
   </div>

@@ -17,7 +17,7 @@ from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, get_question_form
 from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
-
+import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
@@ -73,7 +73,7 @@ def create_experiment():
     """
     form = CreateExperimentForm()
     if not form.validate_on_submit():
-        abort(400)
+        return jsonify({"success": 0, "errors": form.errors})
 
     exp = Experiment()
     form.populate_experiment(exp)
@@ -131,7 +131,7 @@ def update_experiment(exp_id):
     experiment_update_form = CreateExperimentForm()
 
     if not experiment_update_form.validate():
-        abort(400)
+        return jsonify({"success": 0, "errors": experiment_update_form.errors})
 
     experiment_update_form.populate_experiment(exp)
 
@@ -227,7 +227,7 @@ def update_assignment(exp_id, a_id):
     question_form.populate_choices(question.choices)
 
     if not question_form.validate():
-        return jsonify({"success": 0})
+        return jsonify({"success": 0, "errors": question_form.errors})
 
     selected_choice = validate_model_id(Choice,
                                         int(question_form.choices.data), 400)

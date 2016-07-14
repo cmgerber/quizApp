@@ -26,12 +26,35 @@ function done_redirect(data) {
   console.log(data);
   if(data.success) {
     window.location.href = data["next_url"]
+  } else {
+    render_errors(data.errors);
   }
+
 }
 
 function done_refresh(data) {
   console.log(data);
   if(data.success) {
     window.location.reload();
+  } else {
+    render_errors(data.errors, data.prefix);
   }
+}
+
+function render_errors(errors, prefix) {
+  if(!prefix) {
+    prefix = ""
+  }
+  for(var id in errors) {
+    if(errors.hasOwnProperty(id)) {
+      var form_control = $("#" + prefix + id).parents(".form-group");
+      form_control.addClass("has-error");
+      form_control.children(".help-block").remove();
+      form_control.append(error_to_html(errors[id]));
+    }
+  }
+}
+
+function error_to_html(text) {
+  return "<p class='help-block'>" + text + "</p>";
 }

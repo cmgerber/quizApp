@@ -92,7 +92,7 @@ $(function () {
         {{ macros.render_checkbox_field(form.remember_me) }}
  #}
 {% macro render_checkbox_field(field, label_visible=true) -%}
-    <div class="checkbox">
+    <div class="checkbox form-group">
         <label>
             {{ field(type='checkbox', **kwargs) }}
             {% if label_visible %}
@@ -113,7 +113,7 @@ $(function () {
  #}
 {% macro render_radio_field(field, label_visible=true) -%}
 {% for value in field %}
-<div class="radio">
+<div class="radio form-group">
   <label>
     {{ value(**kwargs) }}
     {% if label_visible %}

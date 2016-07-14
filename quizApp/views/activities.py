@@ -8,7 +8,7 @@ read_activity itself).
 from flask import Blueprint, render_template, url_for, jsonify, abort
 from flask_security import roles_required
 from sqlalchemy import not_
-
+import pdb
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
 from quizApp.forms.activities import QuestionForm, DatasetListForm,\
@@ -127,6 +127,7 @@ def update_activity(activity_id):
 def update_question(question):
     """Given a question, update its settings.
     """
+    pdb.set_trace()
     general_form = QuestionForm()
 
     if general_form.validate():
@@ -135,6 +136,12 @@ def update_question(question):
 
         return jsonify({"success": 1})
 
+    return jsonify({"success": 0, "errors": general_form.errors})
+
+
+@activities.route("/<int:activity_id>/datasets", methods=["PATCH"])
+@roles_required("experimenter")
+def update_activity_datasets(activity_id):
     dataset_form = DatasetListForm()
     dataset_form.reset_objects()
     dataset_mapping = dataset_form.populate_objects(Dataset.query.all())
@@ -151,6 +158,8 @@ def update_question(question):
         db.session.commit()
 
         return jsonify({"success": 1})
+
+    return jsonify({"success": 0, "errors": dataset_form.errors})
 
 
 @activities.route("/<int:activity_id>", methods=["DELETE"])
@@ -184,7 +193,8 @@ def create_choice(question_id):
     create_choice_form = ChoiceForm(prefix="create")
 
     if not create_choice_form.validate():
-        abort(400)
+        return jsonify({"sucess": 0, "prefix": "create-",
+                        "errors": create_choice_form.errors})
 
     choice = Choice()
 
@@ -219,7 +229,8 @@ def update_choice(question_id, choice_id):
     update_choice_form = ChoiceForm(prefix="update")
 
     if not update_choice_form.validate():
-        abort(400)
+        return jsonify({"sucess": 0, "prefix": "update-",
+                        "errors": update_choice_form.errors})
 
     update_choice_form.populate_choice(choice)
 

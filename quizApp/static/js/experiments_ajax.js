@@ -1,8 +1,3 @@
-function create_experiment_done(data) {
-  console.log(data);
-  $('#exp_table tr:last').before(data);
-}
-
 function question_submit_done(data) {
   console.log(data);
   if(data.success) {
@@ -19,7 +14,7 @@ function question_submit_done(data) {
 }
 
 $(document).ready(function() {
-  form_ajax("#create-experiment-form", create_experiment_done);
+  form_ajax("#create-experiment-form", done_refresh);
   form_ajax("#update-experiment-form", done_refresh);
   form_ajax("#activity-remove-form, #activity-add-form", done_refresh);
   form_ajax("#experiment-delete-form", done_redirect);
