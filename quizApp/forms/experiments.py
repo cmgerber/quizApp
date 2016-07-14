@@ -6,8 +6,6 @@ from wtforms import StringField, DateTimeField, SubmitField, \
         RadioField, TextAreaField
 from wtforms.validators import DataRequired
 
-from quizApp.forms.common import MultiCheckboxField
-
 
 def get_question_form(question):
     """Given a question type, return the proper form.
@@ -61,30 +59,38 @@ class CreateExperimentForm(Form):
     start = DateTimeField("Start time", validators=[DataRequired()])
     stop = DateTimeField("Stop time", validators=[DataRequired()])
     submit = SubmitField("Submit")
+    blurb = TextAreaField("Blurb")
 
-
-class ActivityListForm(Form):
-    """Form to show a selectable list of Activities.
-    """
-    activities = MultiCheckboxField(validators=[DataRequired()], choices=[])
-    submit = SubmitField("Submit")
-
-    def populate_activities(self, activities_set):
-        """Given a list of Activities, populate the activities field with
-        choices.
+    def populate_experiment(self, experiment):
+        """Given an Experiment instance, set its values to those contained by
+        the form.
         """
-        activities_mapping = {}
-        for activity in activities_set:
-            activities_mapping[str(activity.id)] = activity
-            if "question" in activity.type:
-                choice_tuple = (str(activity.id), activity.question)
-            else:
-                choice_tuple = (str(activity.id), "-")
-            self.activities.choices.append(choice_tuple)
-        return activities_mapping
 
-    def reset_activities(self):
-        """Reset the list of activities - sometimes necessary in strange
-        situations
+        experiment.name = self.name.data
+        experiment.start = self.start.data
+        experiment.stop = self.stop.data
+        experiment.blurb = self.blurb.data
+
+    def populate_fields(self, experiment):
+        """Given an Experiment instance, set this form's fields' values to
+        those contained by the experiment.
         """
-        self.activities.choices = []
+
+        self.name.data = experiment.name
+        self.start.data = experiment.start
+        self.stop.data = experiment.stop
+        self.blurb.data = experiment.blurb
+
+    def validate(self):
+        """Validate the start and stop times, then do the rest as usual.
+        """
+        if not super(CreateExperimentForm, self).validate():
+            return False
+
+        valid = True
+
+        if self.start < self.stop:
+            self.start.errors.append("Start time must be after stop time.")
+            valid = False
+
+        return valid

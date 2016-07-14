@@ -48,6 +48,7 @@ QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
 def get_questions():
     """Populate the database with questions based on csv files.
     """
+    categories = ["foobar", "foo", "example", "baz"]
     with open(os.path.join(DATA_ROOT, "questions.csv")) as questions_csv:
         question_reader = csv.DictReader(questions_csv)
         for row in question_reader:
@@ -77,6 +78,7 @@ def get_questions():
                 type=QUESTION_TYPE_MAPPING[row["question_type"]],
                 explanation=explanation,
                 num_graphs=1,
+                category=random.choice(categories),
                 needs_reflection=needs_reflection)
 
 

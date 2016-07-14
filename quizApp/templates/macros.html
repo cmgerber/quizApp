@@ -92,7 +92,7 @@ $(function () {
         {{ macros.render_checkbox_field(form.remember_me) }}
  #}
 {% macro render_checkbox_field(field, label_visible=true) -%}
-    <div class="checkbox">
+    <div class="checkbox form-group">
         <label>
             {{ field(type='checkbox', **kwargs) }}
             {% if label_visible %}
@@ -113,7 +113,7 @@ $(function () {
  #}
 {% macro render_radio_field(field, label_visible=true) -%}
 {% for value in field %}
-<div class="radio">
+<div class="radio form-group">
   <label>
     {{ value(**kwargs) }}
     {% if label_visible %}
@@ -158,3 +158,18 @@ $(function () {
 {% macro render_glyphicon(name) -%}
 <span class="glyphicon glyphicon-{{ name }}" aria-hidden="true"></span>
 {%- endmacro %}
+
+{# Macros for specific js/css imports #}
+{% macro import_datetimepicker() %}
+<script src="{{ url_for('static', filename='js/moment.min.js')}}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
+<link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
+{% endmacro %}
+
+{% macro import_datatables() %}
+<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js')}}"></script>
+<script src="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"></script>
+<link href="{{ url_for('static', filename='css/dataTables.bootstrap.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/enable_dataTables.js')
+}}"></script>
+{% endmacro %}

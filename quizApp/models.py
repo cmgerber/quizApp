@@ -213,7 +213,9 @@ class Activity(Base):
 
     Attributes:
         type - string: Discriminator column that determines what kind
-        of Activity this is.
+            of Activity this is.
+        category - string: A description of this assignment's category, for the
+            users' convenience.
 
     Relationships:
         M2M with Experiment
@@ -225,6 +227,7 @@ class Activity(Base):
                                   secondary=activity_experiment_table)
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
+    category = db.Column(db.String(100))
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -375,6 +378,7 @@ class Experiment(Base):
     created = db.Column(db.DateTime)
     start = db.Column(db.DateTime)
     stop = db.Column(db.DateTime)
+    blurb = db.Column(db.String(500))
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table)

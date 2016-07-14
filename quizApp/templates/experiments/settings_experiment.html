@@ -4,11 +4,9 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
-<script src="{{ url_for('static', filename='js/moment.min.js')}}"></script>
-<script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.js') }}"></script>
 <script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+{{ macros.import_datetimepicker() }}
 {% endblock %}
 
 {% block title %}{{ experiment.name }} - Settings{% endblock %}
@@ -18,56 +16,13 @@
 
 <form action="{{ url_for('experiments.update_experiment',
 exp_id=experiment.id) }}" method="put" id="update-experiment-form">
-  {{ macros.render_field(update_experiment_form.name, value=experiment.name) }}
-  {{ macros.render_field(update_experiment_form.start, value=experiment.start) }}
-  {{ macros.render_field(update_experiment_form.stop, value=experiment.stop) }}
+  {{ macros.render_field(update_experiment_form.name) }}
+  {{ macros.render_field(update_experiment_form.start) }}
+  {{ macros.render_field(update_experiment_form.stop) }}
+  {{ macros.render_field(update_experiment_form.blurb) }}
   {{ macros.render_field(update_experiment_form.submit, value="Save",
   class_="btn-success") }}
 </form>
-
-<hr>
-
-<h3>Activities in this experiment</h3>
-<div class="alert alert-info" role="alert">
-  You must reassign participants (below) before any changes in activity
-  selection will take effect.
-</div>
-
-<form action="{{ url_for('experiments.update_experiment_activities',
-exp_id=experiment.id) }}" method="put" id="activity-remove-form">
-  <div class="table-container">
-    {{ exp_macros.activity_table(activities_form, remove_activities_mapping) }}
-  </div>
-  {{ macros.render_field(activities_form.submit,
-  value="Remove from experiment", class_="btn-danger") }}
-</form>
-
-<hr>
-
-<h3>Activities not in this experiment</h3>
-<div class="alert alert-info" role="alert">
-  You must reassign participants (below) before any changes in activity
-  selection will take effect.
-</div>
-
-<form action="{{ url_for('experiments.update_experiment_activities',
-exp_id=experiment.id) }}" method="put" id="activity-add-form">
-  <div class="table-container">
-    {{ exp_macros.activity_table(activities_form, add_activities_mapping) }}
-  </div>
-  {{ macros.render_field(activities_form.submit,
-  value="Add to experiment") }}
-</form>
-
-<hr>
-
-<h3>Reassign participants</h3>
-<p>If you have changed the activity assortment in this experiment, you must
-reassign participants before the changes take effect.</p>
-<p>This will delete all result records and participant progress in this
-experiment.</p>
-
-Button goes here...
 
 <hr>
 

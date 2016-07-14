@@ -15,6 +15,7 @@ from quizApp.forms.activities import QuestionForm, DatasetListForm,\
     ChoiceForm
 from quizApp.forms.common import DeleteObjectForm
 from quizApp import db
+from quizApp.views.helpers import validate_model_id
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -43,10 +44,7 @@ def create_activity():
 def read_activity(activity_id):
     """Display a given activity as it would appear to a participant.
     """
-    activity = Activity.query.get(activity_id)
-
-    if not activity:
-        abort(404)
+    activity = validate_model_id(Activity, activity_id)
 
     if "question" in activity.type:
         return read_question(activity)
@@ -69,10 +67,7 @@ def read_question(question):
 def settings_activity(activity_id):
     """Display settings for a particular activity.
     """
-    activity = Activity.query.get(activity_id)
-
-    if not activity:
-        abort(404)
+    activity = validate_model_id(Activity, activity_id)
 
     if "question" in activity.type:
         return settings_question(activity)
@@ -115,10 +110,7 @@ def settings_question(question):
 def update_activity(activity_id):
     """Update the activity based on transmitted form data.
     """
-    activity = Activity.query.get(activity_id)
-
-    if not activity:
-        abort(404)
+    activity = validate_model_id(Activity, activity_id)
 
     if "question" in activity.type:
         return update_question(activity)
@@ -129,28 +121,38 @@ def update_question(question):
     """
     general_form = QuestionForm()
 
-    if general_form.validate():
-        general_form.populate_question(question)
-        db.session.commit()
+    if not general_form.validate():
+        return jsonify({"success": 0, "errors": general_form.errors})
 
-        return jsonify({"success": 1})
+    general_form.populate_question(question)
 
+    return jsonify({"success": 1})
+
+
+@activities.route("/<int:activity_id>/datasets", methods=["PATCH"])
+@roles_required("experimenter")
+def update_question_datasets(activity_id):
+    """Change the datasets that this question is associated with.
+    """
+    question = validate_model_id(Question, activity_id)
     dataset_form = DatasetListForm()
     dataset_form.reset_objects()
     dataset_mapping = dataset_form.populate_objects(Dataset.query.all())
 
-    if dataset_form.validate():
-        for dataset_id in dataset_form.objects.data:
-            dataset = dataset_mapping[dataset_id]
+    if not dataset_form.validate():
+        return jsonify({"success": 0, "errors": dataset_form.errors})
 
-            if dataset in question.datasets:
-                question.datasets.remove(dataset)
-            else:
-                question.datasets.append(dataset)
+    for dataset_id in dataset_form.objects.data:
+        dataset = dataset_mapping[dataset_id]
 
-        db.session.commit()
+        if dataset in question.datasets:
+            question.datasets.remove(dataset)
+        else:
+            question.datasets.append(dataset)
 
-        return jsonify({"success": 1})
+    db.session.commit()
+
+    return jsonify({"success": 1})
 
 
 @activities.route("/<int:activity_id>", methods=["DELETE"])
@@ -158,10 +160,7 @@ def update_question(question):
 def delete_activity(activity_id):
     """Delete the given activity.
     """
-    activity = Activity.query.get(activity_id)
-
-    if not activity:
-        abort(404)
+    activity = validate_model_id(Activity, activity_id)
 
     db.session.delete(activity)
     db.session.commit()
@@ -176,15 +175,13 @@ def delete_activity(activity_id):
 def create_choice(question_id):
     """Create a choice for the given question.
     """
-    question = Question.query.get(question_id)
-
-    if not question:
-        abort(404)
+    question = validate_model_id(Question, question_id)
 
     create_choice_form = ChoiceForm(prefix="create")
 
     if not create_choice_form.validate():
-        abort(400)
+        return jsonify({"sucess": 0, "prefix": "create-",
+                        "errors": create_choice_form.errors})
 
     choice = Choice()
 
@@ -203,15 +200,8 @@ def create_choice(question_id):
 def update_choice(question_id, choice_id):
     """Update the given choice using form data.
     """
-    question = Question.query.get(question_id)
-
-    if not question:
-        abort(404)
-
-    choice = Choice.query.get(choice_id)
-
-    if not choice:
-        abort(404)
+    question = validate_model_id(Question, question_id)
+    choice = validate_model_id(Choice, choice_id)
 
     if choice not in question.choices:
         abort(400)
@@ -219,7 +209,8 @@ def update_choice(question_id, choice_id):
     update_choice_form = ChoiceForm(prefix="update")
 
     if not update_choice_form.validate():
-        abort(400)
+        return jsonify({"sucess": 0, "prefix": "update-",
+                        "errors": update_choice_form.errors})
 
     update_choice_form.populate_choice(choice)
 
@@ -234,15 +225,8 @@ def update_choice(question_id, choice_id):
 def delete_choice(question_id, choice_id):
     """Delete the given choice.
     """
-    question = Question.query.get(question_id)
-
-    if not question:
-        abort(404)
-
-    choice = Choice.query.get(choice_id)
-
-    if not choice:
-        abort(404)
+    question = validate_model_id(Question, question_id)
+    choice = validate_model_id(Choice, choice_id)
 
     if choice not in question.choices:
         abort(400)

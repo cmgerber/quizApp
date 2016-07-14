@@ -261,9 +261,10 @@ ul#answers {
 }
 
 .table-container {
-  max-height: 25em;
+  max-height: 30em;
   margin-bottom: 20px;
   overflow: auto;
+  width: 100%;
 }
 
 .table-container table {

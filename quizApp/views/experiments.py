@@ -9,30 +9,16 @@ import os
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
 from flask_security import login_required, current_user, roles_required
-from sqlalchemy import not_
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
-from quizApp.forms.experiments import CreateExperimentForm, ActivityListForm, \
-    get_question_form
+from quizApp.forms.experiments import CreateExperimentForm, get_question_form
 from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
-
+from quizApp.views.helpers import validate_model_id
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
-
-
-def validate_model_id(model, model_id, code=404):
-    """Given a model and id, retrieve and return that model from the database
-    or abort with the given code.
-    """
-    obj = model.query.get(model_id)
-
-    if not obj:
-        abort(code)
-
-    return obj
 
 
 def get_participant_experiment_or_abort(exp_id, code=400):
@@ -52,11 +38,19 @@ def get_participant_experiment_or_abort(exp_id, code=400):
 def read_experiments():
     """List experiments.
     """
-    exps = Experiment.query.all()
+    now = datetime.now()
+    past_experiments = Experiment.query.filter(Experiment.stop < now).all()
+    present_experiments = Experiment.query.filter(Experiment.stop > now).\
+        filter(Experiment.start < now).all()
+    future_experiments = Experiment.query.filter(Experiment.start > now)
+
     create_form = CreateExperimentForm()
 
     return render_template("experiments/read_experiments.html",
-                           experiments=exps, create_form=create_form)
+                           past_experiments=past_experiments,
+                           present_experiments=present_experiments,
+                           future_experiments=future_experiments,
+                           create_form=create_form)
 
 
 @experiments.route("/", methods=["POST"])
@@ -66,14 +60,11 @@ def create_experiment():
     """
     form = CreateExperimentForm()
     if not form.validate_on_submit():
-        abort(400)
+        return jsonify({"success": 0, "errors": form.errors})
 
-    exp = Experiment(
-        name=form.name.data,
-        start=form.start.data,
-        stop=form.stop.data,
-        created=datetime.now())
-
+    exp = Experiment()
+    form.populate_experiment(exp)
+    exp.created = datetime.now()
     exp.save()
 
     return render_template("experiments/create_experiment_response.html",
@@ -117,34 +108,6 @@ def delete_experiment(exp_id):
                     url_for('experiments.read_experiments')})
 
 
-@experiments.route("/<int:exp_id>/activities", methods=["PUT"])
-@roles_required("experimenter")
-def update_experiment_activities(exp_id):
-    """Change what activities are contained in an experiment.
-    """
-    exp = validate_model_id(Experiment, exp_id)
-
-    activities_update_form = ActivityListForm()
-
-    activities_pool = Activity.query.all()
-
-    activities_mapping = activities_update_form.\
-        populate_activities(activities_pool)
-
-    if not activities_update_form.validate():
-        abort(400)
-
-    for activity_id in activities_update_form.activities.data:
-        activity = activities_mapping[activity_id]
-        if exp in activity.experiments:
-            activity.experiments.remove(exp)
-        else:
-            activity.experiments.append(exp)
-
-    db.session.commit()
-    return jsonify({"success": 1})
-
-
 @experiments.route("/<int:exp_id>", methods=["PUT"])
 @roles_required("experimenter")
 def update_experiment(exp_id):
@@ -155,11 +118,9 @@ def update_experiment(exp_id):
     experiment_update_form = CreateExperimentForm()
 
     if not experiment_update_form.validate():
-        abort(400)
+        return jsonify({"success": 0, "errors": experiment_update_form.errors})
 
-    exp.name = experiment_update_form.name.data
-    exp.start = experiment_update_form.start.data
-    exp.stop = experiment_update_form.stop.data
+    experiment_update_form.populate_experiment(exp)
 
     exp.save()
 
@@ -253,7 +214,7 @@ def update_assignment(exp_id, a_id):
     question_form.populate_choices(question.choices)
 
     if not question_form.validate():
-        return jsonify({"success": 0})
+        return jsonify({"success": 0, "errors": question_form.errors})
 
     selected_choice = validate_model_id(Choice,
                                         int(question_form.choices.data), 400)
@@ -307,31 +268,14 @@ def settings_experiment(exp_id):
     """
     experiment = validate_model_id(Experiment, exp_id)
 
-    # Due to an unfortunate quirk in wtforms, we can't use two separate forms
-    # for the two lists of activities on this page because they both will have
-    # the same set of choices. So what we do instead is have one form but two
-    # mappings, one mapping for activities in the exp and one for not in the
-    # exp. We then render two forms based on what is in each mapping.
-
     update_experiment_form = CreateExperimentForm()
-
-    activities_form = ActivityListForm()
-    activities_form.reset_activities()
-    remove_activities_mapping = activities_form.populate_activities(
-        experiment.activities)
-
-    add_activities_mapping = activities_form.populate_activities(
-        Activity.query.
-        filter(not_(Activity.experiments.any(id=experiment.id))).all())
+    update_experiment_form.populate_fields(experiment)
 
     delete_experiment_form = DeleteObjectForm()
 
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
                            update_experiment_form=update_experiment_form,
-                           activities_form=activities_form,
-                           add_activities_mapping=add_activities_mapping,
-                           remove_activities_mapping=remove_activities_mapping,
                            delete_experiment_form=delete_experiment_form)
 
 
@@ -394,7 +338,7 @@ def confirm_done_experiment(exp_id):
     """
     experiment = validate_model_id(Experiment, exp_id)
 
-    return render_template("experiments/experiment_confirm_done.html",
+    return render_template("experiments/confirm_done_experiment.html",
                            experiment=experiment)
 
 
@@ -411,7 +355,7 @@ def finalize_experiment(exp_id):
 
     db.session.commit()
 
-    return render_template("experiments/experiment_finalize.html")
+    return render_template("experiments/finalize_experiment.html")
 
 
 @experiments.app_template_filter("datetime_format")

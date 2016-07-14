@@ -1,7 +1,0 @@
-{% import "experiment_macros.html" as exp_macros %}
-
-<tr data-exp-id="{{ exp.id }}">
-{{ exp_macros.create_row(modify_form, url_for("update_experiment", exp_id=exp.id),
-id="modify-" ~ exp.id, name=exp.name, start=exp.start|datetime_format,
-stop=exp.stop|datetime_format, submit="Save", class_="modify-form") }}
-</tr>
