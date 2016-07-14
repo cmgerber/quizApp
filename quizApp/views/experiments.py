@@ -17,21 +17,10 @@ from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, get_question_form
 from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
+from quizApp.views.helpers import validate_model_id
 import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
-
-
-def validate_model_id(model, model_id, code=404):
-    """Given a model and id, retrieve and return that model from the database
-    or abort with the given code.
-    """
-    obj = model.query.get(model_id)
-
-    if not obj:
-        abort(code)
-
-    return obj
 
 
 def get_participant_experiment_or_abort(exp_id, code=400):
