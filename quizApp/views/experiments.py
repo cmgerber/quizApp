@@ -27,11 +27,19 @@ experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 def read_experiments():
     """List experiments.
     """
-    exps = Experiment.query.all()
+    now = datetime.now()
+    past_experiments = Experiment.query.filter(Experiment.stop < now).all()
+    present_experiments = Experiment.query.filter(Experiment.stop > now).\
+        filter(Experiment.start < now).all()
+    future_experiments = Experiment.query.filter(Experiment.start > now)
+
     create_form = CreateExperimentForm()
 
     return render_template("experiments/read_experiments.html",
-                           experiments=exps, create_form=create_form)
+                           past_experiments=past_experiments,
+                           present_experiments=present_experiments,
+                           future_experiments=future_experiments,
+                           create_form=create_form)
 
 
 @experiments.route("/", methods=["POST"])
@@ -317,22 +325,12 @@ def settings_experiment(exp_id):
     update_experiment_form = CreateExperimentForm()
 
     activities_form = ActivityListForm()
-    activities_form.reset_activities()
-    remove_activities_mapping = activities_form.populate_activities(
-        experiment.activities)
-
-    add_activities_mapping = activities_form.populate_activities(
-        Activity.query.
-        filter(not_(Activity.experiments.any(id=experiment.id))).all())
 
     delete_experiment_form = DeleteObjectForm()
 
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
                            update_experiment_form=update_experiment_form,
-                           activities_form=activities_form,
-                           add_activities_mapping=add_activities_mapping,
-                           remove_activities_mapping=remove_activities_mapping,
                            delete_experiment_form=delete_experiment_form)
 
 

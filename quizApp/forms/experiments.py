@@ -73,6 +73,7 @@ class CreateExperimentForm(Form):
     start = DateTimeField("Start time", validators=[DataRequired()])
     stop = DateTimeField("Stop time", validators=[DataRequired()])
     submit = SubmitField("Submit")
+    blurb = StringField("Blurb")
 
 
 class ActivityListForm(Form):

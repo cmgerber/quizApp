@@ -373,6 +373,7 @@ class Experiment(Base):
     created = db.Column(db.DateTime)
     start = db.Column(db.DateTime)
     stop = db.Column(db.DateTime)
+    blurb = db.Column(db.String(500))
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table)
