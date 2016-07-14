@@ -26,3 +26,10 @@ def login_user(client, user):
     return client.post('/login', data=dict(
         email=user.email,
         password=user.password), follow_redirects=True)
+
+
+def get_participant():
+    """Return a participant model object.
+    """
+
+    return User.query.filter_by(email=conftest.PARTICIPANT_EMAIL).one()

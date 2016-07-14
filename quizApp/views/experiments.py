@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import os
-import pdb
 
 from flask import Blueprint, render_template, url_for, Markup, jsonify, \
     abort, current_app
@@ -20,14 +19,15 @@ from quizApp.forms.experiments import CreateExperimentForm, ActivityListForm, \
 from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 
+
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 
-def validate_model_id(model, id, code=404):
+def validate_model_id(model, model_id, code=404):
     """Given a model and id, retrieve and return that model from the database
     or abort with the given code.
     """
-    obj = model.query.get(id)
+    obj = model.query.get(model_id)
 
     if not obj:
         abort(code)
@@ -87,21 +87,17 @@ def read_experiment(exp_id):
     """
     exp = validate_model_id(Experiment, exp_id)
 
-    try:
-        part_exp = ParticipantExperiment.query.\
-            filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=exp_id).one()
-    except NoResultFound:
-        part_exp = None
+    part_exp = get_participant_experiment_or_abort(exp_id)
 
-    try:
-        assignment = part_exp.assignments[part_exp.progress]
-    except (IndexError, AttributeError):
-        #TODO: is this ok?
+    if len(part_exp.assignments) == 0:
+        assignment = None
+    elif part_exp.complete:
+        assignment = part_exp.assignments[0]
+    else:
         try:
-            assignment = part_exp.assignments[0]
+            assignment = part_exp.assignments[part_exp.progress]
         except IndexError:
-            assignment = None
+            assignment = part_exp.assignments[0]
 
     return render_template("experiments/read_experiment.html", experiment=exp,
                            assignment=assignment)
@@ -198,7 +194,6 @@ def read_question(experiment, question, assignment):
     This function assumes that all necessary error checking has been done on
     its parameters.
     """
-    participant = current_user
 
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
@@ -222,8 +217,7 @@ def read_question(experiment, question, assignment):
     this_index = part_exp.assignments.index(assignment)
 
     if part_exp.complete:
-        next_url = get_next_assignment_url(experiment, part_exp,
-                                           this_index)
+        next_url = get_next_assignment_url(part_exp, this_index)
         if not next_url:
             next_url = url_for("experiments.confirm_done_experiment",
                                exp_id=experiment.id)
@@ -248,10 +242,9 @@ def update_assignment(exp_id, a_id):
     """Record a user's answer to this assignment
     """
     assignment = validate_model_id(Assignment, a_id)
-
     question = validate_model_id(Question, assignment.activity_id)
-
     part_exp = assignment.participant_experiment
+    validate_model_id(Experiment, exp_id)
 
     if part_exp.complete:
         abort(400)
@@ -266,16 +259,10 @@ def update_assignment(exp_id, a_id):
     if not question_form.validate():
         return jsonify({"success": 0})
 
-    selected_choice = Choice.query.get(int(question_form.choices.data))
-
-    if not selected_choice:
-        # This choice does not exist
-        abort(400)
+    selected_choice = validate_model_id(Choice,
+                                        int(question_form.choices.data), 400)
 
     # User has answered this question successfully
-
-    part_exp = get_participant_experiment_or_abort(exp_id)
-
     this_index = part_exp.assignments.index(assignment)
     assignment.choice_id = selected_choice.id
     assignment.reflection = question_form.reflection.data
@@ -283,10 +270,9 @@ def update_assignment(exp_id, a_id):
     if this_index == part_exp.progress:
         part_exp.progress += 1
 
-    next_url = get_next_assignment_url(experiment, part_exp,
-                                       this_index)
+    next_url = get_next_assignment_url(part_exp, this_index)
 
-    if not next__url:
+    if not next_url:
         next_url = url_for("experiments.confirm_done_experiment",
                            exp_id=exp_id)
 
@@ -294,12 +280,15 @@ def update_assignment(exp_id, a_id):
     return jsonify({"success": 1, "next_url": next_url})
 
 
-def get_next_assignment_url(experiment, participant_experiment, current_index):
+def get_next_assignment_url(participant_experiment, current_index):
+    """Given an experiment, a participant_experiment, and the current index,
+    find the url of the next assignment in the sequence.
+    """
     try:
         return url_for(
             "experiments.read_assignment",
-            exp_id=experiment.id,
-            a_id=part_experiment.assignments[current_index + 1].id)
+            exp_id=participant_experiment.experiment.id,
+            a_id=participant_experiment.assignments[current_index + 1].id)
     except IndexError:
         return None
 
@@ -405,8 +394,10 @@ def confirm_done_experiment(exp_id):
 @experiments.route("/<int:exp_id>/finalize", methods=["GET"])
 @roles_required("participant")
 def finalize_experiment(exp_id):
-    experiment = validate_model_id(Experiment, exp_id)
-
+    """Finalize the user's answers for this experiment. They will no longer be
+    able to edit them, but may view them.
+    """
+    validate_model_id(Experiment, exp_id)
     part_exp = get_participant_experiment_or_abort(exp_id)
 
     part_exp.complete = True

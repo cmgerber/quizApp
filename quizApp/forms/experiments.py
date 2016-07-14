@@ -5,10 +5,9 @@ from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, \
         RadioField, TextAreaField
 from wtforms.validators import DataRequired
-from wtforms.widgets.core import HTMLString, html_params
 
 from quizApp.forms.common import MultiCheckboxField
-import pdb
+
 
 def get_question_form(question):
     """Given a question type, return the proper form.
