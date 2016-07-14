@@ -81,7 +81,7 @@ def get_questions():
 
 
             if "scale" in question.type:
-                for i in range(0, 5):
+                for i in range(1, 6):
                     question.choices.append(Choice(choice=str(i), label=str(i),
                                                    correct=True))
 
