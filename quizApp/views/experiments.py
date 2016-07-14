@@ -299,6 +299,7 @@ def get_next_assignment_url(participant_experiment, current_index):
 
     return next_url
 
+
 @experiments.route('/<int:exp_id>/settings', methods=["GET"])
 @roles_required("experimenter")
 def settings_experiment(exp_id):
