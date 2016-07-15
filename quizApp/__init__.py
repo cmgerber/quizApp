@@ -35,9 +35,11 @@ def create_app(config_name, overrides=None):
     from quizApp.views.core import core
     from quizApp.views.experiments import experiments
     from quizApp.views.activities import activities
+    from quizApp.views.datasets import datasets
 
     app.register_blueprint(core)
     app.register_blueprint(experiments)
     app.register_blueprint(activities)
+    app.register_blueprint(datasets)
 
     return app

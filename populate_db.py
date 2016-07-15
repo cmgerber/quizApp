@@ -16,7 +16,7 @@ from quizApp import create_app
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice, Role
 from quizApp import db
-
+import pdb
 def get_experiments():
     """Populate the database with initial experiments.
     """
@@ -70,6 +70,9 @@ def get_questions():
             if includes_explanation:
                 explanation = "This explains question " + \
                 str(row["question_id"])
+
+            if QUESTION_TYPE_MAPPING[row["question_type"]] == "question":
+                continue
 
             question = Question(
                 id=row["question_id"],
@@ -256,6 +259,7 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     participant_experiment_id=participant_experiment.id,
                     graphs=[Graph.query.get(graph_id)])
 
+
                 experiments[test].activities.append(
                     Question.query.get(question_id))
                 db.session.add(assignment)
@@ -290,9 +294,11 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x + 1))
                         #write row to db
+
                         if not Question.query.get(question_id):
                             missing_qs.add(question_id)
                             continue
+
                         assignment = Assignment(
                             participant_id=participant_id,
                             activity_id=question_id,

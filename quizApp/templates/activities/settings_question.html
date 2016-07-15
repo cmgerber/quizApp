@@ -11,6 +11,7 @@
 {% block title %}Activity {{ question.id }} - Settings{% endblock %}
 
 {% block content %}
+{% if update_choice_form %}
 <div class="modal fade" id="update-choice-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -36,6 +37,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 <h3>General</h3>
 
@@ -78,14 +80,7 @@ activity_id=question.id) }}" method="patch" id="add-dataset-form">
 
 <hr>
 
-<h3>Regenerate assignments</h3>
-<p>If you have modified the associated datasets of this question, you must
-regenerate assignments before the changes will take effect.</p>
-<p>This will destroy all records of student progress with this question.</p>
-
-button goes here...
-
-<hr>
+{% if create_choice_form %}
 
 <h3>Choices</h3>
 <form action="{{ url_for('activities.create_choice', question_id=question.id
@@ -96,6 +91,8 @@ button goes here...
 </form>
 
 <hr>
+
+{% endif %}
 
 <h3>Delete activity</h3>
 <div class="alert alert-danger" role="alert">
