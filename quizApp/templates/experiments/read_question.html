@@ -15,7 +15,10 @@ Quiz
 {% block content %}
 {% for graph in assignment.graphs %}
 <div class="row media-item-container"
-  data-flash-duration="{{ graph.flash_duration }}">
+  {% if not experiment_complete %}
+  data-flash-duration="{{ graph.flash_duration }}"
+  {% endif %}
+  >
   {{ graph|graph_to_img }}
 </div>
 {% endfor %}
