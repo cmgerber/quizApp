@@ -150,14 +150,16 @@ $(function () {
         class_ - sets a class for form
     #}
 {% macro render_form(form, action_url='', method='POST', action_text='Submit',
-      class_='') -%}
-  <form method="{{ method }}" action="{{ action_url }}" role="form" class="{{ class_ }}">
-    {{ form.hidden_tag() if form.hidden_tag }}
+      class_='', id='') -%}
+  <form method="{{ method }}" action="{{ action_url }}" role="form" class="{{
+  class_ }}", id="{{ id }}">
     {% if caller %}
         {{ caller() }}
     {% else %}
         {% for f in form %}
-            {{ render_field(f) }}
+            {% if f.name != "csrf_token" %}
+              {{ render_field(f) }}
+            {% endif %}
         {% endfor %}
     {% endif %}
 </form>

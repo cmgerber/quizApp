@@ -17,7 +17,7 @@ class MultiCheckboxField(SelectMultipleField):
 class ListObjectForm(Form):
     """A form that has a MultiCheckboxField of some objet.
     """
-    objects = MultiCheckboxField(validators=[DataRequired()], choices=[])
+    objects = MultiCheckboxField(validators=[DataRequired()])
     submit = SubmitField("Submit")
 
     def reset_objects(self):
@@ -29,6 +29,9 @@ class ListObjectForm(Form):
         """Given a list of objects, populate the object field with
         choices.
         """
+        if not self.objects.choices:
+            self.objects.choices = []
+
         objects_mapping = {}
 
         for obj in object_pool:
