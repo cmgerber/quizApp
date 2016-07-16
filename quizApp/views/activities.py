@@ -5,7 +5,7 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
-from flask import Blueprint, render_template, url_for, jsonify, abort
+from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 from sqlalchemy import not_
 
@@ -16,7 +16,7 @@ from quizApp.forms.activities import QuestionForm, DatasetListForm,\
 from quizApp.forms.common import DeleteObjectForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
-
+import pdb
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -159,10 +159,8 @@ def update_question_datasets(activity_id):
     """Change the datasets that this question is associated with.
     """
     question = validate_model_id(Question, activity_id)
-    dataset_form = DatasetListForm()
-    dataset_form.reset_objects()
+    dataset_form = DatasetListForm(request.form)
     dataset_mapping = dataset_form.populate_objects(Dataset.query.all())
-
     if not dataset_form.validate():
         return jsonify({"success": 0, "errors": dataset_form.errors})
 
