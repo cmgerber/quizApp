@@ -42,14 +42,22 @@ function done_refresh(data) {
 }
 
 function render_errors(errors, prefix) {
+  var cleared_form_ids = [];
   if(!prefix) {
     prefix = ""
   }
   for(var id in errors) {
     if(errors.hasOwnProperty(id)) {
       var form_control = $("#" + prefix + id).parents(".form-group");
+      var form = form_control.parents("form");
+
+      if($.inArray(form.attr("id"), cleared_form_ids) == -1) {
+        form.find(".help-block").remove();
+        form.find(".has-error").removeClass("has-error");
+        cleared_form_ids.push(form.attr("id"));
+      }
+
       form_control.addClass("has-error");
-      form_control.children(".help-block").remove();
       form_control.append(error_to_html(errors[id]));
     }
   }

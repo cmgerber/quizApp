@@ -6,8 +6,8 @@ from datetime import datetime
 import json
 import os
 
-from flask import Blueprint, render_template, url_for, Markup, jsonify, \
-    abort, current_app
+from flask import Blueprint, render_template, url_for, jsonify, abort, \
+    current_app
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -67,8 +67,7 @@ def create_experiment():
     exp.created = datetime.now()
     exp.save()
 
-    return render_template("experiments/create_experiment_response.html",
-                           exp=exp)
+    return jsonify({"success": 1})
 
 
 @experiments.route('/<int:exp_id>', methods=["GET"])
@@ -364,16 +363,14 @@ def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
     return value.strftime(fmt)
 
 
-@experiments.app_template_filter("graph_to_img")
-def graph_to_img_filter(graph):
+@experiments.app_template_filter("get_graph_url")
+def get_graph_url_filter(graph):
     """Given a graph, return html to display it.
     """
-    absolute_path = os.path.join(current_app.static_folder, "graphs/",
-                                 graph.filename)
-    if os.path.isfile(absolute_path):
-        filename = graph.filename
+    if os.path.isfile(graph.path):
+        filename = graph.filename()
     else:
         filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
 
     graph_path = url_for('static', filename=os.path.join("graphs", filename))
-    return Markup("<img src='" + graph_path + "'>")
+    return graph_path

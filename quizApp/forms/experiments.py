@@ -1,6 +1,8 @@
 """Forms for the Experiments blueprint.
 """
 
+from datetime import datetime
+
 from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, \
         RadioField, TextAreaField
@@ -97,9 +99,12 @@ class CreateExperimentForm(Form):
             return False
 
         valid = True
+        if self.start.data >= self.stop.data:
+            self.start.errors.append("Start time must be before stop time.")
+            valid = False
 
-        if self.start < self.stop:
-            self.start.errors.append("Start time must be after stop time.")
+        if self.stop.data < datetime.now():
+            self.stop.errors.append("Stop time may not be in past")
             valid = False
 
         return valid

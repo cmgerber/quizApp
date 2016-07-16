@@ -1,5 +1,7 @@
 """Models for the quizApp.
 """
+import os
+
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
 
@@ -130,16 +132,16 @@ class ParticipantExperiment(Base):
         return assignment
 
 
-assignment_graph_table = db.Table(
-    "assignment_graph", db.metadata,
+assignment_media_item_table = db.Table(
+    "assignment_media_item", db.metadata,
     db.Column("assignment_id", db.Integer,
               db.ForeignKey("assignment.id")),
-    db.Column("graph_id", db.Integer, db.ForeignKey("graph.id"))
+    db.Column("media_item_id", db.Integer, db.ForeignKey("media_item.id"))
 )
 
 
 class Assignment(Base):
-    """For a given Activity, determine which Graphs, if any, a particular
+    """For a given Activity, determine which MediaItems, if any, a particular
     Participant sees, as well as recording the Participant's answer, or if
     they skipped this assignment.
 
@@ -154,7 +156,7 @@ class Assignment(Base):
             the IDs of those choices.
 
     Relationships:
-        M2M with Graph
+        M2M with MediaItem
         M2O with Participant (child)
         M2O with Activity (child)
         M2O with Choice (specifically, which answer this User chose) (child)
@@ -165,7 +167,8 @@ class Assignment(Base):
     reflection = db.Column(db.String(200))
     choice_order = db.Column(db.String(80))
 
-    graphs = db.relationship("Graph", secondary=assignment_graph_table)
+    media_items = db.relationship("MediaItem",
+                                  secondary=assignment_media_item_table)
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
@@ -242,7 +245,7 @@ question_dataset_table = db.Table(
 
 
 class Question(Activity):
-    """A Question is related to one or more Graphs and has one or more Choices,
+    """A Question is related to one or more MediaItems and has one or more Choices,
     and is a part of one or more Experiments.
 
     Attributes:
@@ -251,10 +254,8 @@ class Question(Activity):
             correct.
         needs_reflection - bool: True if the participant should be asked why
             they picked what they did after they answer the question.
-        duration - int: If nonzero, how long (in milliseconds) to display the
-            graphs before hiding them again.
-        num_graphs - int: How many graphs should be shown when displaying this
-            question
+        num_media_items - int: How many MediaItems should be shown when
+            displaying this question
 
     Relationships:
        O2M with Choice (parent)
@@ -265,9 +266,8 @@ class Question(Activity):
     choices = db.relationship("Choice", backref="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
     explanation = db.Column(db.String(200))
-    num_graphs = db.Column(db.Integer)
+    num_media_items = db.Column(db.Integer)
     needs_reflection = db.Column(db.Boolean())
-    duration = db.Column(db.Integer)
 
     __mapper_args__ = {
         'polymorphic_identity': 'question',
@@ -340,26 +340,53 @@ class Choice(Base):
     assignments = db.relationship("Assignment", backref="choice")
 
 
-class Graph(Base):
-    """A Graph is an image file located on the server that may be shown in
-    conjunction with a Question.
+class MediaItem(Base):
+    """A MediaItem is any aid to be shown when displaying an assignment. It can
+    be text, image, videos, sound, whatever. Specific types should subclass
+    this class and define their own fields needed for rendering.
 
     Attributes:
-        filename - string: Filename of the graph
-        flash_duration - integer: How long to display the graph (-1 for
+        flash_duration - integer: How long to display the MediaItem (-1 for
             indefinitely)
+        name - string: Name for this Media Item
 
     Relationships:
         M2M with Assignment
         M2O with Dataset (child)
     """
 
-    filename = db.Column(db.String(100))
     assignments = db.relationship(
         "Assignment",
-        secondary=assignment_graph_table)
+        secondary=assignment_media_item_table)
     flash_duration = db.Column(db.Integer)
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
+    type = db.Column(db.String(80))
+    name = db.Column(db.String(100))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'media_item',
+        'polymorphic_on': type
+    }
+
+
+class Graph(MediaItem):
+    """A Graph is an image file located on the server that may be shown in
+    conjunction with an Assignment.
+
+    Attributes:
+        filename - string: Filename of the graph
+    """
+
+    path = db.Column(db.String(200))
+
+    def filename(self):
+        """Return the filename of this graph.
+        """
+        return os.path.split(os.path.basename(self.path))[1]
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'graph'
+    }
 
 
 class Experiment(Base):
@@ -391,21 +418,21 @@ class Experiment(Base):
 
 
 class Dataset(Base):
-    """A Dataset represents some data that graphs are based on.
+    """A Dataset represents some data that MediaItems are based on.
 
     Attributes:
         name - string
         uri - A path or descriptor of where this dataset is located.
 
     Relationships:
-        O2M with Graph (parent)
+        O2M with MediaItem (parent)
         M2M with Question
         M2M with Participant
     """
     name = db.Column(db.String(100))
     uri = db.Column(db.String(200))
 
-    graphs = db.relationship("Graph", backref="dataset")
+    media_items = db.relationship("MediaItem", backref="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table)
     participant = db.relationship("Participant",
                                   secondary=participant_dataset_table)

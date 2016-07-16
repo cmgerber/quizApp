@@ -14,8 +14,8 @@ class QuestionForm(Form):
     """
 
     question = TextAreaField("Question text", validators=[DataRequired()])
-    num_graphs = IntegerField("Number of graphs to show",
-                              validators=[DataRequired()])
+    num_media_items = IntegerField("Number of media items to show",
+                                   validators=[DataRequired()])
     explanation = TextAreaField(
         "Explanation (displayed to explain the correct choice)")
     needs_reflection = BooleanField("Ask students for a reflection")
@@ -27,7 +27,7 @@ class QuestionForm(Form):
         self.question.data = question.question
         self.explanation.data = question.explanation
         self.needs_reflection.data = question.needs_reflection
-        self.num_graphs.data = question.num_graphs
+        self.num_media_items.data = question.num_media_items
 
     def populate_question(self, question):
         """Given a question, populate it using the values of the fields.
@@ -35,7 +35,7 @@ class QuestionForm(Form):
         question.question = self.question.data
         question.explanation = self.explanation.data
         question.needs_reflection = self.needs_reflection.data
-        question.num_graphs = self.num_graphs.data
+        question.num_media_items = self.num_media_items.data
 
 
 class DatasetListForm(ListObjectForm):

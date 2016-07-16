@@ -12,7 +12,7 @@
 
 {% block content %}
 {% if update_choice_form %}
-<div class="modal fade" id="preview-graph-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+<div class="modal fade" id="preview-media-item-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -44,7 +44,7 @@
 <form action="{{ url_for('activities.update_activity', activity_id=question.id
 ) }}" method="post" id="update-activity-form">
   {{ macros.render_field(general_form.question) }}
-  {{ macros.render_field(general_form.num_graphs) }}
+  {{ macros.render_field(general_form.num_media_items) }}
   {{ macros.render_field(general_form.explanation) }}
   {{ macros.render_field(general_form.needs_reflection) }}
   {{ macros.render_field(general_form.submit) }}
@@ -54,7 +54,7 @@
 
 <h3>Datasets associated with this activity</h3>
 <div class="alert alert-info" role="alert">
-  If this activity is not associated with any datasets, it may use a graph
+  If this activity is not associated with any datasets, it may use a media item
   from any dataset.
 </div>
 

@@ -4,7 +4,7 @@
 from flask import Blueprint, render_template, url_for, jsonify, abort
 from flask_security import roles_required
 
-from quizApp.models import Dataset, Graph
+from quizApp.models import Dataset, MediaItem
 from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.datasets import DatasetForm
 from quizApp import db
@@ -78,35 +78,38 @@ def delete_dataset(dataset_id):
                     "next_url": url_for('datasets.read_datasets')})
 
 
-@datasets.route('/<int:dataset_id>/graphs/<int:graph_id>', methods=["DELETE"])
+@datasets.route('/<int:dataset_id>/media_items/<int:media_item_id>',
+                methods=["DELETE"])
 @roles_required("experimenter")
-def delete_dataset_graph(dataset_id, graph_id):
-    """Delete a particular graph in a particular dataset.
+def delete_dataset_media_item(dataset_id, media_item_id):
+    """Delete a particular media_item in a particular dataset.
     """
     dataset = validate_model_id(Dataset, dataset_id)
-    graph = validate_model_id(Graph, graph_id)
+    media_item = validate_model_id(MediaItem, media_item_id)
 
-    if graph not in dataset.graphs:
+    if media_item not in dataset.media_items:
         abort(404)
 
-    db.session.delete(graph)
+    db.session.delete(media_item)
     db.session.commit()
 
     return jsonify({"success": 1})
 
 
-@datasets.route('/<int:dataset_id>/graphs/<int:graph_id>', methods=["GET"])
+@datasets.route('/<int:dataset_id>/media_items/<int:media_item_id>',
+                methods=["GET"])
 @roles_required("experimenter")
-def read_graph(dataset_id, graph_id):
-    """Get an html representation of a particular graph.
+def read_media_item(dataset_id, media_item_id):
+    """Get an html representation of a particular media_item.
     """
     dataset = validate_model_id(Dataset, dataset_id)
-    graph = validate_model_id(Graph, graph_id)
+    media_item = validate_model_id(MediaItem, media_item_id)
 
-    if graph not in dataset.graphs:
+    if media_item not in dataset.media_items:
         abort(404)
 
-    return render_template("datasets/read_graph.html", graph=graph)
+    return render_template("datasets/read_media_item.html",
+                           media_item=media_item)
 
 
 @datasets.route('/<int:dataset_id>/settings', methods=["GET"])

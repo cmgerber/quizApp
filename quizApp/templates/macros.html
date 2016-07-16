@@ -184,3 +184,13 @@ $(function () {
 <script src="{{ url_for('static', filename='js/enable_dataTables.js')
 }}"></script>
 {% endmacro %}
+
+{% macro render_media_item(media_item) %}
+{% if media_item.type == "graph" %}
+{{ render_graph(media_item) }}
+{% endif %}
+{% endmacro %}
+
+{% macro render_graph(graph) %}
+<img src="{{ graph|get_graph_url }}">
+{% endmacro %}
