@@ -14,7 +14,8 @@ Quiz
 
 {% block content %}
 {% for graph in assignment.graphs %}
-<div class="row graph-container">
+<div class="row media-item-container"
+  data-flash-duration="{{ graph.flash_duration }}">
   {{ graph|graph_to_img }}
 </div>
 {% endfor %}

@@ -346,6 +346,8 @@ class Graph(Base):
 
     Attributes:
         filename - string: Filename of the graph
+        flash_duration - integer: How long to display the graph (-1 for
+            indefinitely)
 
     Relationships:
         M2M with Assignment
@@ -356,6 +358,7 @@ class Graph(Base):
     assignments = db.relationship(
         "Assignment",
         secondary=assignment_graph_table)
+    flash_duration = db.Column(db.Integer)
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
 
 
