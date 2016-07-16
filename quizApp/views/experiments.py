@@ -17,7 +17,6 @@ from quizApp.forms.experiments import CreateExperimentForm, get_question_form
 from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
-import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 

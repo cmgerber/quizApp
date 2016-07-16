@@ -16,7 +16,6 @@ from quizApp.forms.activities import QuestionForm, DatasetListForm,\
 from quizApp.forms.common import DeleteObjectForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
-import pdb
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
