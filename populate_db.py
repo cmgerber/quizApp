@@ -98,7 +98,14 @@ def get_questions():
 
             if "scale" in question.type:
                 for i in range(1, 6):
-                    question.choices.append(Choice(choice=str(i), label=str(i),
+                    choice = ""
+                    if i == 1:
+                        choice = "Very bad"
+                    elif i == 5:
+                        choice = "Very good"
+
+                    question.choices.append(Choice(choice=choice,
+                                                   label=str(i),
                                                    correct=True))
 
             db.session.add(question)
