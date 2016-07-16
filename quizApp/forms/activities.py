@@ -3,8 +3,7 @@
 
 from flask_wtf import Form
 from wtforms import StringField, SubmitField, \
-    TextAreaField, IntegerField, \
-    BooleanField
+    TextAreaField, IntegerField, BooleanField, SelectField
 from wtforms.validators import DataRequired
 
 from quizApp.forms.common import ListObjectForm
@@ -45,6 +44,19 @@ class DatasetListForm(ListObjectForm):
 
     def get_choice_tuple(self, dataset):
         self.objects.choices.append((str(dataset.id), dataset.name))
+
+
+class ActivityTypeForm(Form):
+    """Select an activity type from a drop down menu.
+    """
+    activity_type = SelectField("Activity type")
+    submit = SubmitField("Submit")
+
+    def populate_activity_type(self, mapping):
+        """Given a mapping of activity types to human readable names, populate
+        the activity_type field.
+        """
+        self.activity_type.choices = [(k, v) for k, v in mapping.iteritems()]
 
 
 class ChoiceForm(Form):

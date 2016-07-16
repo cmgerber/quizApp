@@ -12,12 +12,18 @@ from sqlalchemy import not_
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
 from quizApp.forms.activities import QuestionForm, DatasetListForm,\
-    ChoiceForm
+    ChoiceForm, ActivityTypeForm
 from quizApp.forms.common import DeleteObjectForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
 
+
 activities = Blueprint("activities", __name__, url_prefix="/activities")
+
+ACTIVITY_TYPES = {"question_mc_singleselect": "Single select multiple choice",
+                  "question_mc_multiselect": "Multi select multiple choice",
+                  "question_mc_singleselect_scale": "Likert scale",
+                  "question_freeanswer": "Free answer"}
 
 
 @activities.route('/', methods=["GET"])
@@ -26,17 +32,31 @@ def read_activities():
     """Display a list of all activities.
     """
     activities_list = Activity.query.all()
+    activity_type_form = ActivityTypeForm()
+    activity_type_form.populate_activity_type(ACTIVITY_TYPES)
 
     return render_template("activities/read_activities.html",
-                           activities=activities_list)
+                           activities=activities_list,
+                           activity_type_form=activity_type_form)
 
 
-@activities.route("/", methods=["PUT"])
+@activities.route("/", methods=["POST"])
 @roles_required("experimenter")
 def create_activity():
     """Create an activity.
     """
-    abort(404)
+    activity_type_form = ActivityTypeForm()
+    activity_type_form.populate_activity_type(ACTIVITY_TYPES)
+
+    if not activity_type_form.validate():
+        return jsonify({"success": 0, "errors": activity_type_form.errors})
+
+    activity = Activity(type=activity_type_form.activity_type.data)
+    activity.save()
+
+    next_url = url_for("activities.settings_activity", activity_id=activity.id)
+
+    return jsonify({"success": 1, "next_url": next_url})
 
 
 @activities.route("/<int:activity_id>", methods=["GET"])
@@ -86,8 +106,12 @@ def settings_question(question):
         Dataset.query.
         filter(not_(Dataset.questions.any(id=question.id))).all())
 
-    create_choice_form = ChoiceForm(prefix="create")
-    update_choice_form = ChoiceForm(prefix="update")
+    if "mc" in question.type:
+        create_choice_form = ChoiceForm(prefix="create")
+        update_choice_form = ChoiceForm(prefix="update")
+    else:
+        create_choice_form = None
+        update_choice_form = None
 
     delete_activity_form = DeleteObjectForm(prefix="activity")
     delete_choice_form = DeleteObjectForm(prefix="choice")
