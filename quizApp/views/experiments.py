@@ -17,6 +17,7 @@ from quizApp.forms.experiments import CreateExperimentForm, get_question_form
 from quizApp.models import Question, Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
+import pdb
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
@@ -284,19 +285,18 @@ def get_question_stats(assignment, question_stats):
     about this question in the array.
     """
     question = assignment.activity
-    question_stats[question.id]["question_text"] = question.question
+    if question.id not in question_stats:
+        question_stats[question.id] = {
+            "num_responses": 0,
+            "num_correct": 0,
+            "question_text": question.question,
+        }
 
     if assignment.choice:
-        try:
-            question_stats[question.id]["num_responses"] += 1
-        except KeyError:
-            question_stats[question.id]["num_responses"] = 1
+        question_stats[question.id]["num_responses"] += 1
 
         if assignment.choice.correct:
-            try:
-                question_stats[question.id]["num_crrect"] += 1
-            except KeyError:
-                question_stats[question.id]["num_correct"] = 1
+            question_stats[question.id]["num_correct"] += 1
 
 
 @experiments.route("/<int:exp_id>/results", methods=["GET"])
