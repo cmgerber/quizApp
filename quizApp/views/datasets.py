@@ -5,13 +5,18 @@ from flask import Blueprint, render_template, url_for, jsonify, abort
 from flask_security import roles_required
 
 from quizApp.models import Dataset, MediaItem
-from quizApp.forms.common import DeleteObjectForm
+from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp.forms.datasets import DatasetForm
 from quizApp import db
-from quizApp.views.helpers import validate_model_id
+from quizApp.views.helpers import validate_model_id, validate_form_or_error
 
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
+
+
+MEDIA_ITEM_TYPES = {
+    "graph": "Graph",
+}
 
 
 @datasets.route('/', methods=["GET"])
@@ -125,7 +130,28 @@ def settings_dataset(dataset_id):
 
     delete_dataset_form = DeleteObjectForm()
 
+    create_media_item_form = ObjectTypeForm()
+    create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
+
     return render_template("datasets/settings_dataset.html",
                            dataset=dataset,
                            update_dataset_form=update_dataset_form,
-                           delete_dataset_form=delete_dataset_form)
+                           delete_dataset_form=delete_dataset_form,
+                           create_media_item_form=create_media_item_form)
+
+
+@datasets.route('/<int:dataset_id>/media_items/', methods=["POST"])
+@roles_required("experimenter")
+def create_media_item():
+    """Create a new dataset.
+    """
+    create_media_item_form = ObjectTypeForm()
+    create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
+
+    response = validate_form_or_error(create_media_item_form)
+
+    if response:
+        return response
+
+    media_item = MediaItem(type=create_media_item_form.type.data)
+    media_item.save()

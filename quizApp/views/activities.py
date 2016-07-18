@@ -12,8 +12,8 @@ from sqlalchemy import not_
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
 from quizApp.forms.activities import QuestionForm, DatasetListForm,\
-    ChoiceForm, ActivityTypeForm
-from quizApp.forms.common import DeleteObjectForm
+    ChoiceForm
+from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
 
@@ -31,8 +31,8 @@ def read_activities():
     """Display a list of all activities.
     """
     activities_list = Activity.query.all()
-    activity_type_form = ActivityTypeForm()
-    activity_type_form.populate_activity_type(ACTIVITY_TYPES)
+    activity_type_form = ObjectTypeForm()
+    activity_type_form.populate_object_type(ACTIVITY_TYPES)
 
     return render_template("activities/read_activities.html",
                            activities=activities_list,
@@ -44,7 +44,7 @@ def read_activities():
 def create_activity():
     """Create an activity.
     """
-    activity_type_form = ActivityTypeForm()
+    activity_type_form = ObjectTypeForm()
     activity_type_form.populate_activity_type(ACTIVITY_TYPES)
 
     if not activity_type_form.validate():

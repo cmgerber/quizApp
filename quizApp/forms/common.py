@@ -2,7 +2,7 @@
 """
 
 from flask_wtf import Form
-from wtforms import SubmitField, SelectMultipleField
+from wtforms import SubmitField, SelectMultipleField, SelectField
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import CheckboxInput, ListWidget
 
@@ -51,3 +51,16 @@ class DeleteObjectForm(Form):
     """
 
     submit = SubmitField("Delete")
+
+
+class ObjectTypeForm(Form):
+    """Select an object type from a drop down menu.
+    """
+    object_type = SelectField("Type")
+    submit = SubmitField("Submit")
+
+    def populate_object_type(self, mapping):
+        """Given a mapping of object types to human readable names, populate
+        the object_type field.
+        """
+        self.object_type.choices = [(k, v) for k, v in mapping.iteritems()]

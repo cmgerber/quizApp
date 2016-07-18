@@ -73,6 +73,16 @@
   </tbody>
 </table>
 
+<h4>Create new...</h4>
+
+<form id="create-media-item-form" method="post" action="{{
+url_for('datasets.create_media_item', dataset_id=dataset.id) }}>
+  {{ macros.render_field(create_media_item_form.object_type) }}
+  {{ macros.render_field(create_media_item_form.submit, class_="btn-success",
+  value="Create") }}
+</form>
+
+
 <hr>
 
 <h3>Delete Dataset</h3>
