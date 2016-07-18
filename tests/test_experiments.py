@@ -1,10 +1,12 @@
 """Test the Experiments blueprint.
 """
+import pdb
 from datetime import datetime, timedelta
 
 from quizApp.models import Experiment, ParticipantExperiment
 
-from tests.auth import login_participant, get_participant
+from tests.auth import login_participant, get_participant, \
+    login_experimenter
 
 
 def test_experiments(client):
@@ -34,7 +36,8 @@ def test_experiments_authed_participant(client, users):
 
     participant = get_participant()
     exp = Experiment(name="foo", start=datetime.now(),
-                     stop=datetime.now() + timedelta(days=5))
+                     stop=datetime.now() + timedelta(days=5),
+                     blurb="this is a blurb")
     exp.save()
     part_exp = ParticipantExperiment(experiment_id=exp.id,
                                      participant_id=participant.id)
@@ -49,7 +52,7 @@ def test_experiments_authed_participant(client, users):
     response = client.get(exp_url)
     assert response.status_code == 200
     assert "foo" in response.data
-    # assert "Start" in response.data
+    assert exp.blurb in response.data
 
     response = client.get(exp_url + "/settings")
     assert response.status_code == 302
@@ -59,3 +62,81 @@ def test_experiments_authed_participant(client, users):
 
     response = client.put(exp_url)
     assert response.status_code == 302
+
+
+def test_experiments_authed_experimenter(client, users):
+    """Make sure logged in experimenters can see things.
+    """
+    response = login_experimenter(client)
+    assert response.status_code == 200
+
+    response = client.get("/")
+    assert "Hello experimenter" in response.data
+    
+    exp = Experiment(name="foo", start=datetime.now(),
+                     stop=datetime.now() + timedelta(days=5))
+    exp.save()
+    
+    exp_url = "/experiments/" + str(exp.id)
+
+    response = client.get("/experiments/")
+    assert response.status_code == 200
+    assert exp.name in response.data
+
+    response = client.get(exp_url)
+    assert response.status_code == 200
+    assert exp.name in response.data
+    assert "Start" not in response.data
+
+    response = client.get(exp_url + "/settings")
+    assert response.status_code == 200
+
+    response = client.put(exp_url)
+    assert response.status_code == 200
+    
+    response = client.delete(exp_url)
+    assert response.status_code == 200
+
+
+def test_experiments_delete(client, users):
+    """Make sure logged in experimenters can delete expeirments.
+    """
+    response = login_experimenter(client)
+    assert response.status_code == 200
+    
+    exp = Experiment(name="foo", start=datetime.now(),
+                     stop=datetime.now() + timedelta(days=5))
+    exp.save()
+    
+    exp_url = "/experiments/" + str(exp.id)
+    
+    response = client.delete(exp_url)
+    assert response.status_code == 200
+
+    response = client.get("/experiments/")
+    assert response.status_code == 200
+    assert exp.name not in response.data
+
+
+def test_experiments_create(client, users):
+    """Make sure logged in experimenters can create expeirments.
+    """
+    response = login_experimenter(client)
+    assert response.status_code == 200
+
+    exp_name = "foo"
+    exp_start = datetime.now()
+    exp_stop = datetime.now() + timedelta(days=4)
+    exp_blurb = "behwavbuila"
+
+    pdb.set_trace()
+    response = client.post("/experiments/", data=dict(
+        name=exp_name,
+        start=exp_start,
+        stop=exp_stop,
+        blurb=exp_blurb))
+    assert response.status_code == 200
+    
+    response = client.get("/experiments/")
+    assert response.status_code == 200
+    assert exp_name in response.data
