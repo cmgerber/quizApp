@@ -1,6 +1,5 @@
 """Test the Experiments blueprint.
 """
-import pdb
 from datetime import datetime, timedelta
 
 from quizApp.models import Experiment, ParticipantExperiment
@@ -130,7 +129,6 @@ def test_experiments_create(client, users):
     exp_blurb = "behwavbuila"
     datetime_format = "%Y-%m-%d %H:%M:%S"
 
-    pdb.set_trace()
     response = client.post("/experiments/", data=dict(
         name=exp_name,
         start=exp_start.strftime(datetime_format),
