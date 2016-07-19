@@ -1,16 +1,21 @@
+"""Handle creating the app and configuring it.
+"""
+
 from flask import Flask
 from flask_wtf.csrf import CsrfProtect
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
-import os
-import config
+from flask_security import Security, SQLAlchemyUserDatastore
+from quizApp import config
 
-login_manager = LoginManager()
+
 db = SQLAlchemy()
 csrf = CsrfProtect()
+security = Security()
+
 
 def create_app(config_name, overrides=None):
-    global login_manager
+    """Create and return an instance of this application.
+    """
     app = Flask(__name__, instance_relative_config=True)
 
     app.config.from_object(config.configs[config_name])
@@ -21,15 +26,20 @@ def create_app(config_name, overrides=None):
     print "Using config: " + config_name
 
     db.init_app(app)
-    login_manager.init_app(app)
     csrf.init_app(app)
 
-    from quizApp.views.admin import admin
+    from quizApp.models import User, Role
+    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    security.init_app(app, user_datastore)
+
     from quizApp.views.core import core
     from quizApp.views.experiments import experiments
+    from quizApp.views.activities import activities
+    from quizApp.views.datasets import datasets
 
-    app.register_blueprint(admin)
     app.register_blueprint(core)
     app.register_blueprint(experiments)
+    app.register_blueprint(activities)
+    app.register_blueprint(datasets)
 
     return app

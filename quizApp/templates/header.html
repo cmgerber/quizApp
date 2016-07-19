@@ -23,17 +23,30 @@
         <nav>
           <ul class="nav nav-pills pull-right">
             {% if current_user.is_authenticated %}
-            <li role="presentation" class="active"><a>Hello {{ current_user.id
-                }}</a></li>
+            <li role="presentation" class="active"><a>Hello {{
+                current_user.email }}</a></li>
             <li role="presentation">
-              <a href="{{ url_for('admin.logout') }}">Logout</a>
+              <a href="{{ url_for('security.logout') }}">Logout</a>
             </li>
             <li role="presentation">
               <a href="{{ url_for('experiments.read_experiments') }}">Experiments</a>
             </li>
+            {% if current_user.has_role("experimenter") %}
+            <li role="presentation">
+              <a href="{{ url_for('activities.read_activities')
+                }}">Activities</a>
+            </li>
+            <li role="presentation">
+              <a href="{{ url_for('datasets.read_datasets')
+                }}">Datasets</a>
+            </li>
+            {% endif %}
             {% else %}
             <li role="presentation" class="active">
-              <a href="{{ url_for('admin.login') }}">Login</a>
+              <a href="{{ url_for('security.login') }}">Login</a>
+            </li>
+            <li role="presentation" class="active">
+              <a href="{{ url_for('security.register') }}">Register</a>
             </li>
             {% endif %}
             <li role="presentation">
@@ -43,9 +56,8 @@
         </nav>
         <h1 class="site-name">Quiz App</h1>
       </div>
-      <h3>{% block title %}{% endblock %}</h3>
+      <h2>{% block title %}{% endblock %}</h2>
       {% block content %}{% endblock %}
     </div> <!-- end .wrapper.container -->
   </body>
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </html>
