@@ -4,9 +4,12 @@
 from datetime import datetime
 
 from flask_wtf import Form
-from wtforms import StringField, DateTimeField, SubmitField, \
-        RadioField, TextAreaField
+from wtforms import SubmitField, RadioField, TextAreaField
 from wtforms.validators import DataRequired
+from wtforms_alchemy import ModelForm
+
+from quizApp.forms.common import OrderFormMixin
+from quizApp.models import Experiment
 
 
 def get_question_form(question):
@@ -63,34 +66,17 @@ class ScaleForm(MultipleChoiceForm):
                                 for c in choice_pool]
 
 
-class CreateExperimentForm(Form):
+class CreateExperimentForm(OrderFormMixin, ModelForm):
     """Form for creating or updating an experiment's properties.
     """
-    name = StringField("Name", validators=[DataRequired()])
-    start = DateTimeField("Start time", validators=[DataRequired()])
-    stop = DateTimeField("Stop time", validators=[DataRequired()])
+    class Meta(object):
+        """Specify model and field order.
+        """
+        model = Experiment
+        exclude = ['created']
+        order = ('*', 'submit')
+
     submit = SubmitField("Submit")
-    blurb = TextAreaField("Blurb")
-
-    def populate_experiment(self, experiment):
-        """Given an Experiment instance, set its values to those contained by
-        the form.
-        """
-
-        experiment.name = self.name.data
-        experiment.start = self.start.data
-        experiment.stop = self.stop.data
-        experiment.blurb = self.blurb.data
-
-    def populate_fields(self, experiment):
-        """Given an Experiment instance, set this form's fields' values to
-        those contained by the experiment.
-        """
-
-        self.name.data = experiment.name
-        self.start.data = experiment.start
-        self.stop.data = experiment.stop
-        self.blurb.data = experiment.blurb
 
     def validate(self):
         """Validate the start and stop times, then do the rest as usual.
