@@ -1,10 +1,9 @@
 """Run tests on the database models.
 """
-from datetime import datetime, timedelta
 import pytest
 
-from quizApp.models import Experiment, ParticipantExperiment, Assignment, \
-    Role, Participant
+from tests.factories import ExperimentFactory, ParticipantFactory
+from quizApp.models import ParticipantExperiment, Assignment, Role
 
 
 def test_db_rollback1():
@@ -28,10 +27,8 @@ def test_db_rollback2():
 def test_participant_experiment_validators():
     """Make sure validators are functioning correctly.
     """
-    exp1 = Experiment(name="foo", start=datetime.now(),
-                      stop=datetime.now() + timedelta(days=5))
-    exp2 = Experiment(name="bar", start=datetime.now(),
-                      stop=datetime.now() + timedelta(days=5))
+    exp1 = ExperimentFactory()
+    exp2 = ExperimentFactory()
 
     part_exp = ParticipantExperiment(experiment=exp1)
     assignment = Assignment(experiment=exp2)
@@ -39,12 +36,12 @@ def test_participant_experiment_validators():
     with pytest.raises(AssertionError):
         part_exp.assignments.append(assignment)
 
-    user1 = Participant(email="u1", password="foo")
-    user2 = Participant(email="u2", password="foo")
+    part1 = ParticipantFactory()
+    part2 = ParticipantFactory()
 
     part_exp.experiment = exp2
-    part_exp.participant = user1
-    assignment.participant = user2
+    part_exp.participant = part1
+    assignment.participant = part2
 
     with pytest.raises(AssertionError):
         part_exp.assignments.append(assignment)
