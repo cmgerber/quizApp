@@ -105,6 +105,8 @@ def get_questions():
                     choice = ""
                     if i == 1:
                         choice = "Very bad"
+                    elif i == 3:
+                        choice = "Neutral"
                     elif i == 5:
                         choice = "Very good"
 
