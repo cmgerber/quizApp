@@ -77,17 +77,20 @@ def read_experiment(exp_id):
     """
     exp = validate_model_id(Experiment, exp_id)
 
-    part_exp = get_participant_experiment_or_abort(exp_id)
+    if current_user.has_role("participant"):
+        part_exp = get_participant_experiment_or_abort(exp_id)
 
-    if len(part_exp.assignments) == 0:
-        assignment = None
-    elif part_exp.complete:
-        assignment = part_exp.assignments[0]
-    else:
-        try:
-            assignment = part_exp.assignments[part_exp.progress]
-        except IndexError:
+        if len(part_exp.assignments) == 0:
+            assignment = None
+        elif part_exp.complete:
             assignment = part_exp.assignments[0]
+        else:
+            try:
+                assignment = part_exp.assignments[part_exp.progress]
+            except IndexError:
+                assignment = part_exp.assignments[0]
+    else:
+        assignment = None
 
     return render_template("experiments/read_experiment.html", experiment=exp,
                            assignment=assignment)

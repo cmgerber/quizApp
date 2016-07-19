@@ -12,6 +12,7 @@
 {% import 'macros.html' as macros %}
 
 {% block content %}
+<p class="experiment-blurb">{{ experiment.blurb }}</p>
   {% if current_user.has_role("participant") %}
     {% if assignment %}
       <p>Press the start button to begin.</p>
