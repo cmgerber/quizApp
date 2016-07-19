@@ -12,13 +12,13 @@ from quizApp.forms.common import OrderFormMixin
 from quizApp.models import Experiment
 
 
-def get_question_form(question):
+def get_question_form(question, data=None):
     """Given a question type, return the proper form.
     """
     if "scale" in question.type:
-        return ScaleForm()
+        return ScaleForm(data)
     else:
-        return MultipleChoiceForm()
+        return MultipleChoiceForm(data)
 
 
 class LikertField(RadioField):

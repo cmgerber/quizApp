@@ -129,7 +129,7 @@ def update_experiment(exp_id):
     return jsonify({"success": 1})
 
 
-@experiments.route('/<int:exp_id>/assignment/<int:a_id>')
+@experiments.route('/<int:exp_id>/assignment/<int:a_id>', methods=["GET"])
 @roles_required("participant")
 def read_assignment(exp_id, a_id):
     """Given an assignment ID, retrieve it from the database and display it to
@@ -196,7 +196,7 @@ def read_question(experiment, question, assignment):
                            previous_assignment=previous_assignment)
 
 
-@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["POST"])
+@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["PATCH"])
 def update_assignment(exp_id, a_id):
     """Record a user's answer to this assignment
     """
@@ -212,7 +212,7 @@ def update_assignment(exp_id, a_id):
         # Pass for now
         return jsonify({"success": 1})
 
-    question_form = get_question_form(question)
+    question_form = get_question_form(question, request.form)
     question_form.populate_choices(question.choices)
 
     if not question_form.validate():
@@ -342,7 +342,7 @@ def confirm_done_experiment(exp_id):
                            experiment=experiment)
 
 
-@experiments.route("/<int:exp_id>/finalize", methods=["GET"])
+@experiments.route("/<int:exp_id>/finalize", methods=["PATCH"])
 @roles_required("participant")
 def finalize_experiment(exp_id):
     """Finalize the user's answers for this experiment. They will no longer be
@@ -355,7 +355,17 @@ def finalize_experiment(exp_id):
 
     db.session.commit()
 
-    return render_template("experiments/finalize_experiment.html")
+    return jsonify({"success": 1,
+                    "next_url": url_for('experiments.done_experiment',
+                                        exp_id=exp_id)})
+
+
+@experiments.route("/<int:exp_id>/done", methods=["GET"])
+@roles_required("participant")
+def done_experiment(_):
+    """Show the user a screen indicating that they are finished.
+    """
+    return render_template("experiments/done_experiment.html")
 
 
 @experiments.app_template_filter("datetime_format")
