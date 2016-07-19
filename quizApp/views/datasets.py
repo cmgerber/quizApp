@@ -1,6 +1,6 @@
 """Views for CRUD datasets.
 """
-
+import os
 from flask import Blueprint, render_template, url_for, jsonify, abort
 from flask_security import roles_required
 
@@ -17,8 +17,8 @@ MEDIA_ITEM_TYPES = {
     "graph": "Graph",
 }
 DATASET_ROUTE = "/<int:dataset_id>/"
-MEDIA_ITEMS_ROUTE = DATASET_ROUTE + "/media_items/"
-MEDIA_ITEM_ROUTE = MEDIA_ITEMS_ROUTE + "/media_items/<int:media_item_id>"
+MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "media_items/")
+MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<int:media_item_id>")
 
 
 @datasets.route("/", methods=["GET"])
@@ -163,7 +163,7 @@ def create_media_item(dataset_id):
     })
 
 
-@datasets.route(MEDIA_ITEM_ROUTE, methods=["GET"])
+@datasets.route(MEDIA_ITEM_ROUTE + "/settings", methods=["GET"])
 @roles_required("experimenter")
 def settings_media_item(dataset_id, media_item_id):
     """View the configuration of some media item.
