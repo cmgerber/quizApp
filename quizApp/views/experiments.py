@@ -165,7 +165,7 @@ def read_question(experiment, question, assignment):
         question_form.choices.default = str(assignment.choice_id)
         question_form.process()
 
-    question_form.reflection.data = assignment.reflection
+    question_form.comment.data = assignment.comment
 
     part_exp = assignment.participant_experiment
     this_index = part_exp.assignments.index(assignment)
@@ -224,7 +224,7 @@ def update_assignment(exp_id, a_id):
     # User has answered this question successfully
     this_index = part_exp.assignments.index(assignment)
     assignment.choice_id = selected_choice.id
-    assignment.reflection = question_form.reflection.data
+    assignment.comment = question_form.comment.data
 
     if this_index == part_exp.progress:
         part_exp.progress += 1

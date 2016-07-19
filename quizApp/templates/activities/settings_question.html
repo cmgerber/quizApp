@@ -43,11 +43,7 @@
 
 <form action="{{ url_for('activities.update_activity', activity_id=question.id
 ) }}" method="post" id="update-activity-form">
-  {{ macros.render_field(general_form.question) }}
-  {{ macros.render_field(general_form.num_media_items) }}
-  {{ macros.render_field(general_form.explanation) }}
-  {{ macros.render_field(general_form.needs_reflection) }}
-  {{ macros.render_field(general_form.submit) }}
+  {{ macros.render_form(general_form) }}
 </form>
 
 <hr>
