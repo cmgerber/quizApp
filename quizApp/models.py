@@ -49,12 +49,12 @@ class User(Base, UserMixin):
 
     email = db.Column(db.String(255), unique=True)
     active = db.Column(db.Boolean())
-    password = db.Column(db.String(255))
+    password = db.Column(db.String(255), nullable=False)
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship("Role", secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
-    type = db.Column(db.String(50))
+    type = db.Column(db.String(50), nullable=False)
 
     __mapper_args__ = {
         'polymorphic_identity': 'user',
@@ -113,7 +113,7 @@ class ParticipantExperiment(Base):
         O2M with Assignment (parent)
     """
 
-    progress = db.Column(db.Integer)
+    progress = db.Column(db.Integer, nullable=False, default=0)
     complete = db.Column(db.Boolean, default=False)
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -153,8 +153,7 @@ class Assignment(Base):
     Attributes:
         skipped - bool: True if the Participant skipped this Question, False
                          otherwise
-        reflection - string: A reflection on why this participant answered this
-            question in this way.
+        comment - string: An optional comment entered by the student.
         choice_order - string: A JSON object in string form that represents the
             order of choices that this participant was presented with when
             answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
@@ -169,7 +168,7 @@ class Assignment(Base):
     """
 
     skipped = db.Column(db.Boolean)
-    reflection = db.Column(db.String(200))
+    comment = db.Column(db.String(200))
     choice_order = db.Column(db.String(80))
 
     media_items = db.relationship("MediaItem",
@@ -245,14 +244,14 @@ class Activity(Base):
         O2M with Assignment (parent)
     """
 
-    type = db.Column(db.String(50))
+    type = db.Column(db.String(50), nullable=False)
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities")
 
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
-    category = db.Column(db.String(100))
+    category = db.Column(db.String(100), info={"label": "Category"})
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -274,7 +273,7 @@ class Question(Activity):
         question - string: This question as a string
         explantion - string: The explanation for why the correct answer is
             correct.
-        needs_reflection - bool: True if the participant should be asked why
+        needs_comment - bool: True if the participant should be asked why
             they picked what they did after they answer the question.
         num_media_items - int: How many MediaItems should be shown when
             displaying this question
@@ -284,13 +283,19 @@ class Question(Activity):
        M2M with Dataset - if empty, this Question is universal
     """
 
-    question = db.Column(db.String(200))
-    choices = db.relationship("Choice", back_populates="question")
+    question = db.Column(db.String(200), nullable=False, info={"label":
+                                                               "Question"})
+    explanation = db.Column(db.String(200), info={"label": "Explanation"})
+    num_media_items = db.Column(db.Integer,
+                                nullable=False,
+                                info={
+                                    "label": "Number of media items to show"
+                                })
+    needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
+
+    choices = db.relationship("Choice", backref="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table,
                                back_populates="questions")
-    explanation = db.Column(db.String(200))
-    num_media_items = db.Column(db.Integer)
-    needs_reflection = db.Column(db.Boolean())
 
     __mapper_args__ = {
         'polymorphic_identity': 'question',
@@ -355,9 +360,12 @@ class Choice(Base):
         M2O with Question (child)
         O2M with Assignment (parent)
     """
-    choice = db.Column(db.String(200))
-    label = db.Column(db.String(3))
-    correct = db.Column(db.Boolean)
+    choice = db.Column(db.String(200), nullable=False,
+                       info={"label": "Choice"})
+    label = db.Column(db.String(3),
+                      info={"label": "Label"})
+    correct = db.Column(db.Boolean,
+                        info={"label": "Correct?"})
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
@@ -384,14 +392,14 @@ class MediaItem(Base):
         "Assignment",
         secondary=assignment_media_item_table,
         back_populates="media_items")
-
-    flash_duration = db.Column(db.Integer)
-
-    dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
+    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
+                               info={"label": "Flash duration"})
     dataset = db.relationship("Dataset", back_populates="media_items")
-
-    type = db.Column(db.String(80))
-    name = db.Column(db.String(100))
+    dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
+    type = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(100), nullable=False,
+                     info={"label": "Name"},
+                     default="New media item")
 
     __mapper_args__ = {
         'polymorphic_identity': 'media_item',
@@ -407,7 +415,7 @@ class Graph(MediaItem):
         filename - string: Filename of the graph
     """
 
-    path = db.Column(db.String(200))
+    path = db.Column(db.String(200), nullable=False)
 
     def filename(self):
         """Return the filename of this graph.
@@ -434,11 +442,11 @@ class Experiment(Base):
       O2M with Assignment (parent)
     """
 
-    name = db.Column(db.String(150), index=True)
+    name = db.Column(db.String(150), index=True, info={"label": "Name"})
     created = db.Column(db.DateTime)
-    start = db.Column(db.DateTime)
-    stop = db.Column(db.DateTime)
-    blurb = db.Column(db.String(500))
+    start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
+    stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
+    blurb = db.Column(db.String(500), info={"label": "Blurb"})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,
@@ -462,8 +470,8 @@ class Dataset(Base):
         M2M with Question
         M2M with Participant
     """
-    name = db.Column(db.String(100))
-    uri = db.Column(db.String(200))
+    name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
+    uri = db.Column(db.String(200), info={"label": "URI"})
 
     media_items = db.relationship("MediaItem", back_populates="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table,

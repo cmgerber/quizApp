@@ -72,7 +72,7 @@ def get_questions():
             dataset = Dataset.query.get(dataset_id)
 
             includes_explanation = int(random.random() * 10) % 2
-            needs_reflection = int(random.random() * 10) % 2
+            needs_comment = int(random.random() * 10) % 2
 
             if not dataset:
                 dataset = Dataset(
@@ -97,7 +97,7 @@ def get_questions():
                 explanation=explanation,
                 num_media_items=1,
                 category=random.choice(categories),
-                needs_reflection=needs_reflection)
+                needs_comment=needs_comment)
 
 
             if "scale" in question.type:
@@ -105,6 +105,8 @@ def get_questions():
                     choice = ""
                     if i == 1:
                         choice = "Very bad"
+                    elif i == 3:
+                        choice = "Neutral"
                     elif i == 5:
                         choice = "Very good"
 

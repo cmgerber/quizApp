@@ -12,7 +12,7 @@
 
 {% block content %}
 {% if update_choice_form %}
-<div class="modal fade" id="preview-media-item-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+<div class="modal fade" id="update-choice-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -43,11 +43,7 @@
 
 <form action="{{ url_for('activities.update_activity', activity_id=question.id
 ) }}" method="post" id="update-activity-form">
-  {{ macros.render_field(general_form.question) }}
-  {{ macros.render_field(general_form.num_media_items) }}
-  {{ macros.render_field(general_form.explanation) }}
-  {{ macros.render_field(general_form.needs_reflection) }}
-  {{ macros.render_field(general_form.submit) }}
+  {{ macros.render_form(general_form) }}
 </form>
 
 <hr>

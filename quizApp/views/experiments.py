@@ -7,7 +7,7 @@ import json
 import os
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app
+    current_app, request
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -58,12 +58,12 @@ def read_experiments():
 def create_experiment():
     """Create an experiment and save it to the database.
     """
-    form = CreateExperimentForm()
-    if not form.validate_on_submit():
+    form = CreateExperimentForm(request.form)
+    if not form.validate():
         return jsonify({"success": 0, "errors": form.errors})
 
     exp = Experiment()
-    form.populate_experiment(exp)
+    form.populate_obj(exp)
     exp.created = datetime.now()
     exp.save()
 
@@ -117,19 +117,19 @@ def update_experiment(exp_id):
     """
     exp = validate_model_id(Experiment, exp_id)
 
-    experiment_update_form = CreateExperimentForm()
+    experiment_update_form = CreateExperimentForm(request.form)
 
     if not experiment_update_form.validate():
         return jsonify({"success": 0, "errors": experiment_update_form.errors})
 
-    experiment_update_form.populate_experiment(exp)
+    experiment_update_form.populate_obj(exp)
 
     exp.save()
 
     return jsonify({"success": 1})
 
 
-@experiments.route('/<int:exp_id>/assignment/<int:a_id>')
+@experiments.route('/<int:exp_id>/assignment/<int:a_id>', methods=["GET"])
 @roles_required("participant")
 def read_assignment(exp_id, a_id):
     """Given an assignment ID, retrieve it from the database and display it to
@@ -165,7 +165,7 @@ def read_question(experiment, question, assignment):
         question_form.choices.default = str(assignment.choice_id)
         question_form.process()
 
-    question_form.reflection.data = assignment.reflection
+    question_form.comment.data = assignment.comment
 
     part_exp = assignment.participant_experiment
     this_index = part_exp.assignments.index(assignment)
@@ -196,7 +196,7 @@ def read_question(experiment, question, assignment):
                            previous_assignment=previous_assignment)
 
 
-@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["POST"])
+@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["PATCH"])
 def update_assignment(exp_id, a_id):
     """Record a user's answer to this assignment
     """
@@ -212,7 +212,7 @@ def update_assignment(exp_id, a_id):
         # Pass for now
         return jsonify({"success": 1})
 
-    question_form = get_question_form(question)
+    question_form = get_question_form(question, request.form)
     question_form.populate_choices(question.choices)
 
     if not question_form.validate():
@@ -224,7 +224,7 @@ def update_assignment(exp_id, a_id):
     # User has answered this question successfully
     this_index = part_exp.assignments.index(assignment)
     assignment.choice_id = selected_choice.id
-    assignment.reflection = question_form.reflection.data
+    assignment.comment = question_form.comment.data
 
     if this_index == part_exp.progress:
         part_exp.progress += 1
@@ -270,8 +270,7 @@ def settings_experiment(exp_id):
     """
     experiment = validate_model_id(Experiment, exp_id)
 
-    update_experiment_form = CreateExperimentForm()
-    update_experiment_form.populate_fields(experiment)
+    update_experiment_form = CreateExperimentForm(obj=experiment)
 
     delete_experiment_form = DeleteObjectForm()
 
@@ -343,7 +342,7 @@ def confirm_done_experiment(exp_id):
                            experiment=experiment)
 
 
-@experiments.route("/<int:exp_id>/finalize", methods=["GET"])
+@experiments.route("/<int:exp_id>/finalize", methods=["PATCH"])
 @roles_required("participant")
 def finalize_experiment(exp_id):
     """Finalize the user's answers for this experiment. They will no longer be
@@ -356,7 +355,17 @@ def finalize_experiment(exp_id):
 
     db.session.commit()
 
-    return render_template("experiments/finalize_experiment.html")
+    return jsonify({"success": 1,
+                    "next_url": url_for('experiments.done_experiment',
+                                        exp_id=exp_id)})
+
+
+@experiments.route("/<int:exp_id>/done", methods=["GET"])
+@roles_required("participant")
+def done_experiment(_):
+    """Show the user a screen indicating that they are finished.
+    """
+    return render_template("experiments/done_experiment.html")
 
 
 @experiments.app_template_filter("datetime_format")

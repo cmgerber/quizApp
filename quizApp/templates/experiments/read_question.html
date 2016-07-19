@@ -13,7 +13,7 @@ Quiz
 {% endblock %}
 
 {% block content %}
-{% for media_item in assignment.meda_items %}
+{% for media_item in assignment.media_items %}
 <div class="row media-item-container"
   {% if not experiment_complete %}
   data-flash-duration="{{ media_item.flash_duration }}"
@@ -26,11 +26,11 @@ Quiz
 <div id='question'>
   <h3>{{ question.question }}</h3>
   <form action="{{ url_for('experiments.update_assignment', exp_id=exp.id,
-  a_id=assignment.id)}}" method="post" id="question-submit-form">
+  a_id=assignment.id)}}" method="patch" id="question-submit-form">
     {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
-    {% if question.needs_reflection %}
+    {% if question.needs_comment %}
     <p>Why do you think this is the correct choice?</p>
-    {{ macros.render_field(mc_form.reflection, rows="5",
+    {{ macros.render_field(mc_form.comment, rows="5",
     disabled=experiment_complete) }}
     <br />
     {% endif %}
