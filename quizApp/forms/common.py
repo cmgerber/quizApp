@@ -88,7 +88,7 @@ class OrderFormMixin(object):
                             if field in visited or field in field_order:
                                 continue
                             new_fields[field] = self._fields[field]
-                            visited.append(field)
+                            visited.add(field)
                     else:
                         new_fields[field_name] = self._fields[field_name]
 
