@@ -229,7 +229,7 @@ class Activity(Base):
                                   secondary=activity_experiment_table)
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
-    category = db.Column(db.String(100))
+    category = db.Column(db.String(100), info={"label": "Category"})
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -261,12 +261,18 @@ class Question(Activity):
        M2M with Dataset - if empty, this Question is universal
     """
 
-    question = db.Column(db.String(200))
+    question = db.Column(db.String(200), nullable=False, info={"label":
+                                                               "Question"})
+    explanation = db.Column(db.String(200), info={"label": "Explanation"})
+    num_media_items = db.Column(db.Integer,
+                                nullable=False,
+                                info={
+                                    "label": "Number of media items to show"
+                                })
+    needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
+
     choices = db.relationship("Choice", backref="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
-    explanation = db.Column(db.String(200))
-    num_media_items = db.Column(db.Integer, nullable=False)
-    needs_comment = db.Column(db.Boolean())
 
     __mapper_args__ = {
         'polymorphic_identity': 'question',
@@ -331,9 +337,12 @@ class Choice(Base):
         M2O with Question (child)
         O2M with Assignment (parent)
     """
-    choice = db.Column(db.String(200), nullable=False)
-    label = db.Column(db.String(3))
-    correct = db.Column(db.Boolean)
+    choice = db.Column(db.String(200), nullable=False,
+                       info={"label": "Choice"})
+    label = db.Column(db.String(3),
+                      info={"label": "Label"})
+    correct = db.Column(db.Boolean,
+                        info={"label": "Correct?"})
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     assignments = db.relationship("Assignment", backref="choice")
@@ -406,11 +415,11 @@ class Experiment(Base):
       O2M with Assignment (parent)
     """
 
-    name = db.Column(db.String(150), index=True)
+    name = db.Column(db.String(150), index=True, info={"label": "Name"})
     created = db.Column(db.DateTime)
-    start = db.Column(db.DateTime)
-    stop = db.Column(db.DateTime)
-    blurb = db.Column(db.String(500))
+    start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
+    stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
+    blurb = db.Column(db.String(500), info={"label": "Blurb"})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table)
@@ -431,8 +440,8 @@ class Dataset(Base):
         M2M with Question
         M2M with Participant
     """
-    name = db.Column(db.String(100))
-    uri = db.Column(db.String(200))
+    name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
+    uri = db.Column(db.String(200), info={"label": "URI"})
 
     media_items = db.relationship("MediaItem", backref="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table)

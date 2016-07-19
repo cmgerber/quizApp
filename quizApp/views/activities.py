@@ -95,8 +95,7 @@ def settings_activity(activity_id):
 def settings_question(question):
     """Display settings for the given question.
     """
-    general_form = QuestionForm()
-    general_form.populate_fields(question)
+    general_form = QuestionForm(obj=question)
 
     dataset_form = DatasetListForm()
     dataset_form.reset_objects()
@@ -147,7 +146,7 @@ def update_question(question):
     if not general_form.validate():
         return jsonify({"success": 0, "errors": general_form.errors})
 
-    general_form.populate_question(question)
+    general_form.populate_obj(question)
 
     return jsonify({"success": 1})
 
@@ -206,7 +205,7 @@ def create_choice(question_id):
 
     choice = Choice()
 
-    create_choice_form.populate_choice(choice)
+    create_choice_form.populate_obj(choice)
 
     choice.question_id = question.id
 
@@ -227,13 +226,13 @@ def update_choice(question_id, choice_id):
     if choice not in question.choices:
         abort(400)
 
-    update_choice_form = ChoiceForm(prefix="update")
+    update_choice_form = ChoiceForm(request.form, prefix="update")
 
     if not update_choice_form.validate():
         return jsonify({"sucess": 0, "prefix": "update-",
                         "errors": update_choice_form.errors})
 
-    update_choice_form.populate_choice(choice)
+    update_choice_form.populate_obj(choice)
 
     db.session.commit()
 

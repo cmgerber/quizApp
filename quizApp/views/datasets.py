@@ -44,7 +44,7 @@ def create_dataset():
         return jsonify({"success": 0, "errors": create_dataset_form.errors})
 
     dataset = Dataset()
-    create_dataset_form.populate_dataset(dataset)
+    create_dataset_form.populate_obj(dataset)
 
     dataset.save()
 
@@ -58,12 +58,12 @@ def update_dataset(dataset_id):
     """
     dataset = validate_model_id(Dataset, dataset_id)
 
-    update_dataset_form = DatasetForm()
+    update_dataset_form = DatasetForm(request.form)
 
     if not update_dataset_form.validate():
         return jsonify({"success": 0, "errors": update_dataset_form.errors})
 
-    update_dataset_form.populate_dataset(dataset)
+    update_dataset_form.populate_obj(dataset)
 
     db.session.commit()
 
@@ -123,9 +123,7 @@ def settings_dataset(dataset_id):
     """
     dataset = validate_model_id(Dataset, dataset_id)
 
-    update_dataset_form = DatasetForm()
-
-    update_dataset_form.populate_fields(dataset)
+    update_dataset_form = DatasetForm(obj=dataset)
 
     delete_dataset_form = DeleteObjectForm()
 

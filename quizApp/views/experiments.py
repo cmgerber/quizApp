@@ -7,7 +7,7 @@ import json
 import os
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app
+    current_app, request
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -58,12 +58,12 @@ def read_experiments():
 def create_experiment():
     """Create an experiment and save it to the database.
     """
-    form = CreateExperimentForm()
-    if not form.validate_on_submit():
+    form = CreateExperimentForm(request.form)
+    if not form.validate():
         return jsonify({"success": 0, "errors": form.errors})
 
     exp = Experiment()
-    form.populate_experiment(exp)
+    form.populate_obj(exp)
     exp.created = datetime.now()
     exp.save()
 
@@ -117,12 +117,12 @@ def update_experiment(exp_id):
     """
     exp = validate_model_id(Experiment, exp_id)
 
-    experiment_update_form = CreateExperimentForm()
+    experiment_update_form = CreateExperimentForm(request.form)
 
     if not experiment_update_form.validate():
         return jsonify({"success": 0, "errors": experiment_update_form.errors})
 
-    experiment_update_form.populate_experiment(exp)
+    experiment_update_form.populate_obj(exp)
 
     exp.save()
 
@@ -270,8 +270,7 @@ def settings_experiment(exp_id):
     """
     experiment = validate_model_id(Experiment, exp_id)
 
-    update_experiment_form = CreateExperimentForm()
-    update_experiment_form.populate_fields(experiment)
+    update_experiment_form = CreateExperimentForm(obj=experiment)
 
     delete_experiment_form = DeleteObjectForm()
 
