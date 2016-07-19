@@ -29,7 +29,7 @@ class QuestionForm(Form):
     """Form for rendering a general Question.
     """
     submit = SubmitField("Submit")
-    reflection = TextAreaField()
+    comment = TextAreaField()
 
     def populate_choices(self, choice_pool):
         """Child classes should implement this themselves for choice selection.

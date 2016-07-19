@@ -18,7 +18,7 @@ class QuestionForm(Form):
                                    validators=[DataRequired()])
     explanation = TextAreaField(
         "Explanation (displayed to explain the correct choice)")
-    needs_reflection = BooleanField("Ask students for a reflection")
+    needs_comment = BooleanField("Ask students for an optional comment")
     submit = SubmitField("Submit")
 
     def populate_fields(self, question):
@@ -26,7 +26,7 @@ class QuestionForm(Form):
         """
         self.question.data = question.question
         self.explanation.data = question.explanation
-        self.needs_reflection.data = question.needs_reflection
+        self.needs_comment.data = question.needs_comment
         self.num_media_items.data = question.num_media_items
 
     def populate_question(self, question):
@@ -34,7 +34,7 @@ class QuestionForm(Form):
         """
         question.question = self.question.data
         question.explanation = self.explanation.data
-        question.needs_reflection = self.needs_reflection.data
+        question.needs_comment = self.needs_comment.data
         question.num_media_items = self.num_media_items.data
 
 
