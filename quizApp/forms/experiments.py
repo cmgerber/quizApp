@@ -89,8 +89,8 @@ class CreateExperimentForm(Form):
 
         valid = True
 
-        if self.start < self.stop:
-            self.start.errors.append("Start time must be after stop time.")
+        if self.start.data > self.stop.data:
+            self.start.errors.append("Start time must be before stop time.")
             valid = False
 
         return valid

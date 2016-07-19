@@ -128,12 +128,13 @@ def test_experiments_create(client, users):
     exp_start = datetime.now()
     exp_stop = datetime.now() + timedelta(days=4)
     exp_blurb = "behwavbuila"
+    datetime_format = "%Y-%m-%d %H:%M:%S"
 
     pdb.set_trace()
     response = client.post("/experiments/", data=dict(
         name=exp_name,
-        start=exp_start,
-        stop=exp_stop,
+        start=exp_start.strftime(datetime_format),
+        stop=exp_stop.strftime(datetime_format),
         blurb=exp_blurb))
     assert response.status_code == 200
     
