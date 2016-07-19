@@ -1,6 +1,8 @@
 """Forms for the Experiments blueprint.
 """
 
+from datetime import datetime
+
 from flask_wtf import Form
 from wtforms import StringField, DateTimeField, SubmitField, \
         RadioField, TextAreaField
@@ -43,13 +45,22 @@ class MultipleChoiceForm(QuestionForm):
     def populate_choices(self, choice_pool):
         """Given a pool of choices, populate the choices field.
         """
-        self.choices.choices = [(str(c.id), c.choice) for c in choice_pool]
+        self.choices.choices = [(str(c.id),
+                                 "{} - {}".format(c.label, c.choice))
+                                for c in choice_pool]
 
 
 class ScaleForm(MultipleChoiceForm):
     """Form for rendering a likert scale question.
     """
     choices = LikertField(validators=[DataRequired()])
+
+    def populate_choices(self, choice_pool):
+        """Given a pool of choices, populate the choices field.
+        """
+        self.choices.choices = [(str(c.id),
+                                 "{}<br />{}".format(c.label, c.choice))
+                                for c in choice_pool]
 
 
 class CreateExperimentForm(Form):
@@ -88,9 +99,12 @@ class CreateExperimentForm(Form):
             return False
 
         valid = True
-
-        if self.start.data > self.stop.data:
+        if self.start.data >= self.stop.data:
             self.start.errors.append("Start time must be before stop time.")
+            valid = False
+
+        if self.stop.data < datetime.now():
+            self.stop.errors.append("Stop time may not be in past")
             valid = False
 
         return valid

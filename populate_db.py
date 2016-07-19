@@ -16,6 +16,11 @@ from quizApp import create_app
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice, Role
 from quizApp import db
+from quizApp.config import basedir
+import pdb
+
+GRAPH_ROOT = "static/graphs"
+
 
 def get_experiments():
     """Populate the database with initial experiments.
@@ -44,6 +49,16 @@ QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
                          "rating": "question_mc_singleselect_scale",
                          "pre_test": "question"}
 
+def get_random_duration():
+    """Get a random duration for a question.
+    """
+    # 50% chance of indefinite display
+    duration = random.randint(-1, 0)
+
+    if duration == 0:
+        duration = random.randint(500, 1500)
+
+    return duration
 
 def get_questions():
     """Populate the database with questions based on csv files.
@@ -71,20 +86,30 @@ def get_questions():
                 explanation = "This explains question " + \
                 str(row["question_id"])
 
+            if QUESTION_TYPE_MAPPING[row["question_type"]] == "question":
+                continue
+
             question = Question(
                 id=row["question_id"],
                 datasets=[dataset],
                 question=row["question_text"],
                 type=QUESTION_TYPE_MAPPING[row["question_type"]],
                 explanation=explanation,
-                num_graphs=1,
+                num_media_items=1,
                 category=random.choice(categories),
                 needs_reflection=needs_reflection)
 
 
             if "scale" in question.type:
                 for i in range(1, 6):
-                    question.choices.append(Choice(choice=str(i), label=str(i),
+                    choice = ""
+                    if i == 1:
+                        choice = "Very bad"
+                    elif i == 5:
+                        choice = "Very good"
+
+                    question.choices.append(Choice(choice=choice,
+                                                   label=str(i),
                                                    correct=True))
 
             db.session.add(question)
@@ -108,7 +133,9 @@ def get_choices():
             graph = Graph(
                 id=graph["graph_id"],
                 dataset_id=int(graph["dataset"])+1,
-                filename=graph["graph_location"])
+                flash_duration=get_random_duration(),
+                path=os.path.join(basedir, GRAPH_ROOT,
+                                      graph["graph_location"]))
             db.session.add(graph)
 
 # In this list, each list is associated with a participant (one to one).  The
@@ -254,7 +281,8 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     activity_id=question_id,
                     experiment_id=experiments[test].id,
                     participant_experiment_id=participant_experiment.id,
-                    graphs=[Graph.query.get(graph_id)])
+                    media_items=[Graph.query.get(graph_id)])
+
 
                 experiments[test].activities.append(
                     Question.query.get(question_id))
@@ -278,7 +306,7 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                             activity_id=question_id,
                             experiment_id=experiments[test].id,
                             participant_experiment_id=participant_experiment.id,
-                            graphs=[Graph.query.get(graph_id)])
+                            media_items=[Graph.query.get(graph_id)])
 
                         experiments[test].activities.append(
                             Question.query.get(question_id))
@@ -290,15 +318,17 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                         order += 1
                         question_id = int(str(dataset)+str(x + 1))
                         #write row to db
+
                         if not Question.query.get(question_id):
                             missing_qs.add(question_id)
                             continue
+
                         assignment = Assignment(
                             participant_id=participant_id,
                             activity_id=question_id,
                             experiment_id=experiments[test].id,
                             participant_experiment_id=participant_experiment.id,
-                            graphs=[Graph.query.get(graph_id)])
+                            media_items=[Graph.query.get(graph_id)])
 
                         experiments[test].activities.append(
                             Question.query.get(question_id))
@@ -318,7 +348,7 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     activity_id=question_id,
                     experiment_id=experiments[test].id,
                     participant_experiment_id=participant_experiment.id,
-                    graphs=[Graph.query.get(graph_id)])
+                    media_items=[Graph.query.get(graph_id)])
 
                 experiments[test].activities.append(
                     Question.query.get(question_id))

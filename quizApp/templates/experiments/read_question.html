@@ -13,9 +13,13 @@ Quiz
 {% endblock %}
 
 {% block content %}
-{% for graph in assignment.graphs %}
-<div class="row graph-container">
-  {{ graph|graph_to_img }}
+{% for media_item in assignment.meda_items %}
+<div class="row media-item-container"
+  {% if not experiment_complete %}
+  data-flash-duration="{{ media_item.flash_duration }}"
+  {% endif %}
+  >
+  {{ macros.render_media_item(media_item) }}
 </div>
 {% endfor %}
 

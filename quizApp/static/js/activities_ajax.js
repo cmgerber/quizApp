@@ -6,6 +6,7 @@ $(document).ready(function() {
   form_ajax("#create-choice-form", done_refresh)
   form_ajax("#delete-choice-form", done_refresh)
   form_ajax("#update-choice-form", done_refresh)
+  form_ajax("#create-activity-form", done_redirect)
 
   $('#update-choice-modal').on('show.bs.modal', function (event) {
     var button = $(event.relatedTarget); // Button that triggered the modal
