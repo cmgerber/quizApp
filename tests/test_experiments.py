@@ -71,11 +71,11 @@ def test_experiments_authed_experimenter(client, users):
 
     response = client.get("/")
     assert "Hello experimenter" in response.data
-    
+
     exp = Experiment(name="foo", start=datetime.now(),
                      stop=datetime.now() + timedelta(days=5))
     exp.save()
-    
+
     exp_url = "/experiments/" + str(exp.id)
 
     response = client.get("/experiments/")
@@ -92,7 +92,7 @@ def test_experiments_authed_experimenter(client, users):
 
     response = client.put(exp_url)
     assert response.status_code == 200
-    
+
     response = client.delete(exp_url)
     assert response.status_code == 200
 
@@ -102,13 +102,13 @@ def test_experiments_delete(client, users):
     """
     response = login_experimenter(client)
     assert response.status_code == 200
-    
+
     exp = Experiment(name="foo", start=datetime.now(),
                      stop=datetime.now() + timedelta(days=5))
     exp.save()
-    
+
     exp_url = "/experiments/" + str(exp.id)
-    
+
     response = client.delete(exp_url)
     assert response.status_code == 200
 
@@ -135,7 +135,7 @@ def test_experiments_create(client, users):
         stop=exp_stop.strftime(datetime_format),
         blurb=exp_blurb))
     assert response.status_code == 200
-    
+
     response = client.get("/experiments/")
     assert response.status_code == 200
     assert exp_name in response.data
