@@ -1,7 +1,7 @@
 """Views for CRUD datasets.
 """
 import os
-from flask import Blueprint, render_template, url_for, jsonify, abort
+from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 
 from quizApp.models import Dataset, MediaItem
@@ -9,7 +9,6 @@ from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp.forms.datasets import DatasetForm, GraphForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id, validate_form_or_error
-
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 
@@ -157,7 +156,7 @@ def create_media_item(dataset_id):
     media_item = MediaItem(type=create_media_item_form.object_type.data,
                            dataset=dataset)
     media_item.save()
- 
+
     return jsonify({
         "success": 1,
     })
@@ -173,7 +172,7 @@ def settings_media_item(dataset_id, media_item_id):
     """
     dataset = validate_model_id(Dataset, dataset_id)
     media_item = validate_model_id(MediaItem, media_item_id)
-    
+
     if media_item not in dataset.media_items:
         abort(400)
 
@@ -190,7 +189,7 @@ def settings_graph(dataset, graph):
                            update_graph_form=update_graph_form,
                            dataset=dataset,
                            graph=graph)
-    
+
 
 @datasets.route(MEDIA_ITEM_ROUTE, methods=["POST"])
 @roles_required("experimenter")
@@ -201,7 +200,7 @@ def update_media_item(dataset_id, media_item_id):
     """
     dataset = validate_model_id(Dataset, dataset_id)
     media_item = validate_model_id(MediaItem, media_item_id)
-    
+
     if media_item not in dataset.media_items:
         abort(400)
 
@@ -212,7 +211,7 @@ def update_media_item(dataset_id, media_item_id):
 def update_graph(_, graph):
     """Update a graph.
     """
-    update_graph_form = GraphForm()
+    update_graph_form = GraphForm(request.form)
 
     response = validate_form_or_error(update_graph_form)
 
@@ -222,5 +221,4 @@ def update_graph(_, graph):
     update_graph_form.populate_obj(graph)
 
     db.session.commit()
-
     return jsonify({"success": 1})

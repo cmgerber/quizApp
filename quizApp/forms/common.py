@@ -76,20 +76,23 @@ class OrderFormMixin(object):
 
         field_order = getattr(self.meta, 'order', [])
         if field_order:
-            visited = set()
-            new_fields = OrderedDict()
+            self.order_fields(field_order)
 
-            for field_name in field_order:
-                if field_name in self._fields and \
-                        field_name not in visited:
-                    visited.add(field_name)
-                    if field_name == '*':
-                        for field in self._fields:
-                            if field in visited or field in field_order:
-                                continue
-                            new_fields[field] = self._fields[field]
-                            visited.add(field)
-                    else:
-                        new_fields[field_name] = self._fields[field_name]
+    def order_fields(self, field_order):
+        """Given a field order, order the fields of this form as specified.
+        """
+        visited = set()
+        new_fields = OrderedDict()
 
-            self._fields = new_fields
+        for field_name in field_order:
+            if field_name not in visited:
+                if field_name == '*':
+                    for field in self._fields:
+                        if field in visited or field in field_order:
+                            continue
+                        new_fields[field] = self._fields[field]
+                elif field_name in self._fields:
+                    new_fields[field_name] = self._fields[field_name]
+                visited.add(field_name)
+
+        self._fields = new_fields

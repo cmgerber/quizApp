@@ -4,7 +4,6 @@ import os
 
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
-from wtforms import fields
 
 
 class Base(db.Model):
@@ -381,12 +380,7 @@ class Graph(MediaItem):
         filename - string: Filename of the graph
     """
 
-    path = db.Column(db.String(200),
-                     info={
-                         "label": "Path",
-                         "form_field_class": fields.FileField,
-                     },
-                     nullable=False)
+    path = db.Column(db.String(200), nullable=False)
 
     def filename(self):
         """Return the filename of this graph.

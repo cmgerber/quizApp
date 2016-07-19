@@ -32,7 +32,6 @@ class DatasetForm(Form):
         self.uri.data = dataset.uri
 
 
-# TODO: paths is not really in the update form
 class GraphForm(OrderFormMixin, ModelForm):
     """Form for updating Graph objects.
     """
@@ -40,6 +39,7 @@ class GraphForm(OrderFormMixin, ModelForm):
         """Specify model and field order.
         """
         model = Graph
-        order = ('name', 'path', 'flash_duration', 'submit')
+        exclude = ['path']
+        order = ('*', 'submit')
 
     submit = SubmitField("Submit")
