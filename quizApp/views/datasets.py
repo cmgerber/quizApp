@@ -1,20 +1,26 @@
 """Views for CRUD datasets.
 """
-
-from flask import Blueprint, render_template, url_for, jsonify, abort
+import os
+from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 
 from quizApp.models import Dataset, MediaItem
-from quizApp.forms.common import DeleteObjectForm
-from quizApp.forms.datasets import DatasetForm
+from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
+from quizApp.forms.datasets import DatasetForm, GraphForm
 from quizApp import db
-from quizApp.views.helpers import validate_model_id
-
+from quizApp.views.helpers import validate_model_id, validate_form_or_error
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 
+MEDIA_ITEM_TYPES = {
+    "graph": "Graph",
+}
+DATASET_ROUTE = "/<int:dataset_id>/"
+MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "media_items/")
+MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<int:media_item_id>")
 
-@datasets.route('/', methods=["GET"])
+
+@datasets.route("/", methods=["GET"])
 @roles_required("experimenter")
 def read_datasets():
     """Display a list of all datasets.
@@ -27,7 +33,7 @@ def read_datasets():
                            create_dataset_form=create_dataset_form)
 
 
-@datasets.route('/', methods=["POST"])
+@datasets.route("/", methods=["POST"])
 @roles_required("experimenter")
 def create_dataset():
     """Create a new dataset.
@@ -45,7 +51,7 @@ def create_dataset():
     return jsonify({"success": 1})
 
 
-@datasets.route('/<int:dataset_id>/', methods=["POST"])
+@datasets.route(DATASET_ROUTE, methods=["POST"])
 @roles_required("experimenter")
 def update_dataset(dataset_id):
     """Change the properties of this dataset.
@@ -64,7 +70,7 @@ def update_dataset(dataset_id):
     return jsonify({"success": 1})
 
 
-@datasets.route('/<int:dataset_id>/', methods=["DELETE"])
+@datasets.route(DATASET_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
 def delete_dataset(dataset_id):
     """Delete this dataset.
@@ -78,8 +84,7 @@ def delete_dataset(dataset_id):
                     "next_url": url_for('datasets.read_datasets')})
 
 
-@datasets.route('/<int:dataset_id>/media_items/<int:media_item_id>',
-                methods=["DELETE"])
+@datasets.route(MEDIA_ITEM_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
 def delete_dataset_media_item(dataset_id, media_item_id):
     """Delete a particular media_item in a particular dataset.
@@ -96,8 +101,7 @@ def delete_dataset_media_item(dataset_id, media_item_id):
     return jsonify({"success": 1})
 
 
-@datasets.route('/<int:dataset_id>/media_items/<int:media_item_id>',
-                methods=["GET"])
+@datasets.route(MEDIA_ITEM_ROUTE, methods=["GET"])
 @roles_required("experimenter")
 def read_media_item(dataset_id, media_item_id):
     """Get an html representation of a particular media_item.
@@ -112,7 +116,7 @@ def read_media_item(dataset_id, media_item_id):
                            media_item=media_item)
 
 
-@datasets.route('/<int:dataset_id>/settings', methods=["GET"])
+@datasets.route(DATASET_ROUTE + 'settings', methods=["GET"])
 @roles_required("experimenter")
 def settings_dataset(dataset_id):
     """View the configuration of a particular dataset.
@@ -125,7 +129,96 @@ def settings_dataset(dataset_id):
 
     delete_dataset_form = DeleteObjectForm()
 
+    create_media_item_form = ObjectTypeForm()
+    create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
+
     return render_template("datasets/settings_dataset.html",
                            dataset=dataset,
                            update_dataset_form=update_dataset_form,
-                           delete_dataset_form=delete_dataset_form)
+                           delete_dataset_form=delete_dataset_form,
+                           create_media_item_form=create_media_item_form)
+
+
+@datasets.route(MEDIA_ITEMS_ROUTE, methods=["POST"])
+@roles_required("experimenter")
+def create_media_item(dataset_id):
+    """Create a new dataset.
+    """
+    dataset = validate_model_id(Dataset, dataset_id)
+    create_media_item_form = ObjectTypeForm()
+    create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
+
+    response = validate_form_or_error(create_media_item_form)
+
+    if response:
+        return response
+
+    media_item = MediaItem(type=create_media_item_form.object_type.data,
+                           dataset=dataset)
+    media_item.save()
+
+    return jsonify({
+        "success": 1,
+    })
+
+
+@datasets.route(MEDIA_ITEM_ROUTE + "/settings", methods=["GET"])
+@roles_required("experimenter")
+def settings_media_item(dataset_id, media_item_id):
+    """View the configuration of some media item.
+
+    Ultimately this view dispatches to another view for the specific type
+    of media item.
+    """
+    dataset = validate_model_id(Dataset, dataset_id)
+    media_item = validate_model_id(MediaItem, media_item_id)
+
+    if media_item not in dataset.media_items:
+        abort(400)
+
+    if media_item.type == "graph":
+        return settings_graph(dataset, media_item)
+
+
+def settings_graph(dataset, graph):
+    """Display settings for a graph.
+    """
+    update_graph_form = GraphForm(obj=graph)
+
+    return render_template("datasets/settings_graph.html",
+                           update_graph_form=update_graph_form,
+                           dataset=dataset,
+                           graph=graph)
+
+
+@datasets.route(MEDIA_ITEM_ROUTE, methods=["POST"])
+@roles_required("experimenter")
+def update_media_item(dataset_id, media_item_id):
+    """Update a particular media item.
+
+    Dispatches to a handler for the specific kind of media item.
+    """
+    dataset = validate_model_id(Dataset, dataset_id)
+    media_item = validate_model_id(MediaItem, media_item_id)
+
+    if media_item not in dataset.media_items:
+        abort(400)
+
+    if media_item.type == "graph":
+        return update_graph(dataset, media_item)
+
+
+def update_graph(_, graph):
+    """Update a graph.
+    """
+    update_graph_form = GraphForm(request.form)
+
+    response = validate_form_or_error(update_graph_form)
+
+    if response:
+        return response
+
+    update_graph_form.populate_obj(graph)
+
+    db.session.commit()
+    return jsonify({"success": 1})

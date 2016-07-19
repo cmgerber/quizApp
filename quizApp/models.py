@@ -49,12 +49,12 @@ class User(Base, UserMixin):
 
     email = db.Column(db.String(255), unique=True)
     active = db.Column(db.Boolean())
-    password = db.Column(db.String(255))
+    password = db.Column(db.String(255), nullable=False)
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship("Role", secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
-    type = db.Column(db.String(50))
+    type = db.Column(db.String(50), nullable=False)
 
     __mapper_args__ = {
         'polymorphic_identity': 'user',
@@ -113,7 +113,7 @@ class ParticipantExperiment(Base):
         O2M with Assignment (parent)
     """
 
-    progress = db.Column(db.Integer)
+    progress = db.Column(db.Integer, nullable=False, default=0)
     complete = db.Column(db.Boolean, default=False)
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -225,7 +225,7 @@ class Activity(Base):
         O2M with Assignment (parent)
     """
 
-    type = db.Column(db.String(50))
+    type = db.Column(db.String(50), nullable=False)
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table)
     assignments = db.relationship("Assignment", back_populates="activity",
@@ -266,7 +266,7 @@ class Question(Activity):
     choices = db.relationship("Choice", backref="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table)
     explanation = db.Column(db.String(200))
-    num_media_items = db.Column(db.Integer)
+    num_media_items = db.Column(db.Integer, nullable=False)
     needs_reflection = db.Column(db.Boolean())
 
     __mapper_args__ = {
@@ -332,7 +332,7 @@ class Choice(Base):
         M2O with Question (child)
         O2M with Assignment (parent)
     """
-    choice = db.Column(db.String(200))
+    choice = db.Column(db.String(200), nullable=False)
     label = db.Column(db.String(3))
     correct = db.Column(db.Boolean)
 
@@ -358,10 +358,13 @@ class MediaItem(Base):
     assignments = db.relationship(
         "Assignment",
         secondary=assignment_media_item_table)
-    flash_duration = db.Column(db.Integer)
+    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
+                               info={"label": "Flash duration"})
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
-    type = db.Column(db.String(80))
-    name = db.Column(db.String(100))
+    type = db.Column(db.String(80), nullable=False)
+    name = db.Column(db.String(100), nullable=False,
+                     info={"label": "Name"},
+                     default="New media item")
 
     __mapper_args__ = {
         'polymorphic_identity': 'media_item',
@@ -377,7 +380,7 @@ class Graph(MediaItem):
         filename - string: Filename of the graph
     """
 
-    path = db.Column(db.String(200))
+    path = db.Column(db.String(200), nullable=False)
 
     def filename(self):
         """Return the filename of this graph.

@@ -13,7 +13,7 @@ Quiz
 {% endblock %}
 
 {% block content %}
-{% for media_item in assignment.meda_items %}
+{% for media_item in assignment.media_items %}
 <div class="row media-item-container"
   {% if not experiment_complete %}
   data-flash-duration="{{ media_item.flash_duration }}"
