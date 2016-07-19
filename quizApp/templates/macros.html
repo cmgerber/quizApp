@@ -22,9 +22,20 @@
     {{ render_select_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'DateTimeField' %}
     {{ render_date_time_field(field, label_visible, **kwargs) }}
+  {% elif field.type == 'FileField' %}
+    {{ render_file_field(field, label_visible, **kwargs) }}
   {% else %}
     {{ render_string_field(field, label_visible, **kwargs) }}
 	{% endif %}
+{% endmacro %}
+
+{% macro render_file_field(field, label_visible=True) -%}
+<div class="form-group">
+  {% if label_visible %}
+  {{ field.label }}
+  {% endif %}
+  {{ field(**kwargs) }}
+</div>
 {% endmacro %}
 
 {% macro render_select_field(field, label_visible=true) -%}

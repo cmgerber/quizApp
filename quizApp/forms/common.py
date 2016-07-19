@@ -1,5 +1,6 @@
 """Common forms or form elements live here.
 """
+from collections import OrderedDict
 
 from flask_wtf import Form
 from wtforms import SubmitField, SelectMultipleField, SelectField
@@ -64,3 +65,28 @@ class ObjectTypeForm(Form):
         the object_type field.
         """
         self.object_type.choices = [(k, v) for k, v in mapping.iteritems()]
+
+
+class OrderFormMixin(object):
+    '''
+    To apply add to Meta 'order' iterable
+    '''
+    def __init__(self, *args, **kwargs):
+        super(OrderFormMixin, self).__init__(*args, **kwargs)
+
+        field_order = getattr(self.meta, 'order', [])
+        if field_order:
+            visited = []
+            new_fields = OrderedDict()
+
+            for field_name in field_order:
+                if field_name in self._fields:
+                    new_fields[field_name] = self._fields[field_name]
+                    visited.append(field_name)
+
+            for field_name in self._fields:
+                if field_name in visited:
+                    continue
+                new_fields[field_name] = self._fields[field_name]
+
+            self._fields = new_fields

@@ -45,12 +45,12 @@ def create_activity():
     """Create an activity.
     """
     activity_type_form = ObjectTypeForm()
-    activity_type_form.populate_activity_type(ACTIVITY_TYPES)
+    activity_type_form.populate_object_type(ACTIVITY_TYPES)
 
     if not activity_type_form.validate():
         return jsonify({"success": 0, "errors": activity_type_form.errors})
 
-    activity = Activity(type=activity_type_form.activity_type.data)
+    activity = Activity(type=activity_type_form.object_type.data)
     activity.save()
 
     next_url = url_for("activities.settings_activity", activity_id=activity.id)

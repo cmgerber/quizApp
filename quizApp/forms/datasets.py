@@ -4,6 +4,9 @@
 from flask_wtf import Form
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
+from wtforms_alchemy import ModelForm
+from quizApp.models import Graph
+from quizApp.forms.common import OrderFormMixin
 
 
 class DatasetForm(Form):
@@ -27,3 +30,16 @@ class DatasetForm(Form):
         """
         self.name.data = dataset.name
         self.uri.data = dataset.uri
+
+
+# TODO: paths is not really in the update form
+class GraphForm(OrderFormMixin, ModelForm):
+    """Form for updating Graph objects.
+    """
+    class Meta(object):
+        """Specify model and field order.
+        """
+        model = Graph
+        order = ('name', 'path', 'flash_duration', 'submit')
+
+    submit = SubmitField("Submit")

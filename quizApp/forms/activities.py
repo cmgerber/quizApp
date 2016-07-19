@@ -3,7 +3,7 @@
 
 from flask_wtf import Form
 from wtforms import StringField, SubmitField, \
-    TextAreaField, IntegerField, BooleanField, SelectField
+    TextAreaField, IntegerField, BooleanField
 from wtforms.validators import DataRequired
 
 from quizApp.forms.common import ListObjectForm
