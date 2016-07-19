@@ -130,9 +130,8 @@ class ParticipantExperiment(Base):
     def validate_assignments(self, _, assignment):
         """The Assignments in this model must be related to the same Experiment
         as this model is."""
-        assert False
-        assert assignment.experiment_id == self.experiment_id
-        assert assignment.participant_id == self.participant_id
+        assert assignment.experiment == self.experiment
+        assert assignment.participant == self.participant
         assert assignment.activity in self.experiment.activities
         return assignment
 
@@ -193,27 +192,21 @@ class Assignment(Base):
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments")
 
-    @db.validates("activity_id")
-    def validate_activity_id(self, key, activity_id):
-        return self.validate_activity(key, Activity.query.get(activity_id))
-
     @db.validates("activity")
     def validate_activity(self, _, activity):
         """Make sure that the activity is part of this experiment.
         """
-        assert False
         assert self.experiment in activity.experiments
         return activity
 
-    @db.validates("choice_id")
-    def validate_choice_id(self, _, choice_id):
+    @db.validates("choice")
+    def validate_choice_id(self, _, choice):
         """This must be a valid choice, i.e. contained in the question (if any)
         """
-        assert False
         if "question" in self.activity.type:
-            assert(choice_id in [c.id for c in self.activity.choices])
+            assert choice in self.activity.choices
 
-        return choice_id
+        return choice
 
 
 activity_experiment_table = db.Table(
@@ -293,7 +286,7 @@ class Question(Activity):
                                 })
     needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
 
-    choices = db.relationship("Choice", backref="question")
+    choices = db.relationship("Choice", back_populates="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table,
                                back_populates="questions")
 
