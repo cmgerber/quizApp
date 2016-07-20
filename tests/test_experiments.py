@@ -261,7 +261,7 @@ def test_update_assignment(client, users):
 def test_get_next_assignment_url(users):
     participant = get_participant()
     experiment = create_experiment(3, [participant])
-    experiment.participant_experiments[0].completed = False
+    experiment.participant_experiments[0].complete = False
     experiment.save()
 
     url = get_next_assignment_url(experiment.participant_experiments[0],
