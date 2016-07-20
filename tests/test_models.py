@@ -3,6 +3,7 @@
 import os
 
 import pytest
+from sqlalchemy import inspect
 
 from tests.factories import ExperimentFactory, ParticipantFactory, \
     ChoiceFactory
@@ -74,6 +75,9 @@ def test_assignment_validators():
 
     choice = ChoiceFactory()
     question = Question()
+
+    assn.choice = choice
+
     question.experiments.append(exp)
 
     assn.activity = question
@@ -97,3 +101,23 @@ def test_graph_filename():
     graph = Graph(path=full_path, name="Foobar")
 
     assert graph.filename() == filename
+
+
+def test_save():
+    """Make sure saving works correctly.
+    """
+    role = Role(name="Foo")
+
+    role.save()
+
+    inspection = inspect(role)
+
+    assert not inspection.pending
+
+    role2 = Role(name="bar")
+
+    role2.save(commit=False)
+
+    inspection = inspect(role2)
+
+    assert inspection.pending
