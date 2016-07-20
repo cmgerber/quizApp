@@ -124,7 +124,7 @@ def update_experiment(exp_id):
     return jsonify({"success": 1})
 
 
-@experiments.route('/<int:exp_id>/assignment/<int:a_id>', methods=["GET"])
+@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["GET"])
 @roles_required("participant")
 def read_assignment(exp_id, a_id):
     """Given an assignment ID, retrieve it from the database and display it to

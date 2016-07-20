@@ -5,7 +5,7 @@ import json
 
 import mock
 
-from quizApp.models import ParticipantExperiment, Assignment, Activity
+from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_participant_experiment_or_abort
 from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
@@ -165,22 +165,11 @@ def test_read_experiment(client, users):
 
     exp = create_experiment(1, [participant])
 
-    """
-    assignment.experiment = exp
-    exp.activities.append(activity)
-    assignment.activity = activity
-    assignment.participant = participant
-    part_exp = ParticipantExperiment(
-        participant=participant,
-        experiment=exp)
-    part_exp.assignments = [assignment]
-    part_exp.complete = False
-    part_exp.save()
-    """
     url = "/experiments/" + str(exp.id)
 
     response = client.get(url)
-    assert str(exp.participant_experiments[0].assignments[0].id) in response.data
+    assert str(exp.participant_experiments[0].assignments[0].id) in \
+        response.data
 
 
 def test_update_experiment(client, users):
@@ -231,4 +220,7 @@ def test_read_assignment(client, users):
 
     url = "/experiments/" + str(experiment.id) + "/assignments/"
 
-    
+    for assignment in participant_experiment.assignments:
+        question = assignment.activity
+        response = client.get(url + str(assignment.id))
+        assert question.question in response.data

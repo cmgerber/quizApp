@@ -1,5 +1,6 @@
 """Various factories, useful for writing less boilerplate when testing.
 """
+import random
 
 import factory
 from quizApp import models
@@ -37,9 +38,23 @@ class ActivityFactory(factory.Factory):
     class Meta:
         model = models.Activity
 
-    type = factory.Iterator(["question", "question_mc_singleselect",
-                             "question_mc_singleselect_scale"])
     category = factory.Faker("text")
+
+
+class QuestionFactory(ActivityFactory):
+    class Meta:
+        model = models.Question
+
+    question = factory.Faker("text")
+    num_media_items = factory.Faker("pyint")
+
+    @factory.post_generation
+    def choices(self, create, extracted, **kwargs):
+        if len(self.choices):
+            return
+
+        for i in xrange(0, 4):
+            self.choices.append(ChoiceFactory())
 
 
 class AssignmentFactory(factory.Factory):
@@ -63,7 +78,7 @@ def create_experiment(num_activities, participants, activity_types=[]):
     experiment = ExperimentFactory()
     num_participants = len(participants)
     participant_experiments = []
-    
+
     for participant in participants:
         part_exp = ParticipantExperimentFactory()
         part_exp.participant = participant
@@ -75,14 +90,16 @@ def create_experiment(num_activities, participants, activity_types=[]):
         part_exp = participant_experiments[i % num_participants]
 
         if activity_types:
-            activity = ActivityFactory(random.choice(activity_types)) 
+            activity_type = random.choice(activity_types)
+            if "question" in activity_type:
+                activity = QuestionFactory()
         else:
             activity = ActivityFactory()
 
         assignment = AssignmentFactory()
-        
+
         activity.experiments.append(experiment)
-         
+
         assignment.experiment = experiment
         assignment.participant = participant
         assignment.activity = activity
