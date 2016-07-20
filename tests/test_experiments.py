@@ -1,8 +1,12 @@
 """Test the Experiments blueprint.
 """
 
-from quizApp.models import ParticipantExperiment
+import json
 
+import mock
+
+from quizApp.models import ParticipantExperiment, Assignment, Activity
+from quizApp.views.experiments import get_participant_experiment_or_abort
 from tests.factories import ExperimentFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
@@ -94,7 +98,7 @@ def test_experiments_authed_experimenter(client, users):
     assert response.status_code == 200
 
 
-def test_experiments_delete(client, users):
+def test_delete_experiment(client, users):
     """Make sure logged in experimenters can delete expeirments.
     """
     response = login_experimenter(client)
@@ -113,7 +117,7 @@ def test_experiments_delete(client, users):
     assert exp.name not in response.data
 
 
-def test_experiments_create(client, users):
+def test_create_experiment(client, users):
     """Make sure logged in experimenters can create expeirments.
     """
     response = login_experimenter(client)
@@ -132,3 +136,49 @@ def test_experiments_create(client, users):
     response = client.get("/experiments/")
     assert response.status_code == 200
     assert exp.name in response.data
+
+    response = client.post("/experiments/", data=dict(
+        start=exp.start.strftime(datetime_format),
+        stop=exp.stop.strftime(datetime_format),
+        blurb=exp.blurb))
+    data = json.loads(response.data)
+    assert data["success"] == 0
+    assert data["errors"]
+
+
+@mock.patch('quizApp.views.experiments.abort', autospec=True)
+def test_get_participant_experiment_or_abort(abort_mock, client):
+    """Make sure get_participant_experiment_or_abort actually aborts.
+    """
+    get_participant_experiment_or_abort(5, 500)
+
+    abort_mock.assert_called_once_with(500)
+
+
+def test_read_experiment(client, users):
+    """Test the read_experiment method.
+    """
+    response = login_participant(client)
+    assert response.status_code == 200
+
+    participant = get_participant()
+
+    activity = Activity()
+    assignment = Assignment()
+    exp = ExperimentFactory()
+
+    assignment.experiment = exp
+    exp.activities.append(activity)
+    assignment.activity = activity
+    assignment.participant = participant
+    part_exp = ParticipantExperiment(
+        participant=participant,
+        experiment=exp)
+    part_exp.assignments = [assignment]
+    part_exp.complete = False
+
+    part_exp.save()
+    url = "/experiments/" + str(exp.id)
+
+    response = client.get(url)
+    assert str(assignment.id) in response.data

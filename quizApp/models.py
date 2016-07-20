@@ -435,7 +435,8 @@ class Experiment(Base):
       O2M with Assignment (parent)
     """
 
-    name = db.Column(db.String(150), index=True, info={"label": "Name"})
+    name = db.Column(db.String(150), index=True, nullable=False,
+                     info={"label": "Name"})
     created = db.Column(db.DateTime)
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
