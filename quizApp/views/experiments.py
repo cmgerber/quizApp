@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import os
-import pdb
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request
@@ -251,7 +250,6 @@ def get_next_assignment_url(participant_experiment, current_index):
             next_url = url_for("experiments.confirm_done_experiment",
                                exp_id=experiment_id)
         else:
-            pdb.set_trace()
             # Experiment has already been submitted
             next_url = url_for("experiments.read_experiment",
                                exp_id=experiment_id)

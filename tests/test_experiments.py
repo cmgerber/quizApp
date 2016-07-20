@@ -13,6 +13,7 @@ from quizApp.views.experiments import get_participant_experiment_or_abort,\
 from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
+from tests.helpers import json_success
 
 
 def test_experiments(client):
@@ -99,6 +100,7 @@ def test_experiments_authed_experimenter(client, users):
 
     response = client.delete(exp_url)
     assert response.status_code == 200
+    assert json_success(response.data)
 
 
 def test_delete_experiment(client, users):
@@ -114,6 +116,7 @@ def test_delete_experiment(client, users):
 
     response = client.delete(exp_url)
     assert response.status_code == 200
+    assert json_success(response.data)
 
     response = client.get("/experiments/")
     assert response.status_code == 200
@@ -135,6 +138,7 @@ def test_create_experiment(client, users):
         stop=exp.stop.strftime(datetime_format),
         blurb=exp.blurb))
     assert response.status_code == 200
+    assert json_success(response.data)
 
     response = client.get("/experiments/")
     assert response.status_code == 200
@@ -193,9 +197,8 @@ def test_update_experiment(client, users):
 
     response = client.put(url,
                           data={})
-    data = json.loads(response.data)
+    assert not json_success(response.data)
 
-    assert not data["success"]
     datetime_format = "%Y-%m-%d %H:%M:%S"
 
     response = client.put(url,
@@ -205,9 +208,7 @@ def test_update_experiment(client, users):
                               experiment.start.strftime(datetime_format),
                               "stop": experiment.stop.strftime(datetime_format)
                           })
-    data = json.loads(response.data)
-
-    assert data["success"]
+    assert json_success(response.data)
 
     response = client.get("/experiments/")
 
@@ -221,16 +222,52 @@ def test_read_assignment(client, users):
 
     experiment = create_experiment(3, [participant],
                                    ["question_mc_singleselect"])
-    experiment.save()
-
     participant_experiment = experiment.participant_experiments[0]
+    participant_experiment.complete = False
+    experiment.save()
 
     url = "/experiments/" + str(experiment.id) + "/assignments/"
 
     for assignment in participant_experiment.assignments:
+        # Verify that the question is present in the output
         question = assignment.activity
         response = client.get(url + str(assignment.id))
         assert question.question in response.data
+
+        # And save a random question
+        choice = random.choice(assignment.activity.choices)
+        response = client.patch(url + str(assignment.id),
+                                data={"choices": str(choice.id)})
+
+        assert response.status_code == 200
+        assert json_success(response.data)
+
+    response = client.patch("/experiments/" + str(experiment.id) + "/finalize")
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    # Once an experiment is submitted, make sure defaults are saved and we have
+    # next buttons
+    for assignment in participant_experiment.assignments:
+        response = client.get(url + str(assignment.id))
+        assert response.status_code == 200
+        assert "checked" in response.data
+        assert "disabled" in response.data
+
+    # Verify that we check that the assignment is in this experiment
+    experiment2 = create_experiment(3, [participant])
+    experiment2.save()
+    participant_experiment2 = experiment2.participant_experiments[0]
+    assignment2 = participant_experiment2.assignments[0]
+
+    response = client.get(url + str(assignment2.id))
+    assert response.status_code == 400
+
+    # If we can't render it return an error
+    url2 = "/experiments/" + str(experiment2.id) + "/assignments/"
+
+    response = client.get(url2 + str(assignment2.id))
+    assert response.status_code == 404
 
 
 def test_update_assignment(client, users):
@@ -253,9 +290,11 @@ def test_update_assignment(client, users):
     choice = random.choice(assignment.activity.choices)
 
     response = client.patch(url,
-                            data={"choice": choice.id}
+                            data={"choices": choice.id}
                             )
+
     assert response.status_code == 200
+    assert json_success(response.data)
 
 
 def test_get_next_assignment_url(users):
@@ -282,6 +321,7 @@ def test_finalize_experiment(client, users):
 
     response = client.patch(url)
     assert response.status_code == 200
+    assert json_success(response.data)
 
     url = "/experiments/" + str(experiment.id) + "/assignments/" + \
         str(experiment.participant_experiments[0].assignments[0].id)
@@ -291,7 +331,7 @@ def test_finalize_experiment(client, users):
                            activity.choices)
 
     response = client.patch(url,
-                            data={"choice": choice.id}
+                            data={"choices": choice.id}
                             )
 
     assert response.status_code == 400
