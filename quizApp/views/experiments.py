@@ -76,7 +76,6 @@ def read_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
     exp = validate_model_id(Experiment, exp_id)
-
     if current_user.has_role("participant"):
         part_exp = get_participant_experiment_or_abort(exp_id)
 

@@ -2,11 +2,14 @@
 """
 
 import json
+import random
 
 import mock
 
+from quizApp import db
 from quizApp.models import ParticipantExperiment
-from quizApp.views.experiments import get_participant_experiment_or_abort
+from quizApp.views.experiments import get_participant_experiment_or_abort,\
+    get_next_assignment_url
 from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
@@ -164,12 +167,16 @@ def test_read_experiment(client, users):
     participant = get_participant()
 
     exp = create_experiment(1, [participant])
+    exp.save()
 
     url = "/experiments/" + str(exp.id)
 
     response = client.get(url)
     assert str(exp.participant_experiments[0].assignments[0].id) in \
         response.data
+
+    exp.participant_experiments[0].assignments = []
+    db.session.commit()
 
 
 def test_update_experiment(client, users):
@@ -224,3 +231,67 @@ def test_read_assignment(client, users):
         question = assignment.activity
         response = client.get(url + str(assignment.id))
         assert question.question in response.data
+
+
+def test_update_assignment(client, users):
+    response = login_participant(client)
+    assert response.status_code == 200
+    participant = get_participant()
+
+    experiment = create_experiment(3, [participant],
+                                   ["question_mc_singleselect"])
+
+    participant_experiment = experiment.participant_experiments[0]
+    participant_experiment.complete = False
+    experiment.save()
+
+    assignment = participant_experiment.assignments[0]
+
+    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
+        str(assignment.id)
+
+    choice = random.choice(assignment.activity.choices)
+
+    response = client.patch(url,
+                            data={"choice": choice.id}
+                            )
+    assert response.status_code == 200
+
+
+def test_get_next_assignment_url(users):
+    participant = get_participant()
+    experiment = create_experiment(3, [participant])
+    experiment.participant_experiments[0].completed = False
+    experiment.save()
+
+    url = get_next_assignment_url(experiment.participant_experiments[0],
+                                  2)
+    assert "done" in url
+
+
+def test_finalize_experiment(client, users):
+    response = login_participant(client)
+    assert response.status_code == 200
+    participant = get_participant()
+
+    experiment = create_experiment(3, [participant],
+                                   ["question_mc_singleselect"])
+    experiment.save()
+
+    url = "/experiments/" + str(experiment.id) + "/finalize"
+
+    response = client.patch(url)
+    assert response.status_code == 200
+
+    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
+        str(experiment.participant_experiments[0].assignments[0].id)
+
+    participant_experiment = experiment.participant_experiments[0]
+    choice = random.choice(participant_experiment.assignments[0].
+                           activity.choices)
+
+    response = client.patch(url,
+                            data={"choice": choice.id}
+                            )
+
+    assert response.status_code == 400
