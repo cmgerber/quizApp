@@ -22,3 +22,12 @@ class ParticipantFactory(factory.Factory):
 
     email = factory.Faker('email')
     password = factory.Faker('password')
+
+
+class ChoiceFactory(factory.Factory):
+    class Meta:
+        model = models.Choice
+
+    choice = factory.Faker('text')
+    label = factory.Faker('text')
+    correct = factory.Faker("boolean")

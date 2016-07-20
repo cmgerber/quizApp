@@ -1,9 +1,13 @@
 """Run tests on the database models.
 """
+import os
+
 import pytest
 
-from tests.factories import ExperimentFactory, ParticipantFactory
-from quizApp.models import ParticipantExperiment, Assignment, Role
+from tests.factories import ExperimentFactory, ParticipantFactory, \
+    ChoiceFactory
+from quizApp.models import ParticipantExperiment, Assignment, Role, Activity, \
+    Question, Graph
 
 
 def test_db_rollback1():
@@ -45,3 +49,51 @@ def test_participant_experiment_validators():
 
     with pytest.raises(AssertionError):
         part_exp.assignments.append(assignment)
+
+    activity = Activity()
+    exp2.activities.append(activity)
+    assignment.activity = activity
+    part_exp.participant = part2
+
+    part_exp.assignments.append(assignment)
+
+
+def test_assignment_validators():
+    """Test validators of the Assignment model.
+    """
+    assn = Assignment()
+    exp = ExperimentFactory()
+    activity = Activity()
+    assn.experiment = exp
+
+    with pytest.raises(AssertionError):
+        assn.activity = activity
+
+    activity.experiments.append(exp)
+    assn.activity = activity
+
+    choice = ChoiceFactory()
+    question = Question()
+    question.experiments.append(exp)
+
+    assn.activity = question
+
+    with pytest.raises(AssertionError):
+        assn.choice = choice
+
+    question.choices.append(choice)
+
+    assn.choice = choice
+
+
+def test_graph_filename():
+    """Make sure graph filenames work correctly.
+    """
+    path = "/foo/bar/baz/"
+    filename = "boo.png"
+
+    full_path = os.path.join(path, filename)
+
+    graph = Graph(path=full_path, name="Foobar")
+
+    assert graph.filename() == filename
