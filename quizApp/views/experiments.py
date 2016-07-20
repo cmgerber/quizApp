@@ -82,13 +82,8 @@ def read_experiment(exp_id):
 
         if len(part_exp.assignments) == 0:
             assignment = None
-        elif part_exp.complete:
-            assignment = part_exp.assignments[0]
         else:
-            try:
-                assignment = part_exp.assignments[part_exp.progress]
-            except IndexError:
-                assignment = part_exp.assignments[0]
+            assignment = part_exp.assignments[0]
     else:
         assignment = None
 

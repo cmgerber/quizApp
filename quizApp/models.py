@@ -86,9 +86,9 @@ class Participant(User):
 
     designed_datasets = db.relationship("Dataset",
                                         secondary=participant_dataset_table)
-    assignments = db.relationship("Assignment", backref="participant")
+    assignments = db.relationship("Assignment", back_populates="participant")
     experiments = db.relationship("ParticipantExperiment",
-                                  backref="participant")
+                                  back_populates="participant")
 
     __mapper_args__ = {
         'polymorphic_identity': 'participant',
@@ -117,17 +117,21 @@ class ParticipantExperiment(Base):
     complete = db.Column(db.Boolean, default=False)
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    participant = db.relationship("Participant", back_populates="experiments")
+
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
+    experiment = db.relationship("Experiment",
+                                 back_populates="participant_experiments")
 
     assignments = db.relationship("Assignment",
-                                  backref="participant_experiment")
+                                  back_populates="participant_experiment")
 
     @db.validates('assignments')
     def validate_assignments(self, _, assignment):
         """The Assignments in this model must be related to the same Experiment
         as this model is."""
-        assert assignment.experiment_id == self.experiment_id
-        assert assignment.participant_id == self.participant_id
+        assert assignment.experiment == self.experiment
+        assert assignment.participant == self.participant
         assert assignment.activity in self.experiment.activities
         return assignment
 
@@ -167,17 +171,26 @@ class Assignment(Base):
     choice_order = db.Column(db.String(80))
 
     media_items = db.relationship("MediaItem",
-                                  secondary=assignment_media_item_table)
+                                  secondary=assignment_media_item_table,
+                                  back_populates="assignments")
+
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    participant = db.relationship("Participant", back_populates="assignments")
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     activity = db.relationship("Activity", back_populates="assignments")
 
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
+    choice = db.relationship("Choice", back_populates="assignments")
+
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
+    experiment = db.relationship("Experiment", back_populates="assignments")
+
     participant_experiment_id = db.Column(
         db.Integer,
         db.ForeignKey("participant_experiment.id"))
+    participant_experiment = db.relationship("ParticipantExperiment",
+                                             back_populates="assignments")
 
     @db.validates("activity")
     def validate_activity(self, _, activity):
@@ -186,14 +199,14 @@ class Assignment(Base):
         assert self.experiment in activity.experiments
         return activity
 
-    @db.validates("choice_id")
-    def validate_choice_id(self, _, choice_id):
+    @db.validates("choice")
+    def validate_choice_id(self, _, choice):
         """This must be a valid choice, i.e. contained in the question (if any)
         """
         if "question" in self.activity.type:
-            assert(choice_id in [c.id for c in self.activity.choices])
+            assert choice in self.activity.choices
 
-        return choice_id
+        return choice
 
 
 activity_experiment_table = db.Table(
@@ -226,7 +239,9 @@ class Activity(Base):
 
     type = db.Column(db.String(50), nullable=False)
     experiments = db.relationship("Experiment",
-                                  secondary=activity_experiment_table)
+                                  secondary=activity_experiment_table,
+                                  back_populates="activities")
+
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
@@ -271,8 +286,9 @@ class Question(Activity):
                                 })
     needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
 
-    choices = db.relationship("Choice", backref="question")
-    datasets = db.relationship("Dataset", secondary=question_dataset_table)
+    choices = db.relationship("Choice", back_populates="question")
+    datasets = db.relationship("Dataset", secondary=question_dataset_table,
+                               back_populates="questions")
 
     __mapper_args__ = {
         'polymorphic_identity': 'question',
@@ -345,7 +361,9 @@ class Choice(Base):
                         info={"label": "Correct?"})
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
-    assignments = db.relationship("Assignment", backref="choice")
+    question = db.relationship("Question", back_populates="choices")
+
+    assignments = db.relationship("Assignment", back_populates="choice")
 
 
 class MediaItem(Base):
@@ -365,9 +383,11 @@ class MediaItem(Base):
 
     assignments = db.relationship(
         "Assignment",
-        secondary=assignment_media_item_table)
+        secondary=assignment_media_item_table,
+        back_populates="media_items")
     flash_duration = db.Column(db.Integer, nullable=False, default=-1,
                                info={"label": "Flash duration"})
+    dataset = db.relationship("Dataset", back_populates="media_items")
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
     type = db.Column(db.String(80), nullable=False)
     name = db.Column(db.String(100), nullable=False,
@@ -415,17 +435,21 @@ class Experiment(Base):
       O2M with Assignment (parent)
     """
 
-    name = db.Column(db.String(150), index=True, info={"label": "Name"})
+    name = db.Column(db.String(150), index=True, nullable=False,
+                     info={"label": "Name"})
     created = db.Column(db.DateTime)
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
 
     activities = db.relationship("Activity",
-                                 secondary=activity_experiment_table)
+                                 secondary=activity_experiment_table,
+                                 back_populates="experiments")
+
     participant_experiments = db.relationship("ParticipantExperiment",
-                                              backref="experiment")
-    assignments = db.relationship("Assignment", backref="experiment")
+                                              back_populates="experiment")
+
+    assignments = db.relationship("Assignment", back_populates="experiment")
 
 
 class Dataset(Base):
@@ -443,7 +467,8 @@ class Dataset(Base):
     name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
     uri = db.Column(db.String(200), info={"label": "URI"})
 
-    media_items = db.relationship("MediaItem", backref="dataset")
-    questions = db.relationship("Question", secondary=question_dataset_table)
+    media_items = db.relationship("MediaItem", back_populates="dataset")
+    questions = db.relationship("Question", secondary=question_dataset_table,
+                                back_populates="datasets")
     participant = db.relationship("Participant",
                                   secondary=participant_dataset_table)
