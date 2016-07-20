@@ -7,7 +7,7 @@ import mock
 
 from quizApp.models import ParticipantExperiment, Assignment, Activity
 from quizApp.views.experiments import get_participant_experiment_or_abort
-from tests.factories import ExperimentFactory
+from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 
@@ -163,10 +163,9 @@ def test_read_experiment(client, users):
 
     participant = get_participant()
 
-    activity = Activity()
-    assignment = Assignment()
-    exp = ExperimentFactory()
+    exp = create_experiment(1, [participant])
 
+    """
     assignment.experiment = exp
     exp.activities.append(activity)
     assignment.activity = activity
@@ -176,9 +175,60 @@ def test_read_experiment(client, users):
         experiment=exp)
     part_exp.assignments = [assignment]
     part_exp.complete = False
-
     part_exp.save()
+    """
     url = "/experiments/" + str(exp.id)
 
     response = client.get(url)
-    assert str(assignment.id) in response.data
+    assert str(exp.participant_experiments[0].assignments[0].id) in response.data
+
+
+def test_update_experiment(client, users):
+    response = login_experimenter(client)
+    assert response.status_code == 200
+    participant = get_participant()
+
+    experiment = create_experiment(3, [participant])
+    experiment.save()
+
+    new_exp = ExperimentFactory()
+
+    url = "/experiments/" + str(experiment.id)
+
+    response = client.put(url,
+                          data={})
+    data = json.loads(response.data)
+
+    assert not data["success"]
+    datetime_format = "%Y-%m-%d %H:%M:%S"
+
+    response = client.put(url,
+                          data={
+                              "name": new_exp.name,
+                              "start":
+                              experiment.start.strftime(datetime_format),
+                              "stop": experiment.stop.strftime(datetime_format)
+                          })
+    data = json.loads(response.data)
+
+    assert data["success"]
+
+    response = client.get("/experiments/")
+
+    assert new_exp.name in response.data
+
+
+def test_read_assignment(client, users):
+    response = login_participant(client)
+    assert response.status_code == 200
+    participant = get_participant()
+
+    experiment = create_experiment(3, [participant],
+                                   ["question_mc_singleselect"])
+    experiment.save()
+
+    participant_experiment = experiment.participant_experiments[0]
+
+    url = "/experiments/" + str(experiment.id) + "/assignments/"
+
+    
