@@ -20,7 +20,6 @@ def validate_form_or_error(form):
 
     If the form is valid, None is returned.
     """
-
     if not form.validate():
         return jsonify({"success": 0, "errors": form.errors})
 
