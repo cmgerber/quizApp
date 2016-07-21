@@ -206,8 +206,6 @@ def create_choice(question_id):
     choice = Choice()
 
     create_choice_form.populate_obj(choice)
-    # kvesteri/wtforms-alchemy issue #106
-    choice.correct = create_choice_form.correct.data
     question.choices.append(choice)
 
     choice.save()
@@ -226,7 +224,7 @@ def update_choice(question_id, choice_id):
     choice = validate_model_id(Choice, choice_id)
 
     if choice not in question.choices:
-        abort(400)
+        abort(404)
 
     update_choice_form = ChoiceForm(request.form, prefix="update")
 
@@ -235,9 +233,6 @@ def update_choice(question_id, choice_id):
                         "errors": update_choice_form.errors})
 
     update_choice_form.populate_obj(choice)
-
-    # kvesteri/wtforms-alchemy issue #106
-    choice.correct = update_choice_form.correct.data
 
     db.session.commit()
 
@@ -254,7 +249,7 @@ def delete_choice(question_id, choice_id):
     choice = validate_model_id(Choice, choice_id)
 
     if choice not in question.choices:
-        abort(400)
+        abort(404)
 
     db.session.delete(choice)
     db.session.commit()

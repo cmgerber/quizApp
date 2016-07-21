@@ -197,3 +197,41 @@ def test_update_choice(client, users):
     response = client.put(url)
     assert response.status_code == 200
     assert not json_success(response.data)
+
+    unrelated_choice = ChoiceFactory()
+    unrelated_choice.save()
+
+    url = ("/activities/" + str(question.id) + "/choices/" +
+           str(unrelated_choice.id))
+    response = client.put(url, data={"update-choice": choice.choice,
+                                     "update-label": choice.label,
+                                     "update-correct":
+                                     str(choice.correct).lower()})
+    assert response.status_code == 404
+
+
+def test_delete_choice(client, users):
+    login_experimenter(client)
+    question = QuestionFactory()
+    question.save()
+
+    initial_num_choices = len(question.choices)
+
+    url = ("/activities/" + str(question.id) + "/choices/" +
+           str(question.choices[0].id))
+
+    response = client.delete(url)
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    db.session.refresh(question)
+
+    assert initial_num_choices - 1 == len(question.choices)
+
+    unrelated_choice = ChoiceFactory()
+    unrelated_choice.save()
+
+    url = ("/activities/" + str(question.id) + "/choices/" +
+           str(unrelated_choice.id))
+    response = client.delete(url)
+    assert response.status_code == 404
