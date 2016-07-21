@@ -3,14 +3,14 @@
 
 import json
 import random
-
 import mock
 
 from quizApp import db
 from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_participant_experiment_or_abort,\
     get_next_assignment_url, get_graph_url_filter
-from tests.factories import ExperimentFactory, create_experiment, GraphFactory
+from tests.factories import ExperimentFactory, create_experiment, \
+    GraphFactory, ParticipantFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
@@ -295,6 +295,51 @@ def test_update_assignment(client, users):
 
     assert response.status_code == 200
     assert json_success(response.data)
+
+    # Make sure we can edit choices
+    participant_experiment.progress = 1
+
+    choice = random.choice(assignment.activity.choices)
+
+    response = client.patch(url,
+                            data={"choices": choice.id}
+                            )
+
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    response = client.patch(url)
+
+    assert response.status_code == 200
+    assert not json_success(response.data)
+
+    # Test behavior for non-mc questions
+    experiment2 = create_experiment(3, [participant])
+    participant_experiment2 = experiment2.participant_experiments[0]
+    participant_experiment2.complete = False
+    experiment2.save()
+
+    assignment2 = participant_experiment2.assignments[0]
+    url = "/experiments/" + str(experiment2.id) + "/assignments/" + \
+        str(assignment2.id)
+    response = client.patch(url)
+
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    # Make sure participants can't see each others' stuff
+    other_participant = ParticipantFactory()
+    experiment3 = create_experiment(3, [other_participant])
+    participant_experiment3 = experiment3.participant_experiments[0]
+    participant_experiment3.complete = False
+    experiment3.save()
+
+    assignment3 = participant_experiment3.assignments[0]
+    url = "/experiments/" + str(experiment3.id) + "/assignments/" + \
+        str(assignment3.id)
+    response = client.patch(url)
+
+    assert response.status_code == 403
 
 
 def test_get_next_assignment_url(users):
