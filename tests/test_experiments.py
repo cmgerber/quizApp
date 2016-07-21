@@ -280,6 +280,7 @@ def test_update_assignment(client, users):
 
     participant_experiment = experiment.participant_experiments[0]
     participant_experiment.complete = False
+    participant_experiment.progress = 1
     experiment.save()
 
     assignment = participant_experiment.assignments[0]
@@ -297,7 +298,7 @@ def test_update_assignment(client, users):
     assert json_success(response.data)
 
     # Make sure we can edit choices
-    participant_experiment.progress = 1
+    participant_experiment.progress = 0
 
     choice = random.choice(assignment.activity.choices)
 
