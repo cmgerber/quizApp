@@ -30,7 +30,7 @@ class ChoiceFactory(factory.Factory):
         model = models.Choice
 
     choice = factory.Faker('text')
-    label = factory.Faker('text')
+    label = factory.Iterator(['a', 'b', 'c', 'd'])
     correct = factory.Faker("boolean")
 
 

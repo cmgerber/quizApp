@@ -4,7 +4,7 @@ import factory
 
 from tests.auth import login_experimenter
 from tests.factories import ActivityFactory, SingleSelectQuestionFactory, \
-    DatasetFactory, QuestionFactory
+    DatasetFactory, QuestionFactory, ChoiceFactory
 from tests.helpers import json_success
 from quizApp import db
 from quizApp.models import Question
@@ -146,3 +146,53 @@ def test_delete_activity(client, users):
     assert response.status_code == 200
     assert json_success(response.data)
     assert Question.query.get(question.id) is None
+
+
+def test_create_choice(client, users):
+    login_experimenter(client)
+    question = QuestionFactory()
+
+    question.save()
+    initial_num_choices = len(question.choices)
+    choice = ChoiceFactory()
+
+    url = "/activities/" + str(question.id) + "/choices/"
+
+    response = client.post(url, data={"create-choice": choice.choice,
+                                      "create-label": choice.label,
+                                      "create-correct": choice.correct})
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    updated_question = Question.query.get(question.id)
+    assert initial_num_choices + 1 == len(updated_question.choices)
+    assert choice.choice in [c.choice for c in updated_question.choices]
+
+    response = client.post(url)
+    assert response.status_code == 200
+    assert not json_success(response.data)
+
+
+def test_update_choice(client, users):
+    login_experimenter(client)
+    question = QuestionFactory()
+    question.save()
+    choice = ChoiceFactory()
+
+    url = ("/activities/" + str(question.id) + "/choices/" +
+           str(question.choices[0].id))
+
+    response = client.put(url, data={"update-choice": choice.choice,
+                                     "update-label": choice.label,
+                                     "update-correct": choice.correct})
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    updated_question = Question.query.get(question.id)
+    assert updated_question.choices[0].choice == choice.choice
+    assert updated_question.choices[0].label == choice.label
+    assert updated_question.choices[0].correct == choice.correct
+
+    response = client.put(url)
+    assert response.status_code == 200
+    assert not json_success(response.data)
