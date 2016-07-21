@@ -56,9 +56,10 @@ class QuestionFactory(ActivityFactory):
         for i in xrange(0, 4):
             self.choices.append(ChoiceFactory())
 
-class SingleSelectQuestionFactory(ActivityFactory):
+
+class SingleSelectQuestionFactory(QuestionFactory):
     class Meta:
-        model = models.MultipleChoiceQuestion
+        model = models.SingleSelectQuestion
 
 
 class AssignmentFactory(factory.Factory):

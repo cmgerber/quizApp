@@ -1,6 +1,5 @@
 """Test activity views.
 """
-
 import factory
 
 from tests.auth import login_experimenter
@@ -38,4 +37,4 @@ def test_create_activity(client, users):
 
     response = client.get("/activities/")
 
-    assert question.text in response.data
+    assert question.type in response.data
