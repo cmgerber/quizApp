@@ -74,6 +74,20 @@ class ParticipantExperimentFactory(factory.Factory):
     complete = factory.Faker("boolean")
 
 
+class MediaItemFactory(factory.Factory):
+    class Meta:
+        model = models.MediaItem
+
+    name = factory.Faker("text")
+
+
+class GraphFactory(MediaItemFactory):
+    class Meta:
+        model = models.Graph
+
+    path = factory.Faker("file_name")
+
+
 def create_experiment(num_activities, participants, activity_types=[]):
     experiment = ExperimentFactory()
     num_participants = len(participants)

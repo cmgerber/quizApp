@@ -9,8 +9,8 @@ import mock
 from quizApp import db
 from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_participant_experiment_or_abort,\
-    get_next_assignment_url
-from tests.factories import ExperimentFactory, create_experiment
+    get_next_assignment_url, get_graph_url_filter
+from tests.factories import ExperimentFactory, create_experiment, GraphFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
@@ -335,3 +335,11 @@ def test_finalize_experiment(client, users):
                             )
 
     assert response.status_code == 400
+
+
+def test_get_graph_url_filter():
+    graph = GraphFactory()
+
+    url = get_graph_url_filter(graph)
+
+    assert "missing" in url
