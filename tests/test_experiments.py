@@ -35,8 +35,7 @@ def test_experiments(client):
 def test_experiments_authed_participant(client, users):
     """Make sure logged in participants can see things.
     """
-    response = login_participant(client)
-    assert response.status_code == 200
+    login_participant(client)
 
     response = client.get("/")
     assert "Hello participant" in response.data
@@ -72,8 +71,7 @@ def test_experiments_authed_participant(client, users):
 def test_experiments_authed_experimenter(client, users):
     """Make sure logged in experimenters can see things.
     """
-    response = login_experimenter(client)
-    assert response.status_code == 200
+    login_experimenter(client)
 
     response = client.get("/")
     assert "Hello experimenter" in response.data
@@ -106,8 +104,7 @@ def test_experiments_authed_experimenter(client, users):
 def test_delete_experiment(client, users):
     """Make sure logged in experimenters can delete expeirments.
     """
-    response = login_experimenter(client)
-    assert response.status_code == 200
+    login_experimenter(client)
 
     exp = ExperimentFactory()
     exp.save()
@@ -126,8 +123,7 @@ def test_delete_experiment(client, users):
 def test_create_experiment(client, users):
     """Make sure logged in experimenters can create expeirments.
     """
-    response = login_experimenter(client)
-    assert response.status_code == 200
+    login_experimenter(client)
 
     exp = ExperimentFactory()
     datetime_format = "%Y-%m-%d %H:%M:%S"
@@ -165,8 +161,7 @@ def test_get_participant_experiment_or_abort(abort_mock, client):
 def test_read_experiment(client, users):
     """Test the read_experiment method.
     """
-    response = login_participant(client)
-    assert response.status_code == 200
+    login_participant(client)
 
     participant = get_participant()
 
@@ -184,8 +179,7 @@ def test_read_experiment(client, users):
 
 
 def test_update_experiment(client, users):
-    response = login_experimenter(client)
-    assert response.status_code == 200
+    login_experimenter(client)
     participant = get_participant()
 
     experiment = create_experiment(3, [participant])
@@ -216,8 +210,7 @@ def test_update_experiment(client, users):
 
 
 def test_read_assignment(client, users):
-    response = login_participant(client)
-    assert response.status_code == 200
+    login_participant(client)
     participant = get_participant()
 
     experiment = create_experiment(3, [participant],
@@ -271,8 +264,7 @@ def test_read_assignment(client, users):
 
 
 def test_update_assignment(client, users):
-    response = login_participant(client)
-    assert response.status_code == 200
+    login_participant(client)
     participant = get_participant()
 
     experiment = create_experiment(3, [participant],
@@ -355,8 +347,7 @@ def test_get_next_assignment_url(users):
 
 
 def test_finalize_experiment(client, users):
-    response = login_participant(client)
-    assert response.status_code == 200
+    login_participant(client)
     participant = get_participant()
 
     experiment = create_experiment(3, [participant],

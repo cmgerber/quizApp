@@ -9,7 +9,7 @@ def login_participant(client):
     """Log into the application with the specified username and password.
     """
     participant = User.query.filter_by(email=conftest.PARTICIPANT_EMAIL).one()
-    return login_user(client, participant)
+    login_user(client, participant)
 
 
 def login_experimenter(client):
@@ -17,15 +17,16 @@ def login_experimenter(client):
     """
     experimenter = User.query.filter_by(
         email=conftest.EXPERIMENTER_EMAIL).one()
-    return login_user(client, experimenter)
+    login_user(client, experimenter)
 
 
 def login_user(client, user):
     """Log in the given User in the given client.
     """
-    return client.post('/login', data=dict(
+    response = client.post('/login', data=dict(
         email=user.email,
         password=user.password), follow_redirects=True)
+    assert response.status_code == 200
 
 
 def get_participant():
