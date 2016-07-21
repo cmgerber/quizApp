@@ -15,8 +15,8 @@ datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 MEDIA_ITEM_TYPES = {
     "graph": "Graph",
 }
-DATASET_ROUTE = "/<int:dataset_id>/"
-MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "media_items/")
+DATASET_ROUTE = "/<int:dataset_id>"
+MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "/media_items/")
 MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<int:media_item_id>")
 
 
@@ -38,7 +38,7 @@ def read_datasets():
 def create_dataset():
     """Create a new dataset.
     """
-    create_dataset_form = DatasetForm()
+    create_dataset_form = DatasetForm(request.form)
 
     if not create_dataset_form.validate():
         return jsonify({"success": 0, "errors": create_dataset_form.errors})
@@ -51,7 +51,7 @@ def create_dataset():
     return jsonify({"success": 1})
 
 
-@datasets.route(DATASET_ROUTE, methods=["POST"])
+@datasets.route(DATASET_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
 def update_dataset(dataset_id):
     """Change the properties of this dataset.

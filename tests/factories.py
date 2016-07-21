@@ -106,7 +106,7 @@ class DatasetFactory(factory.Factory):
     class Meta:
         model = models.Dataset
 
-    name = factory.Faker("text")
+    name = factory.Faker("text", max_nb_chars=100)
     uri = factory.Faker("uri")
 
 
