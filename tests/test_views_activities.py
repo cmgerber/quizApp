@@ -184,7 +184,8 @@ def test_update_choice(client, users):
 
     response = client.put(url, data={"update-choice": choice.choice,
                                      "update-label": choice.label,
-                                     "update-correct": choice.correct})
+                                     "update-correct":
+                                     str(choice.correct).lower()})
     assert response.status_code == 200
     assert json_success(response.data)
 

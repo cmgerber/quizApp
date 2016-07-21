@@ -206,6 +206,8 @@ def create_choice(question_id):
     choice = Choice()
 
     create_choice_form.populate_obj(choice)
+    # kvesteri/wtforms-alchemy issue #106
+    choice.correct = create_choice_form.correct.data
     question.choices.append(choice)
 
     choice.save()
@@ -233,6 +235,9 @@ def update_choice(question_id, choice_id):
                         "errors": update_choice_form.errors})
 
     update_choice_form.populate_obj(choice)
+
+    # kvesteri/wtforms-alchemy issue #106
+    choice.correct = update_choice_form.correct.data
 
     db.session.commit()
 
