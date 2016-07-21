@@ -3,9 +3,11 @@
 import factory
 
 from tests.auth import login_experimenter
-from tests.factories import ActivityFactory, SingleSelectQuestionFactory
+from tests.factories import ActivityFactory, SingleSelectQuestionFactory, \
+    DatasetFactory, QuestionFactory
 from tests.helpers import json_success
 from quizApp import db
+from quizApp.models import Question
 
 
 def test_read_activities(client, users):
@@ -84,6 +86,11 @@ def test_update_activity(client, users):
 
     new_question = SingleSelectQuestionFactory()
 
+    response = client.put(url)
+    assert response.status_code == 200
+    assert not json_success(response.data)
+    assert "errors" in response.data
+
     response = client.put(url,
                           data={"question": new_question.question,
                                 "explanation": new_question.explanation,
@@ -96,3 +103,46 @@ def test_update_activity(client, users):
     response = client.get(url)
     assert new_question.question in response.data
     assert new_question.explanation in response.data
+
+
+def test_update_question_datasets(client, users):
+    login_experimenter(client)
+    question = QuestionFactory()
+    datasets = factory.create_batch(DatasetFactory, 10)
+
+    question.save()
+    db.session.add_all(datasets)
+    db.session.commit()
+
+    url = "/activities/" + str(question.id) + "/datasets"
+
+    dataset_to_add = datasets[0]
+    dataset_to_remove = question.datasets[0]
+
+    response = client.patch(url,
+                            data={"objects": [str(dataset_to_add.id),
+                                              str(dataset_to_remove.id)]})
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    updated_question = Question.query.get(question.id)
+    assert dataset_to_add in updated_question.datasets
+    assert dataset_to_remove not in updated_question.datasets
+
+    response = client.patch(url)
+    assert response.status_code == 200
+    assert not json_success(response.data)
+
+
+def test_delete_activity(client, users):
+    login_experimenter(client)
+    question = QuestionFactory()
+
+    question.save()
+
+    url = "/activities/" + str(question.id)
+
+    response = client.delete(url)
+    assert response.status_code == 200
+    assert json_success(response.data)
+    assert Question.query.get(question.id) is None

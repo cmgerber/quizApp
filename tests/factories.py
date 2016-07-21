@@ -57,6 +57,14 @@ class QuestionFactory(ActivityFactory):
         for i in xrange(0, 4):
             self.choices.append(ChoiceFactory())
 
+    @factory.post_generation
+    def datasets(self, create, extracted, **kwargs):
+        if len(self.datasets):
+            return
+
+        for i in xrange(0, 4):
+            self.datasets.append(DatasetFactory())
+
 
 class SingleSelectQuestionFactory(QuestionFactory):
     class Meta:
@@ -92,6 +100,14 @@ class GraphFactory(MediaItemFactory):
         model = models.Graph
 
     path = factory.Faker("file_name")
+
+
+class DatasetFactory(factory.Factory):
+    class Meta:
+        model = models.Dataset
+
+    name = factory.Faker("text")
+    uri = factory.Faker("uri")
 
 
 def create_experiment(num_activities, participants, activity_types=[]):
