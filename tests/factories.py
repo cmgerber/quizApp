@@ -47,6 +47,7 @@ class QuestionFactory(ActivityFactory):
 
     question = factory.Faker("text")
     num_media_items = factory.Faker("pyint")
+    explanation = factory.Faker("text")
 
     @factory.post_generation
     def choices(self, create, extracted, **kwargs):

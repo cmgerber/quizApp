@@ -38,3 +38,61 @@ def test_create_activity(client, users):
     response = client.get("/activities/")
 
     assert question.type in response.data
+
+
+def test_read_activity(client, users):
+    login_experimenter(client)
+
+    question = SingleSelectQuestionFactory()
+    question.save()
+
+    url = "/activities/" + str(question.id)
+
+    response = client.get(url)
+    assert response.status_code == 200
+    assert question.question in response.data
+    assert question.explanation in response.data
+
+    for choice in question.choices:
+        assert choice.choice in response.data
+
+
+def test_settings_activity(client, users):
+    login_experimenter(client)
+
+    question = SingleSelectQuestionFactory()
+    question.save()
+
+    url = "/activities/" + str(question.id) + "/settings"
+
+    response = client.get(url)
+    assert response.status_code == 200
+    assert question.question in response.data
+    assert question.explanation in response.data
+
+    for choice in question.choices:
+        assert choice.choice in response.data
+
+
+def test_update_activity(client, users):
+    login_experimenter(client)
+
+    question = SingleSelectQuestionFactory()
+    question.save()
+
+    url = "/activities/" + str(question.id)
+
+    new_question = SingleSelectQuestionFactory()
+
+    response = client.put(url,
+                          data={"question": new_question.question,
+                                "explanation": new_question.explanation,
+                                "num_media_items":
+                                new_question.num_media_items}
+                          )
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    response = client.get(url)
+    assert new_question.question in response.data
+    assert new_question.explanation in response.data

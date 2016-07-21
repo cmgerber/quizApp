@@ -127,7 +127,7 @@ def settings_question(question):
                            update_choice_form=update_choice_form)
 
 
-@activities.route("/<int:activity_id>", methods=["POST"])
+@activities.route("/<int:activity_id>", methods=["PUT"])
 @roles_required("experimenter")
 def update_activity(activity_id):
     """Update the activity based on transmitted form data.
@@ -141,7 +141,7 @@ def update_activity(activity_id):
 def update_question(question):
     """Given a question, update its settings.
     """
-    general_form = QuestionForm()
+    general_form = QuestionForm(request.form)
 
     if not general_form.validate():
         return jsonify({"success": 0, "errors": general_form.errors})
