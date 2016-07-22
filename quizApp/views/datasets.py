@@ -140,7 +140,7 @@ def settings_dataset(dataset_id):
 @datasets.route(MEDIA_ITEMS_ROUTE, methods=["POST"])
 @roles_required("experimenter")
 def create_media_item(dataset_id):
-    """Create a new dataset.
+    """Create a new media item.
     """
     dataset = validate_model_id(Dataset, dataset_id)
     create_media_item_form = ObjectTypeForm()
@@ -189,7 +189,7 @@ def settings_graph(dataset, graph):
                            graph=graph)
 
 
-@datasets.route(MEDIA_ITEM_ROUTE, methods=["POST"])
+@datasets.route(MEDIA_ITEM_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
 def update_media_item(dataset_id, media_item_id):
     """Update a particular media item.

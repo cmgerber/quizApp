@@ -92,7 +92,7 @@ class MediaItemFactory(factory.Factory):
     class Meta:
         model = models.MediaItem
 
-    name = factory.Faker("text")
+    name = factory.Faker("text", max_nb_chars=100)
 
 
 class GraphFactory(MediaItemFactory):
