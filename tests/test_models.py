@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import inspect
 
 from tests.factories import ExperimentFactory, ParticipantFactory, \
-    ChoiceFactory
+    ChoiceFactory, QuestionFactory
 from quizApp.models import ParticipantExperiment, Assignment, Role, Activity, \
     Question, Graph
 
@@ -66,6 +66,7 @@ def test_assignment_validators():
     exp = ExperimentFactory()
     activity = Activity()
     assn.experiment = exp
+    activity.num_media_items = -1
 
     with pytest.raises(AssertionError):
         assn.activity = activity
@@ -75,6 +76,7 @@ def test_assignment_validators():
 
     choice = ChoiceFactory()
     question = Question()
+    question.num_media_items = -1
 
     assn.choice = choice
 
@@ -88,6 +90,22 @@ def test_assignment_validators():
     question.choices.append(choice)
 
     assn.choice = choice
+
+    # Test the media item number validations
+    question = QuestionFactory()
+    question.experiments.append(exp)
+    assn.choice = None
+
+    question.num_media_items == len(assn.media_items) + 1
+
+    with pytest.raises(AssertionError):
+        assn.activity = question
+
+    question.num_media_items = -1
+    assn.activity = question
+
+    question.num_media_items = len(assn.media_items)
+    assn.activity = question
 
 
 def test_graph_filename():

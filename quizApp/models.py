@@ -195,15 +195,24 @@ class Assignment(Base):
     @db.validates("activity")
     def validate_activity(self, _, activity):
         """Make sure that the activity is part of this experiment.
+        Make sure that the number of media items on the activity is the same as
+        the number of media items this assignment has.
         """
         assert self.experiment in activity.experiments
+
+        try:
+            assert (activity.num_media_items == len(self.media_items)) or \
+                activity.num_media_items == -1
+        except AttributeError:
+            pass
+
         return activity
 
     @db.validates("choice")
-    def validate_choice_id(self, _, choice):
+    def validate_choice(self, _, choice):
         """This must be a valid choice, i.e. contained in the question (if any)
         """
-        if "question" in self.activity.type:
+        if "question" in self.activity.type and choice is not None:
             assert choice in self.activity.choices
 
         return choice
