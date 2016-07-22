@@ -116,7 +116,7 @@ def read_media_item(dataset_id, media_item_id):
                            media_item=media_item)
 
 
-@datasets.route(DATASET_ROUTE + 'settings', methods=["GET"])
+@datasets.route(DATASET_ROUTE + '/settings', methods=["GET"])
 @roles_required("experimenter")
 def settings_dataset(dataset_id):
     """View the configuration of a particular dataset.

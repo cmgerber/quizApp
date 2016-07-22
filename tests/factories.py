@@ -109,6 +109,14 @@ class DatasetFactory(factory.Factory):
     name = factory.Faker("text", max_nb_chars=100)
     uri = factory.Faker("uri")
 
+    @factory.post_generation
+    def media_items(self, create, extracted, **kwargs):
+        if len(self.media_items):
+            return
+
+        for i in xrange(0, 4):
+            self.media_items.append(MediaItemFactory())
+
 
 def create_experiment(num_activities, participants, activity_types=[]):
     experiment = ExperimentFactory()

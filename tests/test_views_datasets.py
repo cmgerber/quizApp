@@ -4,7 +4,7 @@ import factory
 
 from tests.helpers import json_success
 from tests.auth import login_experimenter
-from tests.factories import DatasetFactory
+from tests.factories import DatasetFactory, GraphFactory
 from quizApp.models import Dataset
 from quizApp import db
 
@@ -86,3 +86,27 @@ def test_delete_dataset(client, users):
     response = client.get("/datasets/")
     assert response.status_code == 200
     assert dataset.name not in response.data
+
+
+def test_create_media_item(client, users):
+    login_experimenter(client)
+    dataset = DatasetFactory()
+    dataset.save()
+    initial_num_media_items = len(dataset.media_items)
+
+    url = "/datasets/" + str(dataset.id)
+
+    graph = GraphFactory()
+
+    response = client.post(url + "/media_items/", data={"object_type":
+                                                        graph.type})
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    response = client.get(url + "/settings")
+    assert response.status_code == 200
+    assert graph.type in response.data
+
+    db.session.refresh(dataset)
+
+    assert len(dataset.media_items) == 1 + initial_num_media_items
