@@ -147,6 +147,7 @@ def create_experiment(num_activities, participants, activity_types=[]):
         else:
             activity = ActivityFactory()
 
+        activity.num_media_items = -1
         assignment = AssignmentFactory()
 
         activity.experiments.append(experiment)
