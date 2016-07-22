@@ -172,7 +172,7 @@ def settings_media_item(dataset_id, media_item_id):
     media_item = validate_model_id(MediaItem, media_item_id)
 
     if media_item not in dataset.media_items:
-        abort(400)
+        abort(404)
 
     if media_item.type == "graph":
         return settings_graph(dataset, media_item)
@@ -200,7 +200,7 @@ def update_media_item(dataset_id, media_item_id):
     media_item = validate_model_id(MediaItem, media_item_id)
 
     if media_item not in dataset.media_items:
-        abort(400)
+        abort(404)
 
     if media_item.type == "graph":
         return update_graph(dataset, media_item)

@@ -134,6 +134,7 @@ def test_delete_dataset_media_item(client, users):
     assert len(dataset.media_items) == initial_num_media_items - 1
 
     unrelated_media_item = MediaItemFactory()
+    unrelated_media_item.save()
     url = ("/datasets/" + str(dataset.id) + "/media_items/" +
            str(unrelated_media_item.id))
 
@@ -152,6 +153,14 @@ def test_read_media_item(client, users):
     response = client.get(url)
     assert response.status_code == 200
 
+    unrelated_media_item = MediaItemFactory()
+    unrelated_media_item.save()
+    url = ("/datasets/" + str(dataset.id) + "/media_items/" +
+           str(unrelated_media_item.id))
+
+    response = client.get(url)
+    assert response.status_code == 404
+
 
 def test_settings_media_item(client, users):
     login_experimenter(client)
@@ -166,6 +175,14 @@ def test_settings_media_item(client, users):
     response = client.get(url)
     assert response.status_code == 200
     assert graph.name in response.data
+
+    unrelated_graph = GraphFactory()
+    unrelated_graph.save()
+    url = ("/datasets/" + str(dataset.id) + "/media_items/" +
+           str(unrelated_graph.id) + "/settings")
+
+    response = client.get(url)
+    assert response.status_code == 404
 
 
 def test_update_media_item(client, users):
@@ -191,5 +208,10 @@ def test_update_media_item(client, users):
     assert response.status_code == 200
     assert not json_success(response.data)
 
-    response = client.put(url + "900", data={"name": new_graph.name})
+    unrelated_media_item = MediaItemFactory()
+    unrelated_media_item.save()
+    url = ("/datasets/" + str(dataset.id) + "/media_items/" +
+           str(unrelated_media_item.id))
+
+    response = client.put(url, data={"name": unrelated_media_item.name})
     assert response.status_code == 404
