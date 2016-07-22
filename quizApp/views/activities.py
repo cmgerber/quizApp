@@ -127,7 +127,7 @@ def settings_question(question):
                            update_choice_form=update_choice_form)
 
 
-@activities.route("/<int:activity_id>", methods=["POST"])
+@activities.route("/<int:activity_id>", methods=["PUT"])
 @roles_required("experimenter")
 def update_activity(activity_id):
     """Update the activity based on transmitted form data.
@@ -141,7 +141,7 @@ def update_activity(activity_id):
 def update_question(question):
     """Given a question, update its settings.
     """
-    general_form = QuestionForm()
+    general_form = QuestionForm(request.form)
 
     if not general_form.validate():
         return jsonify({"success": 0, "errors": general_form.errors})
@@ -190,32 +190,32 @@ def delete_activity(activity_id):
     return jsonify({"success": 1, "next_url": next_url})
 
 
-@activities.route("/<int:question_id>/choices/", methods=["PUT"])
+@activities.route("/<int:question_id>/choices/", methods=["POST"])
 @roles_required("experimenter")
 def create_choice(question_id):
     """Create a choice for the given question.
     """
     question = validate_model_id(Question, question_id)
 
-    create_choice_form = ChoiceForm(prefix="create")
+    create_choice_form = ChoiceForm(request.form, prefix="create")
 
     if not create_choice_form.validate():
-        return jsonify({"sucess": 0, "prefix": "create-",
+        return jsonify({"success": 0, "prefix": "create-",
                         "errors": create_choice_form.errors})
 
     choice = Choice()
 
     create_choice_form.populate_obj(choice)
-
-    choice.question_id = question.id
+    question.choices.append(choice)
 
     choice.save()
+    db.session.commit()
 
     return jsonify({"success": 1})
 
 
 @activities.route("/<int:question_id>/choices/<int:choice_id>",
-                  methods=["POST"])
+                  methods=["PUT"])
 @roles_required("experimenter")
 def update_choice(question_id, choice_id):
     """Update the given choice using form data.
@@ -224,12 +224,12 @@ def update_choice(question_id, choice_id):
     choice = validate_model_id(Choice, choice_id)
 
     if choice not in question.choices:
-        abort(400)
+        abort(404)
 
     update_choice_form = ChoiceForm(request.form, prefix="update")
 
     if not update_choice_form.validate():
-        return jsonify({"sucess": 0, "prefix": "update-",
+        return jsonify({"success": 0, "prefix": "update-",
                         "errors": update_choice_form.errors})
 
     update_choice_form.populate_obj(choice)
@@ -249,7 +249,7 @@ def delete_choice(question_id, choice_id):
     choice = validate_model_id(Choice, choice_id)
 
     if choice not in question.choices:
-        abort(400)
+        abort(404)
 
     db.session.delete(choice)
     db.session.commit()

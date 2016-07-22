@@ -15,8 +15,8 @@ datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 MEDIA_ITEM_TYPES = {
     "graph": "Graph",
 }
-DATASET_ROUTE = "/<int:dataset_id>/"
-MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "media_items/")
+DATASET_ROUTE = "/<int:dataset_id>"
+MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "/media_items/")
 MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<int:media_item_id>")
 
 
@@ -38,7 +38,7 @@ def read_datasets():
 def create_dataset():
     """Create a new dataset.
     """
-    create_dataset_form = DatasetForm()
+    create_dataset_form = DatasetForm(request.form)
 
     if not create_dataset_form.validate():
         return jsonify({"success": 0, "errors": create_dataset_form.errors})
@@ -51,7 +51,7 @@ def create_dataset():
     return jsonify({"success": 1})
 
 
-@datasets.route(DATASET_ROUTE, methods=["POST"])
+@datasets.route(DATASET_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
 def update_dataset(dataset_id):
     """Change the properties of this dataset.
@@ -116,7 +116,7 @@ def read_media_item(dataset_id, media_item_id):
                            media_item=media_item)
 
 
-@datasets.route(DATASET_ROUTE + 'settings', methods=["GET"])
+@datasets.route(DATASET_ROUTE + '/settings', methods=["GET"])
 @roles_required("experimenter")
 def settings_dataset(dataset_id):
     """View the configuration of a particular dataset.
@@ -140,7 +140,7 @@ def settings_dataset(dataset_id):
 @datasets.route(MEDIA_ITEMS_ROUTE, methods=["POST"])
 @roles_required("experimenter")
 def create_media_item(dataset_id):
-    """Create a new dataset.
+    """Create a new media item.
     """
     dataset = validate_model_id(Dataset, dataset_id)
     create_media_item_form = ObjectTypeForm()
@@ -172,7 +172,7 @@ def settings_media_item(dataset_id, media_item_id):
     media_item = validate_model_id(MediaItem, media_item_id)
 
     if media_item not in dataset.media_items:
-        abort(400)
+        abort(404)
 
     if media_item.type == "graph":
         return settings_graph(dataset, media_item)
@@ -189,7 +189,7 @@ def settings_graph(dataset, graph):
                            graph=graph)
 
 
-@datasets.route(MEDIA_ITEM_ROUTE, methods=["POST"])
+@datasets.route(MEDIA_ITEM_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
 def update_media_item(dataset_id, media_item_id):
     """Update a particular media item.
@@ -200,7 +200,7 @@ def update_media_item(dataset_id, media_item_id):
     media_item = validate_model_id(MediaItem, media_item_id)
 
     if media_item not in dataset.media_items:
-        abort(400)
+        abort(404)
 
     if media_item.type == "graph":
         return update_graph(dataset, media_item)

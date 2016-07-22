@@ -20,7 +20,7 @@
         <h4 class="modal-title" id="exampleModalLabel"></h4>
       </div>
         <div class="modal-body">
-          <form id="update-choice-form" method="post">
+          <form id="update-choice-form" method="put">
             {{ macros.render_field(update_choice_form.label) }}
             {{ macros.render_field(update_choice_form.choice) }}
             {{ macros.render_field(update_choice_form.correct) }}
@@ -42,7 +42,7 @@
 <h3>General</h3>
 
 <form action="{{ url_for('activities.update_activity', activity_id=question.id
-) }}" method="post" id="update-activity-form">
+) }}" method="put" id="update-activity-form">
   {{ macros.render_form(general_form) }}
 </form>
 
@@ -80,7 +80,7 @@ activity_id=question.id) }}" method="patch" id="add-dataset-form">
 
 <h3>Choices</h3>
 <form action="{{ url_for('activities.create_choice', question_id=question.id
-) }}" method="put" id="create-choice-form">
+) }}" method="post" id="create-choice-form">
   <div class="table-container">
     {{ activities_macros.choice_table(choices, create_choice_form) }}
   </div>

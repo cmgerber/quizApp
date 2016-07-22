@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/github/PlasmaSheep/quizApp/badge.svg?branch=test)](https://coveralls.io/github/PlasmaSheep/quizApp?branch=test)
+[![codecov](https://codecov.io/gh/PlasmaSheep/quizApp/branch/develop/graph/badge.svg)](https://codecov.io/gh/PlasmaSheep/quizApp)
 
 Platform for asking questions based on visualizations.
 

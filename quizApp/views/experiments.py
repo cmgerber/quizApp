@@ -14,7 +14,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, get_question_form
-from quizApp.models import Question, Choice, Experiment, Assignment, \
+from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
 
@@ -76,7 +76,6 @@ def read_experiment(exp_id):
     """View the landing page of an experiment, along with the ability to start.
     """
     exp = validate_model_id(Experiment, exp_id)
-
     if current_user.has_role("participant"):
         part_exp = get_participant_experiment_or_abort(exp_id)
 
@@ -124,7 +123,7 @@ def update_experiment(exp_id):
     return jsonify({"success": 1})
 
 
-@experiments.route('/<int:exp_id>/assignment/<int:a_id>', methods=["GET"])
+@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["GET"])
 @roles_required("participant")
 def read_assignment(exp_id, a_id):
     """Given an assignment ID, retrieve it from the database and display it to
@@ -196,16 +195,26 @@ def update_assignment(exp_id, a_id):
     """Record a user's answer to this assignment
     """
     assignment = validate_model_id(Assignment, a_id)
-    question = validate_model_id(Question, assignment.activity_id)
-    part_exp = assignment.participant_experiment
     validate_model_id(Experiment, exp_id)
+    part_exp = assignment.participant_experiment
+
+    if part_exp.participant != current_user:
+        abort(403)
 
     if part_exp.complete:
         abort(400)
 
-    if "question" not in assignment.activity.type:
-        # Pass for now
-        return jsonify({"success": 1})
+    if "question" in assignment.activity.type:
+        return update_question_assignment(part_exp, assignment)
+
+    # Pass for now
+    return jsonify({"success": 1})
+
+
+def update_question_assignment(part_exp, assignment):
+    """Update an assignment whose activity is a question.
+    """
+    question = assignment.activity
 
     question_form = get_question_form(question, request.form)
     question_form.populate_choices(question.choices)
