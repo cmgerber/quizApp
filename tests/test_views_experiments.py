@@ -1,6 +1,5 @@
 """Test the Experiments blueprint.
 """
-
 import json
 import random
 import mock
@@ -150,6 +149,7 @@ def test_create_experiment(client, users):
     assert data["errors"]
 
     response = client.post("/experiments/", data=dict(
+        name=exp.name,
         start=exp.start.strftime(datetime_format),
         stop=exp.start.strftime(datetime_format),
         blurb=exp.blurb))
@@ -158,6 +158,7 @@ def test_create_experiment(client, users):
     assert data["errors"]
 
     response = client.post("/experiments/", data=dict(
+        name=exp.name,
         start=(datetime.now() - timedelta(days=5)).strftime(datetime_format),
         stop=(datetime.now() - timedelta(days=1)).strftime(datetime_format),
         blurb=exp.blurb))

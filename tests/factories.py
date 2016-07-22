@@ -71,6 +71,11 @@ class SingleSelectQuestionFactory(QuestionFactory):
         model = models.SingleSelectQuestion
 
 
+class ScaleQuestionFactory(QuestionFactory):
+    class Meta:
+        model = models.ScaleQuestion
+
+
 class AssignmentFactory(factory.Factory):
     class Meta:
         model = models.Assignment
@@ -135,8 +140,10 @@ def create_experiment(num_activities, participants, activity_types=[]):
 
         if activity_types:
             activity_type = random.choice(activity_types)
-            if "question" in activity_type:
-                activity = QuestionFactory()
+            if "scale" in activity_type:
+                activity = ScaleQuestionFactory()
+            elif "singleselect" in activity_type:
+                activity = SingleSelectQuestionFactory()
         else:
             activity = ActivityFactory()
 
