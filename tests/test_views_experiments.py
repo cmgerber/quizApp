@@ -4,6 +4,7 @@
 import json
 import random
 import mock
+from datetime import datetime, timedelta
 
 from quizApp import db
 from quizApp.models import ParticipantExperiment
@@ -148,6 +149,22 @@ def test_create_experiment(client, users):
     assert data["success"] == 0
     assert data["errors"]
 
+    response = client.post("/experiments/", data=dict(
+        start=exp.start.strftime(datetime_format),
+        stop=exp.start.strftime(datetime_format),
+        blurb=exp.blurb))
+    data = json.loads(response.data)
+    assert data["success"] == 0
+    assert data["errors"]
+
+    response = client.post("/experiments/", data=dict(
+        start=(datetime.now() - timedelta(days=5)).strftime(datetime_format),
+        stop=(datetime.now() - timedelta(days=1)).strftime(datetime_format),
+        blurb=exp.blurb))
+    data = json.loads(response.data)
+    assert data["success"] == 0
+    assert data["errors"]
+
 
 @mock.patch('quizApp.views.experiments.abort', autospec=True)
 def test_get_participant_experiment_or_abort(abort_mock, client):
@@ -261,6 +278,21 @@ def test_read_assignment(client, users):
 
     response = client.get(url2 + str(assignment2.id))
     assert response.status_code == 404
+    experiment2 = create_experiment(3, [participant])
+
+    # Make sure likert questions render correctly
+    experiment3 = create_experiment(3, [participant],
+                                    ["question_mc_singleselect_scale"])
+    experiment3.save()
+    participant_experiment3 = experiment3.participant_experiments[0]
+    assignment3 = participant_experiment3.assignments[0]
+    url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
+
+    response = client.get(url3 + str(assignment3.id))
+    assert response.status_code == 200
+
+    for choice in assignment3.activity.choices:
+        assert choice.choice in response.data
 
 
 def test_update_assignment(client, users):
