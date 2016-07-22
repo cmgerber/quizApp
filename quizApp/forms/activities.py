@@ -38,8 +38,3 @@ class ChoiceForm(OrderFormMixin, ModelForm):
         order = ('*', 'submit')
 
     submit = SubmitField("Submit")
-
-    def get_choice_tuple(self, choice):
-        """Return the choice tuple for this choice.
-        """
-        self.objects.choices.append((str(choice.id), choice.choice))
