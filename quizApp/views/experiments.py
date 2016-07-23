@@ -20,15 +20,18 @@ from quizApp.views.helpers import validate_model_id
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
+EXPERIMENT_ROUTE = "/<int:experiment_id>"
+ASSIGNMENT_ROUTE = EXPERIMENT_ROUTE + "/assignments/<int:a_id>"
 
-def get_participant_experiment_or_abort(exp_id, code=400):
+
+def get_participant_experiment_or_abort(experiment_id, code=400):
     """Return the ParticipantExperiment object corresponding to the current
-    user and exp_id or abort with the given code.
+    user and experiment_id or abort with the given code.
     """
     try:
         return ParticipantExperiment.query.\
             filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=exp_id).one()
+            filter_by(experiment_id=experiment_id).one()
     except NoResultFound:
         abort(code)
 
@@ -70,14 +73,14 @@ def create_experiment():
     return jsonify({"success": 1})
 
 
-@experiments.route('/<int:exp_id>', methods=["GET"])
+@experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
 @login_required
-def read_experiment(exp_id):
+def read_experiment(experiment_id):
     """View the landing page of an experiment, along with the ability to start.
     """
-    exp = validate_model_id(Experiment, exp_id)
+    exp = validate_model_id(Experiment, experiment_id)
     if current_user.has_role("participant"):
-        part_exp = get_participant_experiment_or_abort(exp_id)
+        part_exp = get_participant_experiment_or_abort(experiment_id)
 
         if len(part_exp.assignments) == 0:
             assignment = None
@@ -90,12 +93,12 @@ def read_experiment(exp_id):
                            assignment=assignment)
 
 
-@experiments.route("/<int:exp_id>", methods=["DELETE"])
+@experiments.route(EXPERIMENT_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
-def delete_experiment(exp_id):
+def delete_experiment(experiment_id):
     """Delete an experiment.
     """
-    exp = validate_model_id(Experiment, exp_id)
+    exp = validate_model_id(Experiment, experiment_id)
 
     db.session.delete(exp)
     db.session.commit()
@@ -104,12 +107,12 @@ def delete_experiment(exp_id):
                     url_for('experiments.read_experiments')})
 
 
-@experiments.route("/<int:exp_id>", methods=["PUT"])
+@experiments.route(EXPERIMENT_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
-def update_experiment(exp_id):
+def update_experiment(experiment_id):
     """Modify an experiment's properties.
     """
-    exp = validate_model_id(Experiment, exp_id)
+    exp = validate_model_id(Experiment, experiment_id)
 
     experiment_update_form = CreateExperimentForm(request.form)
 
@@ -123,16 +126,16 @@ def update_experiment(exp_id):
     return jsonify({"success": 1})
 
 
-@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["GET"])
+@experiments.route(ASSIGNMENT_ROUTE, methods=["GET"])
 @roles_required("participant")
-def read_assignment(exp_id, a_id):
+def read_assignment(experiment_id, a_id):
     """Given an assignment ID, retrieve it from the database and display it to
     the user.
     """
-    experiment = validate_model_id(Experiment, exp_id)
+    experiment = validate_model_id(Experiment, experiment_id)
     assignment = validate_model_id(Assignment, a_id)
 
-    part_exp = get_participant_experiment_or_abort(exp_id)
+    part_exp = get_participant_experiment_or_abort(experiment_id)
 
     if assignment not in part_exp.assignments:
         abort(400)
@@ -190,12 +193,12 @@ def read_question(experiment, question, assignment):
                            previous_assignment=previous_assignment)
 
 
-@experiments.route('/<int:exp_id>/assignments/<int:a_id>', methods=["PATCH"])
-def update_assignment(exp_id, a_id):
+@experiments.route(ASSIGNMENT_ROUTE, methods=["PATCH"])
+def update_assignment(experiment_id, a_id):
     """Record a user's answer to this assignment
     """
     assignment = validate_model_id(Assignment, a_id)
-    validate_model_id(Experiment, exp_id)
+    validate_model_id(Experiment, experiment_id)
     part_exp = assignment.participant_experiment
 
     if part_exp.participant != current_user:
@@ -248,7 +251,7 @@ def get_next_assignment_url(participant_experiment, current_index):
         # If there is a next assignment, return its url
         next_url = url_for(
             "experiments.read_assignment",
-            exp_id=experiment_id,
+            experiment_id=experiment_id,
             a_id=participant_experiment.assignments[current_index + 1].id)
     except IndexError:
         next_url = None
@@ -258,21 +261,21 @@ def get_next_assignment_url(participant_experiment, current_index):
         if not participant_experiment.complete:
             # The experiment needs to be submitted
             next_url = url_for("experiments.confirm_done_experiment",
-                               exp_id=experiment_id)
+                               experiment_id=experiment_id)
         else:
             # Experiment has already been submitted
             next_url = url_for("experiments.read_experiment",
-                               exp_id=experiment_id)
+                               experiment_id=experiment_id)
 
     return next_url
 
 
-@experiments.route('/<int:exp_id>/settings', methods=["GET"])
+@experiments.route(EXPERIMENT_ROUTE + '/settings', methods=["GET"])
 @roles_required("experimenter")
-def settings_experiment(exp_id):
+def settings_experiment(experiment_id):
     """Give information on an experiment and its activities.
     """
-    experiment = validate_model_id(Experiment, exp_id)
+    experiment = validate_model_id(Experiment, experiment_id)
 
     update_experiment_form = CreateExperimentForm(obj=experiment)
 
@@ -303,12 +306,12 @@ def get_question_stats(assignment, question_stats):
             question_stats[question.id]["num_correct"] += 1
 
 
-@experiments.route("/<int:exp_id>/results", methods=["GET"])
+@experiments.route(EXPERIMENT_ROUTE + "/results", methods=["GET"])
 @roles_required("experimenter")
-def results_experiment(exp_id):
+def results_experiment(experiment_id):
     """Render some results.
     """
-    experiment = validate_model_id(Experiment, exp_id)
+    experiment = validate_model_id(Experiment, experiment_id)
 
     num_participants = Participant.query.count()
     num_finished = ParticipantExperiment.query.\
@@ -335,25 +338,25 @@ def results_experiment(exp_id):
                            question_stats=question_stats)
 
 
-@experiments.route("/<int:exp_id>/confirm_done", methods=["GET"])
+@experiments.route(EXPERIMENT_ROUTE + "/confirm_done", methods=["GET"])
 @roles_required("participant")
-def confirm_done_experiment(exp_id):
+def confirm_done_experiment(experiment_id):
     """Show the user a page before finalizing their quiz answers.
     """
-    experiment = validate_model_id(Experiment, exp_id)
+    experiment = validate_model_id(Experiment, experiment_id)
 
     return render_template("experiments/confirm_done_experiment.html",
                            experiment=experiment)
 
 
-@experiments.route("/<int:exp_id>/finalize", methods=["PATCH"])
+@experiments.route(EXPERIMENT_ROUTE + "/finalize", methods=["PATCH"])
 @roles_required("participant")
-def finalize_experiment(exp_id):
+def finalize_experiment(experiment_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
     """
-    validate_model_id(Experiment, exp_id)
-    part_exp = get_participant_experiment_or_abort(exp_id)
+    validate_model_id(Experiment, experiment_id)
+    part_exp = get_participant_experiment_or_abort(experiment_id)
 
     part_exp.complete = True
 
@@ -361,10 +364,10 @@ def finalize_experiment(exp_id):
 
     return jsonify({"success": 1,
                     "next_url": url_for('experiments.done_experiment',
-                                        exp_id=exp_id)})
+                                        experiment_id=experiment_id)})
 
 
-@experiments.route("/<int:exp_id>/done", methods=["GET"])
+@experiments.route(EXPERIMENT_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
 def done_experiment(_):
     """Show the user a screen indicating that they are finished.
