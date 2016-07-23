@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>QuizApp</title>
+    <title>QuizApp - {% block title %}{% endblock %}</title>
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
@@ -56,7 +56,7 @@
         </nav>
         <h1 class="site-name">Quiz App</h1>
       </div>
-      <h2>{% block title %}{% endblock %}</h2>
+      <h2>{{ self.title() }}</h2>
       {% block content %}{% endblock %}
     </div> <!-- end .wrapper.container -->
   </body>
