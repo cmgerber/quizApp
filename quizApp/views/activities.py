@@ -24,6 +24,10 @@ ACTIVITY_TYPES = {"question_mc_singleselect": "Single select multiple choice",
                   "question_mc_singleselect_scale": "Likert scale",
                   "question_freeanswer": "Free answer"}
 
+ACTIVITY_ROUTE = "/<int:activity_id>"
+CHOICES_ROUTE = "/<int:question_id>/choices/"
+CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
+
 
 @activities.route('/', methods=["GET"])
 @roles_required("experimenter")
@@ -58,7 +62,7 @@ def create_activity():
     return jsonify({"success": 1, "next_url": next_url})
 
 
-@activities.route("/<int:activity_id>", methods=["GET"])
+@activities.route(ACTIVITY_ROUTE, methods=["GET"])
 @roles_required("experimenter")
 def read_activity(activity_id):
     """Display a given activity as it would appear to a participant.
@@ -81,7 +85,7 @@ def read_question(question):
                            question_form=form)
 
 
-@activities.route("/<int:activity_id>/settings", methods=["GET"])
+@activities.route(ACTIVITY_ROUTE + "/settings", methods=["GET"])
 @roles_required("experimenter")
 def settings_activity(activity_id):
     """Display settings for a particular activity.
@@ -127,7 +131,7 @@ def settings_question(question):
                            update_choice_form=update_choice_form)
 
 
-@activities.route("/<int:activity_id>", methods=["PUT"])
+@activities.route(ACTIVITY_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
 def update_activity(activity_id):
     """Update the activity based on transmitted form data.
@@ -151,7 +155,7 @@ def update_question(question):
     return jsonify({"success": 1})
 
 
-@activities.route("/<int:activity_id>/datasets", methods=["PATCH"])
+@activities.route(ACTIVITY_ROUTE + "/datasets", methods=["PATCH"])
 @roles_required("experimenter")
 def update_question_datasets(activity_id):
     """Change the datasets that this question is associated with.
@@ -175,7 +179,7 @@ def update_question_datasets(activity_id):
     return jsonify({"success": 1})
 
 
-@activities.route("/<int:activity_id>", methods=["DELETE"])
+@activities.route(ACTIVITY_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
 def delete_activity(activity_id):
     """Delete the given activity.
@@ -190,7 +194,7 @@ def delete_activity(activity_id):
     return jsonify({"success": 1, "next_url": next_url})
 
 
-@activities.route("/<int:question_id>/choices/", methods=["POST"])
+@activities.route(CHOICES_ROUTE, methods=["POST"])
 @roles_required("experimenter")
 def create_choice(question_id):
     """Create a choice for the given question.
@@ -214,8 +218,7 @@ def create_choice(question_id):
     return jsonify({"success": 1})
 
 
-@activities.route("/<int:question_id>/choices/<int:choice_id>",
-                  methods=["PUT"])
+@activities.route(CHOICE_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
 def update_choice(question_id, choice_id):
     """Update the given choice using form data.
@@ -239,8 +242,7 @@ def update_choice(question_id, choice_id):
     return jsonify({"success": 1})
 
 
-@activities.route("/<int:question_id>/choices/<int:choice_id>",
-                  methods=["DELETE"])
+@activities.route(CHOICE_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
 def delete_choice(question_id, choice_id):
     """Delete the given choice.
