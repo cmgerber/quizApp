@@ -112,6 +112,7 @@ class ParticipantExperiment(Base):
         M2O with Experiment (child)
         O2M with Assignment (parent)
     """
+    id = db.Column(db.Integer, primary_key=True, info={"import_include": True})
 
     progress = db.Column(db.Integer, nullable=False, default=0)
     complete = db.Column(db.Boolean, default=False)
@@ -172,13 +173,15 @@ class Assignment(Base):
 
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
-                                  back_populates="assignments")
+                                  back_populates="assignments",
+                                  info={"import_include": True})
 
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     participant = db.relationship("Participant", back_populates="assignments")
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
-    activity = db.relationship("Activity", back_populates="assignments")
+    activity = db.relationship("Activity", back_populates="assignments",
+                               info={"import_include": True})
 
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
     choice = db.relationship("Choice", back_populates="assignments")
@@ -188,7 +191,8 @@ class Assignment(Base):
 
     participant_experiment_id = db.Column(
         db.Integer,
-        db.ForeignKey("participant_experiment.id"))
+        db.ForeignKey("participant_experiment.id"),
+        info={"import_include": True})
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments")
 

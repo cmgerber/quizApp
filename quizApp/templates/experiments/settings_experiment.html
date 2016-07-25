@@ -26,6 +26,12 @@ experiment_id=experiment.id) }}" method="put" id="update-experiment-form">
 
 <hr>
 
+<h3>Assign activities</h3>
+<p><a href="{{ url_for('core.export') }}">Download existing data
+  (.xlsx)</a></p>
+
+<hr>
+
 <h3>Delete experiment</h3>
 <div class="alert alert-danger" role="alert">
   {{ macros.render_glyphicon("exclamation-sign") }}
