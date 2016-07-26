@@ -346,7 +346,7 @@ def create_assignments_from_workbook(workbook, experiment):
                 obj.experiments.append(experiment)
             elif hasattr(obj, "experiment"):
                 obj.experiment = experiment
-            
+
             for col_index, cell in enumerate(row):
                 value = cell.value
                 field_name = headers[col_index]
@@ -392,7 +392,8 @@ def populate_field(model, obj, field_name, value, pk_mapping):
                 column.append(get_object_from_id(remote_model, fk_id,
                                                  pk_mapping))
         else:
-            setattr(obj, field_name, get_object_from_id(remote_model, value, pk_mapping))
+            setattr(obj, field_name, get_object_from_id(remote_model, value,
+                                                        pk_mapping))
     elif field.primary_key:
         pk_mapping[model.__tablename__][value] = obj
     elif isinstance(field_attrs, ColumnProperty):
