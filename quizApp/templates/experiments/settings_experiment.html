@@ -29,6 +29,15 @@ experiment_id=experiment.id) }}" method="put" id="update-experiment-form">
 <h3>Assign activities</h3>
 <p><a href="{{ url_for('core.export') }}">Download existing data
   (.xlsx)</a></p>
+<p><a href="{{ url_for('core.import_template') }}">Download template for
+  imports</a></p>
+<p>Simply fill in the columns in the import template and upload it below to
+create assignments.</p>
+
+<form action="{{ url_for('experiments.import_assignments',
+experiment_id=experiment.id) }}" method="put" id="import-assignment-form">
+{{ macros.render_form(import_assignment_form) }}
+</form>
 
 <hr>
 

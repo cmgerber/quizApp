@@ -1,19 +1,24 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from datetime import datetime
 import json
 import os
+import pdb
 
+import openpyxl
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request
 from flask_security import login_required, current_user, roles_required
+from sqlalchemy import inspect
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 
 from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
-from quizApp.forms.experiments import CreateExperimentForm, get_question_form
+from quizApp.forms.experiments import CreateExperimentForm, \
+    get_question_form, ImportAssignmentForm
 from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
@@ -21,7 +26,8 @@ from quizApp.views.helpers import validate_model_id
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 EXPERIMENT_ROUTE = "/<int:experiment_id>"
-ASSIGNMENT_ROUTE = EXPERIMENT_ROUTE + "/assignments/<int:a_id>"
+ASSIGNMENTS_ROUTE = EXPERIMENT_ROUTE + "/assignments/"
+ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:a_id>"
 
 
 def get_participant_experiment_or_abort(experiment_id, code=400):
@@ -281,10 +287,95 @@ def settings_experiment(experiment_id):
 
     delete_experiment_form = DeleteObjectForm()
 
+    import_assignment_form = ImportAssignmentForm()
+
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
+                           import_assignment_form=import_assignment_form,
                            update_experiment_form=update_experiment_form,
                            delete_experiment_form=delete_experiment_form)
+
+
+
+@experiments.route(ASSIGNMENTS_ROUTE + 'import', methods=["PUT"])
+@roles_required("experimenter")
+def import_assignments(experiment_id):
+    experiment = validate_model_id(Experiment, experiment_id)
+    import_assignment_form = ImportAssignmentForm()
+
+    if not import_assignment_form.validate():
+        return jsonify({"success": 0, "errors": import_assignment_form.errors})
+
+    workbook = openpyxl.load_workbook(import_assignment_form.assignments.data)
+
+    """
+    for part_exp in experiment.participant_experiments:
+        db.session.delete(part_exp)
+
+    db.session.commit()
+    """
+    create_assignments_from_workbook(workbook, experiment)
+
+    abort(404)
+
+
+def create_assignments_from_workbook(workbook, experiment):
+    """Given an excel workbook, read in the sheets and save them to the
+    database.
+    """
+    models_mapping = OrderedDict([
+        ("Participant Experiments", ParticipantExperiment),
+        ("Assignments", Assignment),
+    ])
+    pk_mapping = defaultdict(dict)
+
+    for sheet_name, model in models_mapping.iteritems():
+        sheet = workbook.get_sheet_by_name(sheet_name)
+
+        headers = []
+
+        for row_index, row in enumerate(sheet.rows):
+            if row_index == 0:
+                for col_index, cell in enumerate(row):
+                    if row_index == 0:
+                        headers.append(cell.value)
+                continue
+
+            obj = model()
+            for col_index, cell in enumerate(row):
+                value = cell.value
+                field_name = headers[col_index]
+                populate_field(model, obj, field_name, value, pk_mapping)
+            db.session.add(obj)
+
+
+def populate_field(model, obj, field_name, value, pk_mapping):
+    pdb.set_trace()
+    field_attrs = inspect(model).attrs[field_name]
+    field = getattr(model, field_name)
+    column = getattr(obj, field_name)
+    if isinstance(field_attrs, RelationshipProperty):
+        # This is a relationship
+        remote_model = getattr(model, field_name).property.mapper.class_
+        if "," in value:
+            values = value.split(",")
+            for fk_id in values:
+                column.append(get_object_from_id(remote_model, fk_id, pk_mapping))
+        else:
+            column.append(get_object_from_id(remote_model, value, pk_mapping))
+    elif field.primary_key:
+        # To avoid conflicts between imported PK and existing PK, we do not
+        # assign PK's based on user input. However we have to store them
+        # because other rows in the user input may be referencing this PK. So
+        # we store them in a kind of bastard mini-database in memory.
+        pk_mapping[model.__tablename__][value] = obj
+    else:
+        setattr(obj, field_name, value)
+
+
+def get_object_from_id(model, obj_id, pk_mapping):
+    return pk_mapping[model.__tablename__].get(obj_id,
+                                               model.query.get(obj_id))
 
 
 def get_question_stats(assignment, question_stats):

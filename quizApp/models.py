@@ -191,10 +191,12 @@ class Assignment(Base):
 
     participant_experiment_id = db.Column(
         db.Integer,
-        db.ForeignKey("participant_experiment.id"),
-        info={"import_include": True})
+        db.ForeignKey("participant_experiment.id"))
     participant_experiment = db.relationship("ParticipantExperiment",
-                                             back_populates="assignments")
+                                             back_populates="assignments",
+                                             info={"import_include": True}
+                                             )
+
 
     @db.validates("activity")
     def validate_activity(self, _, activity):

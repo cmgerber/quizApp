@@ -4,7 +4,7 @@
 from datetime import datetime
 
 from flask_wtf import Form
-from wtforms import SubmitField, RadioField, TextAreaField
+from wtforms import SubmitField, RadioField, TextAreaField, FileField
 from wtforms.validators import DataRequired
 from wtforms_alchemy import ModelForm
 
@@ -64,6 +64,15 @@ class ScaleForm(MultipleChoiceForm):
         self.choices.choices = [(str(c.id),
                                  "{}<br />{}".format(c.label, c.choice))
                                 for c in choice_pool]
+
+
+class ImportAssignmentForm(Form):
+    """Provide a FileField for an xlsx upload.
+    """
+
+    assignments = FileField("Import assignments")
+    submit = SubmitField("Submit")
+
 
 
 class CreateExperimentForm(OrderFormMixin, ModelForm):

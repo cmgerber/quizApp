@@ -10,14 +10,28 @@ $.ajaxSetup({
 function form_ajax(selector, done_callback) {
   $(selector).submit(function(event) {
     event.preventDefault();
-    $.ajax({
-      type: this.getAttribute("method"),
-      url: this.getAttribute("action"),
-      data: $(this).serialize(),
-      encode: true,
-    })
-    .done(done_callback);
+
+    if($(this).find("input[type=file]")) {
+      $.ajax({
+        type: this.getAttribute("method"),
+        url: this.getAttribute("action"),
+        data: new FormData(this),
+        processData: false,
+        contentType: false,
+        encode: true,
+      })
+      .done(done_callback);
+    } else {
+      $.ajax({
+        type: this.getAttribute("method"),
+        url: this.getAttribute("action"),
+        data: $(this).serialize(),
+        encode: true,
+      })
+      .done(done_callback);
+    }
   });
+
 }
 
 // Some generic callbacks

@@ -20,6 +20,7 @@ $(document).ready(function() {
   form_ajax("#experiment-delete-form", done_redirect);
   form_ajax("#question-submit-form", done_redirect);
   form_ajax("#submit-experiment-form", done_redirect);
+  form_ajax("#import-assignment-form", done_redirect);
 
   media_items = $(".media-item-container");
 
