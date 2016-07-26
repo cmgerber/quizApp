@@ -194,9 +194,7 @@ class Assignment(Base):
         db.ForeignKey("participant_experiment.id"))
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments",
-                                             info={"import_include": True}
-                                             )
-
+                                             info={"import_include": True})
 
     @db.validates("activity")
     def validate_activity(self, _, activity):

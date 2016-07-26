@@ -74,7 +74,6 @@ class ImportAssignmentForm(Form):
     submit = SubmitField("Submit")
 
 
-
 class CreateExperimentForm(OrderFormMixin, ModelForm):
     """Form for creating or updating an experiment's properties.
     """

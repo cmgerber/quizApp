@@ -43,6 +43,7 @@ def export():
     workbook.remove_sheet(workbook.active)
 
     for sheet_name, query in sheets.iteritems():
+        pdb.set_trace()
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
         sheet_data = object_list_to_sheet(query.all())
@@ -62,11 +63,10 @@ def object_list_to_sheet(object_list):
     """
     headers = []
     rows = []
-
     for obj in object_list:
         row = [""]*len(headers)
         for column, prop in inspect(type(obj)).attrs.items():
-            include = prop.info.get("export_include", False)
+            include = prop.info.get("export_include", True)
 
             if not isinstance(prop, ColumnProperty):
                 continue
@@ -93,9 +93,18 @@ def import_template():
     populate an experiment's activity list.
     """
 
-    sheets = {"Assignments": models.Assignment,
-              "Participant Experiments": models.ParticipantExperiment
-              }
+    sheets = {
+        "Assignments": models.Assignment,
+        "Participant Experiments": models.ParticipantExperiment
+    }
+
+    documentation = [
+        ["Do not modify the first row in every sheet!"],
+        ["Simply add in your data in the rows undeneath it."],
+        ["Use IDs from the export sheet to populate relationship columns."],
+        [("If you want multiple objects in a relation, separate the IDs using"
+          "commas.")],
+    ]
 
     workbook = Workbook()
     workbook.remove_sheet(workbook.active)
@@ -105,6 +114,10 @@ def import_template():
         current_sheet.title = sheet_name
         headers = model_to_sheet_headers(model)
         write_list_to_sheet(headers, current_sheet)
+
+    current_sheet = workbook.create_sheet()
+    current_sheet.title = "Documentation"
+    write_list_to_sheet(documentation, current_sheet)
 
     file_name = os.path.join(basedir, "import-template.xlsx")
     workbook.save(file_name)
@@ -136,7 +149,6 @@ def write_list_to_sheet(data_list, sheet):
     The list should be two dimensional, with each list in the list representing
     a row.
     """
-    pdb.set_trace()
 
     for r in xrange(1, len(data_list) + 1):
         for c in xrange(1, len(data_list[r - 1]) + 1):
