@@ -5,13 +5,13 @@ from collections import defaultdict, OrderedDict
 from datetime import datetime
 import json
 import os
-import pdb
 
 import openpyxl
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy import inspect
+from sqlalchemy.orm.interfaces import ONETOMANY, MANYTOMANY
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 
@@ -342,15 +342,15 @@ def create_assignments_from_workbook(workbook, experiment):
                 continue
 
             obj = model()
-            for col_index, cell in enumerate(row):
-                value = cell.value
-                field_name = headers[col_index]
-                populate_field(model, obj, field_name, value, pk_mapping)
-
             if hasattr(obj, "experiments"):
                 obj.experiments.append(experiment)
             elif hasattr(obj, "experiment"):
                 obj.experiment = experiment
+            
+            for col_index, cell in enumerate(row):
+                value = cell.value
+                field_name = headers[col_index]
+                populate_field(model, obj, field_name, value, pk_mapping)
 
             db.session.add(obj)
 
@@ -379,20 +379,20 @@ def populate_field(model, obj, field_name, value, pk_mapping):
     pk_mapping - A mapping of any objects created in this import session that
     value may refer to.
     """
-    pdb.set_trace()
     field_attrs = inspect(model).attrs[field_name]
     field = getattr(model, field_name)
     column = getattr(obj, field_name)
     if isinstance(field_attrs, RelationshipProperty):
         # This is a relationship
-        remote_model = getattr(model, field_name).property.mapper.class_
-        if "," in value:
-            values = value.split(",")
+        remote_model = field.property.mapper.class_
+        direction = field.property.direction
+        if direction in (MANYTOMANY, ONETOMANY):
+            values = str(value).split(",")
             for fk_id in values:
                 column.append(get_object_from_id(remote_model, fk_id,
                                                  pk_mapping))
         else:
-            column.append(get_object_from_id(remote_model, value, pk_mapping))
+            setattr(obj, field_name, get_object_from_id(remote_model, value, pk_mapping))
     elif field.primary_key:
         pk_mapping[model.__tablename__][value] = obj
     elif isinstance(field_attrs, ColumnProperty):
