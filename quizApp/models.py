@@ -8,7 +8,7 @@ from flask_security import UserMixin, RoleMixin
 
 class Base(db.Model):
     """Base class for all models.
-    
+
     All models have an identical id field.
 
     Attributes:
