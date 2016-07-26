@@ -7,7 +7,12 @@ from flask_security import UserMixin, RoleMixin
 
 
 class Base(db.Model):
-    """All models have an identical id field.
+    """Base class for all models.
+    
+    All models have an identical id field.
+
+    Attributes:
+        id (int): A unique identifier.
     """
     __abstract__ = True
 
@@ -41,10 +46,10 @@ class User(Base, UserMixin):
     """A User is used for authentication.
 
     Attributes:
-        name: string: The username of this user.
-        password: string: This user's password.
-        authenticated: bool: True if this user is authenticated.
-        type: string: The type of this user, e.g. experimenter, participant
+        name (string): The username of this user.
+        password (string): This user's password.
+        authenticated (bool): True if this user is authenticated.
+        type (string): The type of this user, e.g. experimenter, participant
     """
 
     email = db.Column(db.String(255), unique=True)
@@ -102,9 +107,9 @@ class ParticipantExperiment(Base):
     Essentially, this tracks the progress of each User in each Experiment.
 
     Attributes:
-        activities - set: Order of activities for this user in this experiment
-        progress - int: Which question the user is currently working on.
-        complete - bool: True if the user has finalized their responses, False
+        activities (set): Order of activities for this user in this experiment
+        progress (int): Which question the user is currently working on.
+        complete (bool): True if the user has finalized their responses, False
             otherwise
 
     Relationships:
@@ -151,10 +156,10 @@ class Assignment(Base):
     they skipped this assignment.
 
     Attributes:
-        skipped - bool: True if the Participant skipped this Question, False
-                         otherwise
-        comment - string: An optional comment entered by the student.
-        choice_order - string: A JSON object in string form that represents the
+        skipped (bool): True if the Participant skipped this Question, False
+             otherwise
+        comment (string): An optional comment entered by the student.
+        choice_order (string): A JSON object in string form that represents the
             order of choices that this participant was presented with when
             answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
             the IDs of those choices.
@@ -240,9 +245,9 @@ class Activity(Base):
     to SQLAlchemy's support for polymorphism.
 
     Attributes:
-        type - string: Discriminator column that determines what kind
+        type (string): Discriminator column that determines what kind
             of Activity this is.
-        category - string: A description of this assignment's category, for the
+        category (string): A description of this assignment's category, for the
             users' convenience.
 
     Relationships:
@@ -276,12 +281,12 @@ class Question(Activity):
     and is a part of one or more Experiments.
 
     Attributes:
-        question - string: This question as a string
-        explantion - string: The explanation for why the correct answer is
+        question (string): This question as a string
+        explantion (string): The explanation for why the correct answer is
             correct.
-        needs_comment - bool: True if the participant should be asked why
+        needs_comment (bool): True if the participant should be asked why
             they picked what they did after they answer the question.
-        num_media_items - int: How many MediaItems should be shown when
+        num_media_items (int): How many MediaItems should be shown when
             displaying this question
 
     Relationships:
@@ -358,9 +363,9 @@ class Choice(Base):
     """ A Choice is a string that is a possible answer for a Question.
 
     Attributes:
-        choice - string: The choice as a string.
-        label - string: The label for this choice (1,2,3,a,b,c etc)
-        correct - bool: "True" if this choice is correct, "False" otherwise
+        choice (string): The choice as a string.
+        label (string): The label for this choice (1,2,3,a,b,c etc)
+        correct (bool): "True" if this choice is correct, "False" otherwise
 
     Relationships:
         M2O with Question (child)
@@ -385,9 +390,9 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-        flash_duration - integer: How long to display the MediaItem (-1 for
-            indefinitely)
-        name - string: Name for this Media Item
+    flash_duration (integer): How long to display the MediaItem (-1 for
+        indefinitely)
+    name (string): Name for this Media Item
 
     Relationships:
         M2M with Assignment
@@ -418,7 +423,7 @@ class Graph(MediaItem):
     conjunction with an Assignment.
 
     Attributes:
-        filename - string: Filename of the graph
+        filename (string): Filename of the graph
     """
 
     path = db.Column(db.String(200), nullable=False)
@@ -437,10 +442,10 @@ class Experiment(Base):
     """An Experiment contains a list of Activities.
 
     Attributes:
-      name - string
-      created - datetime
-      start - datetime: When this experiment becomes accessible for answers
-      stop - datetime: When this experiment stops accepting answers
+      name (string
+      created (datetime
+      start (datetime): When this experiment becomes accessible for answers
+      stop (datetime): When this experiment stops accepting answers
 
     Relationships:
       M2M with Activity
@@ -469,8 +474,8 @@ class Dataset(Base):
     """A Dataset represents some data that MediaItems are based on.
 
     Attributes:
-        name - string
-        uri - A path or descriptor of where this dataset is located.
+        name (string): The name of this dataset.
+        uri (string): A path or descriptor of where this dataset is located.
 
     Relationships:
         O2M with MediaItem (parent)
