@@ -452,3 +452,7 @@ def test_import_assignments(client, users):
             assert assignment.media_items
             assert assignment.activity
             assert assignment.participant_experiment
+
+    response = client.post(url)
+    assert response.status_code == 200
+    assert not json_success(response.data)

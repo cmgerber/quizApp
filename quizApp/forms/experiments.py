@@ -70,7 +70,7 @@ class ImportAssignmentForm(Form):
     """Provide a FileField for an xlsx upload.
     """
 
-    assignments = FileField("Import assignments")
+    assignments = FileField("Import assignments", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
 

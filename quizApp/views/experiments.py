@@ -347,20 +347,12 @@ def create_assignments_from_workbook(workbook, experiment):
             elif hasattr(obj, "experiment"):
                 obj.experiment = experiment
 
-            row_has_info = False
-
             for col_index, cell in enumerate(row):
                 value = cell.value
-                if not value:
-                    continue
-                row_has_info = True
                 populate_field(model, obj, headers[col_index], value,
                                pk_mapping)
-                if value:
-                    row_has_info = True
 
-            if row_has_info:
-                db.session.add(obj)
+            db.session.add(obj)
 
 
 def populate_field(model, obj, field_name, value, pk_mapping):
