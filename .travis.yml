@@ -10,6 +10,7 @@ install:
 
 script:
     - ./runtests.py
+      #    - cd docs; make html;
 
 before_install:
     - openssl aes-256-cbc -K $encrypted_e1f40c693a59_key -iv $encrypted_e1f40c693a59_iv -in deploy_key.enc -out deploy_key -d
@@ -17,3 +18,6 @@ before_install:
 after_success:
     - bash <(curl -s https://codecov.io/bash)
     - bash scripts/deploy.sh
+
+notifications:
+    email: false # SHUT UP TRAVIS
