@@ -2,7 +2,6 @@
 blueprints.
 """
 import os
-import pdb
 
 from flask import Blueprint, render_template, send_file
 from openpyxl import Workbook
@@ -43,7 +42,6 @@ def export():
     workbook.remove_sheet(workbook.active)
 
     for sheet_name, query in sheets.iteritems():
-        pdb.set_trace()
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
         sheet_data = object_list_to_sheet(query.all())
