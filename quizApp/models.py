@@ -390,9 +390,9 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-    flash_duration (integer): How long to display the MediaItem (-1 for
-        indefinitely)
-    name (string): Name for this Media Item
+        flash_duration (integer): How long to display the MediaItem (-1 for
+            indefinitely)
+        name (string): Name for this Media Item
 
     Relationships:
         M2M with Assignment
