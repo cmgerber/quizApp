@@ -1,16 +1,18 @@
 """Test the Experiments blueprint.
 """
 import json
+import pdb
 import random
 import mock
 from datetime import datetime, timedelta
 
 from quizApp import db
-from quizApp.models import ParticipantExperiment
+from quizApp.models import ParticipantExperiment, MediaItem, Activity, \
+    Assignment
 from quizApp.views.experiments import get_participant_experiment_or_abort,\
     get_next_assignment_url, get_graph_url_filter
 from tests.factories import ExperimentFactory, create_experiment, \
-    GraphFactory, ParticipantFactory
+    GraphFactory, ParticipantFactory, MediaItemFactory, ActivityFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
@@ -413,3 +415,40 @@ def test_get_graph_url_filter():
     url = get_graph_url_filter(graph)
 
     assert "missing" in url
+
+
+def test_import_assignments(client, users):
+    login_experimenter(client)
+    participant = get_participant()
+
+    experiment = create_experiment(3, [participant],
+                                   ["question_mc_singleselect"])
+    experiment.save()
+
+    for i in xrange(1, 5):
+        if not MediaItem.query.get(i):
+            media_item = MediaItemFactory(id=i)
+            db.session.add(media_item)
+        if not Activity.query.get(i):
+            activity = ActivityFactory(id=i)
+            activity.experiments.append(experiment)
+            db.session.add(activity)
+
+
+    url = "/experiments/" + str(experiment.id) + "/assignments/import"
+
+    initial_num_part_exps = ParticipantExperiment.query.count()
+    initial_num_assignments = Assignment.query.count()
+
+    response = client.post(url,
+                           data={"assignments":
+                                 open("tests/data/import.xlsx")})
+
+    assert ParticipantExperiment.query.count() == initial_num_part_exps + 5
+    assert Assignment.query.count() == initial_num_assignments + 4
+
+    for assignment in Assignment.query.all():
+        if assignment.comment == "NEW":
+            assert assignment.media_items
+            assert assignment.activity
+            assert assignment.participant_experiment

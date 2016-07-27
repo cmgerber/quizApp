@@ -296,7 +296,7 @@ def settings_experiment(experiment_id):
                            delete_experiment_form=delete_experiment_form)
 
 
-@experiments.route(ASSIGNMENTS_ROUTE + 'import', methods=["PUT"])
+@experiments.route(ASSIGNMENTS_ROUTE + 'import', methods=["POST"])
 @roles_required("experimenter")
 def import_assignments(experiment_id):
     """Given an uploaded spreadsheet, remove this experiment's assignments
@@ -337,22 +337,30 @@ def create_assignments_from_workbook(workbook, experiment):
         for row_index, row in enumerate(sheet.rows):
             if row_index == 0:
                 for col_index, cell in enumerate(row):
-                    if row_index == 0:
-                        headers.append(cell.value)
+                    headers.append(cell.value)
                 continue
 
             obj = model()
+
             if hasattr(obj, "experiments"):
                 obj.experiments.append(experiment)
             elif hasattr(obj, "experiment"):
                 obj.experiment = experiment
 
+            row_has_info = False
+
             for col_index, cell in enumerate(row):
                 value = cell.value
+                if not value:
+                    continue
+                row_has_info = True
                 field_name = headers[col_index]
                 populate_field(model, obj, field_name, value, pk_mapping)
+                if value:
+                    row_has_info = True
 
-            db.session.add(obj)
+            if row_has_info:
+                db.session.add(obj)
 
 
 def populate_field(model, obj, field_name, value, pk_mapping):
@@ -371,13 +379,13 @@ def populate_field(model, obj, field_name, value, pk_mapping):
     are importing data.
 
     Arguments:
-    model - The sqlalchemy model that obj is an instance of.
-    obj - The object whose fields need populating.
-    field_name - A string containing the name of the field that should be
-    populated.
-    value - The value of the field, as read from the spreadsheet.
-    pk_mapping - A mapping of any objects created in this import session that
-    value may refer to.
+        model - The sqlalchemy model that obj is an instance of.
+        obj - The object whose fields need populating.
+        field_name - A string containing the name of the field that should be
+        populated.
+        value - The value of the field, as read from the spreadsheet.
+        pk_mapping - A mapping of any objects created in this import session
+        that value may refer to.
     """
     field_attrs = inspect(model).attrs[field_name]
     field = getattr(model, field_name)
@@ -389,13 +397,15 @@ def populate_field(model, obj, field_name, value, pk_mapping):
         if direction in (MANYTOMANY, ONETOMANY):
             values = str(value).split(",")
             for fk_id in values:
+                fk_id = int(float(fk_id)) # goddamn stupid excel
                 column.append(get_object_from_id(remote_model, fk_id,
                                                  pk_mapping))
         else:
+            value = int(float(value)) # goddamn stupid excel
             setattr(obj, field_name, get_object_from_id(remote_model, value,
                                                         pk_mapping))
     elif field.primary_key:
-        pk_mapping[model.__tablename__][value] = obj
+        pk_mapping[model.__tablename__][int(float(value))] = obj
     elif isinstance(field_attrs, ColumnProperty):
         setattr(obj, field_name, value)
 
