@@ -1,7 +1,6 @@
 """Test the Experiments blueprint.
 """
 import json
-import pdb
 import random
 import mock
 from datetime import datetime, timedelta
@@ -434,7 +433,6 @@ def test_import_assignments(client, users):
             activity.experiments.append(experiment)
             db.session.add(activity)
 
-
     url = "/experiments/" + str(experiment.id) + "/assignments/import"
 
     initial_num_part_exps = ParticipantExperiment.query.count()
@@ -443,6 +441,8 @@ def test_import_assignments(client, users):
     response = client.post(url,
                            data={"assignments":
                                  open("tests/data/import.xlsx")})
+    assert response.status_code == 200
+    assert json_success(response.data)
 
     assert ParticipantExperiment.query.count() == initial_num_part_exps + 5
     assert Assignment.query.count() == initial_num_assignments + 4

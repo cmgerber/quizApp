@@ -316,7 +316,7 @@ def import_assignments(experiment_id):
 
     create_assignments_from_workbook(workbook, experiment)
 
-    abort(404)
+    return jsonify({"success": 1})
 
 
 def create_assignments_from_workbook(workbook, experiment):
@@ -354,8 +354,8 @@ def create_assignments_from_workbook(workbook, experiment):
                 if not value:
                     continue
                 row_has_info = True
-                field_name = headers[col_index]
-                populate_field(model, obj, field_name, value, pk_mapping)
+                populate_field(model, obj, headers[col_index], value,
+                               pk_mapping)
                 if value:
                     row_has_info = True
 
@@ -397,11 +397,11 @@ def populate_field(model, obj, field_name, value, pk_mapping):
         if direction in (MANYTOMANY, ONETOMANY):
             values = str(value).split(",")
             for fk_id in values:
-                fk_id = int(float(fk_id)) # goddamn stupid excel
+                fk_id = int(float(fk_id))  # goddamn stupid excel
                 column.append(get_object_from_id(remote_model, fk_id,
                                                  pk_mapping))
         else:
-            value = int(float(value)) # goddamn stupid excel
+            value = int(float(value))  # goddamn stupid excel
             setattr(obj, field_name, get_object_from_id(remote_model, value,
                                                         pk_mapping))
     elif field.primary_key:
