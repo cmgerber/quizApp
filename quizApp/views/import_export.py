@@ -1,5 +1,6 @@
 """Functions for importing and exporting data via XLSX files.
 """
+import os
 from collections import OrderedDict, defaultdict
 import tempfile
 
@@ -16,6 +17,8 @@ SHEET_NAME_MAPPING = {
     "Activities": models.Activity,
     "Experiments": models.Experiment,
     "Media items": models.MediaItem,
+    "Participant Experiments": models.ParticipantExperiment,
+    "Assignments": models.Assignment,
 }
 
 
@@ -34,6 +37,7 @@ def export_to_workbook():
         write_list_to_sheet(sheet_data, current_sheet)
 
     file_name = tempfile.mkstemp(".xlsx")
+    os.close(file_name[0])
     workbook.save(file_name[1])
     return file_name[1]
 
