@@ -4,11 +4,10 @@ from flask_wtf import Form
 from wtforms import SubmitField, FileField
 from wtforms.validators import DataRequired
 
+
 class ImportDataForm(Form):
     """Provide a FileField for an xlsx upload.
     """
 
     data = FileField("Import data", validators=[DataRequired()])
     submit = SubmitField("Submit")
-
-

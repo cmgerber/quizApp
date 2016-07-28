@@ -113,7 +113,9 @@ class ParticipantExperiment(Base):
         M2O with Experiment (child)
         O2M with Assignment (parent)
     """
-    class Meta:
+    class Meta(object):
+        """Specify field order.
+        """
         field_order = ('*', 'assignments')
 
     progress = db.Column(db.Integer, nullable=False, default=0,

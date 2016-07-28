@@ -3,11 +3,10 @@ blueprints.
 """
 import os
 
+import openpyxl
 from flask import Blueprint, render_template, send_file, jsonify
-from openpyxl import Workbook
 from flask_security import roles_required
 
-import openpyxl
 from quizApp import models
 from quizApp.config import basedir
 from quizApp.views import import_export
@@ -68,7 +67,7 @@ def import_template():
           " commas.")],
     ]
 
-    workbook = Workbook()
+    workbook = openpyxl.Workbook()
     workbook.remove_sheet(workbook.active)
     for sheet_name, model in sheets.iteritems():
         current_sheet = workbook.create_sheet()

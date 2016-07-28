@@ -11,7 +11,6 @@ info attribute). However, in some cases certain columns need to be filled out
 earlier than others. This is why we use a special method on each model to
 populate an object. 
 """
-import pdb
 import os
 from collections import OrderedDict, defaultdict
 import tempfile
@@ -92,9 +91,9 @@ def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
-    prefix = model.__tabename__ + "_"
+    prefix = model.__tablename__ + "_"
     
-    if name[:len(prefix)] != prefix:
+    if header[:len(prefix)] != prefix:
         # Sanity check failed
         raise ValueError("Incorrect header/model combination")
 
@@ -122,7 +121,6 @@ def model_to_sheet_headers(model):
                 headers.append(header_from_property(prop))
                 seen_columns.add(column)
 
-    pdb.set_trace()
     return [headers]
 
 
@@ -167,6 +165,9 @@ def field_to_string(obj, column):
 
 
 def get_field_order(model):
+    """Given a model, return a list of properties in the order given by that
+    model's Meta class.
+    """
     try:
         field_order = model.Meta.field_order
     except AttributeError:
@@ -283,10 +284,18 @@ def get_object_from_id(model, obj_id, pk_mapping):
 
 
 def instantiate_model(model, headers, row):
+    """Return an instance of a model, correctly handling polymorphism.
+
+    Since the actual object represented by a row may be different from another
+    in the same sheet, we need to take into account any possible polymorphisms.
+
+    This method looks at the model to see if it has polymorphic identities. If
+    so, it returns an instance of the correct one. If not, it returns an
+    instance of the passed in model.
+    """
     model_mapper = inspect(model).mapper
     if not model_mapper.polymorphic_identity:
         return model()
-
     
     polymorphic_index = headers.index(model_mapper.polymorphic_on.name)
     polymorphic_type = row[polymorphic_index].value

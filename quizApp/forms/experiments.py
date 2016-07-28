@@ -4,7 +4,7 @@
 from datetime import datetime
 
 from flask_wtf import Form
-from wtforms import SubmitField, RadioField, TextAreaField, FileField
+from wtforms import SubmitField, RadioField, TextAreaField
 from wtforms.validators import DataRequired
 from wtforms_alchemy import ModelForm
 

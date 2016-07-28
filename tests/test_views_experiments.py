@@ -6,12 +6,11 @@ import mock
 from datetime import datetime, timedelta
 
 from quizApp import db
-from quizApp.models import ParticipantExperiment, MediaItem, Activity, \
-    Assignment
+from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_participant_experiment_or_abort,\
     get_next_assignment_url, get_graph_url_filter
 from tests.factories import ExperimentFactory, create_experiment, \
-    GraphFactory, ParticipantFactory, MediaItemFactory, ActivityFactory
+    GraphFactory, ParticipantFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
@@ -414,5 +413,3 @@ def test_get_graph_url_filter():
     url = get_graph_url_filter(graph)
 
     assert "missing" in url
-
-

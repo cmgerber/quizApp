@@ -6,7 +6,6 @@ from datetime import datetime
 import json
 import os
 
-import openpyxl
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request
 from flask_security import login_required, current_user, roles_required
@@ -19,7 +18,6 @@ from quizApp.forms.experiments import CreateExperimentForm, \
 from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
-from quizApp.views import import_export
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 

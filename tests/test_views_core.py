@@ -70,12 +70,12 @@ def test_import_assignments(client, users):
     assert response.status_code == 200
     assert json_success(response.data)
 
-    assert Experiment.query.count() == 4
-    assert ParticipantExperiment.query.count() == 180
-    assert Dataset.query.count() == 6
-    assert MediaItem.query.count() == 18
-    assert Assignment.query.count() == 811
-    assert Activity.query.count() == 31
+    assert models.Experiment.query.count() == 4
+    assert models.ParticipantExperiment.query.count() == 180
+    assert models.Dataset.query.count() == 6
+    assert models.MediaItem.query.count() == 18
+    assert models.Assignment.query.count() == 811
+    assert models.Activity.query.count() == 31
 
     response = client.post(url)
     assert response.status_code == 200
