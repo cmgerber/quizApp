@@ -79,18 +79,14 @@ class Participant(User):
 
     Attributes:
         opt_in (bool): Has this user opted in to data collection?
-        designed_datasets: Datasets this user has made visualizations for
 
     Relationships:
-        M2M with Dataset
         O2M with Assignment (parent)
         O2M with ParticipantExperiment (parent)
     """
 
     opt_in = db.Column(db.Boolean)
 
-    designed_datasets = db.relationship("Dataset",
-                                        secondary=participant_dataset_table)
     assignments = db.relationship("Assignment", back_populates="participant")
     experiments = db.relationship("ParticipantExperiment",
                                   back_populates="participant")
@@ -117,13 +113,17 @@ class ParticipantExperiment(Base):
         M2O with Experiment (child)
         O2M with Assignment (parent)
     """
-    id = db.Column(db.Integer, primary_key=True, info={"import_include": True})
+    class Meta:
+        field_order = ('*', 'assignments')
 
-    progress = db.Column(db.Integer, nullable=False, default=0)
-    complete = db.Column(db.Boolean, default=False)
+    progress = db.Column(db.Integer, nullable=False, default=0,
+                         info={"import_include": False})
+    complete = db.Column(db.Boolean, default=False,
+                         info={"import_include": False})
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    participant = db.relationship("Participant", back_populates="experiments")
+    participant = db.relationship("Participant", back_populates="experiments",
+                                  info={"import_include": False})
 
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
     experiment = db.relationship("Experiment",
@@ -140,7 +140,6 @@ class ParticipantExperiment(Base):
         assert assignment.participant == self.participant
         assert assignment.activity in self.experiment.activities
         return assignment
-
 
 assignment_media_item_table = db.Table(
     "assignment_media_item", db.metadata,
@@ -172,9 +171,9 @@ class Assignment(Base):
         M2O with ParticipantExperiment (child)
     """
 
-    skipped = db.Column(db.Boolean)
-    comment = db.Column(db.String(200))
-    choice_order = db.Column(db.String(80))
+    skipped = db.Column(db.Boolean, info={"import_include": False})
+    comment = db.Column(db.String(200), info={"import_include": False})
+    choice_order = db.Column(db.String(80), info={"import_include": False})
 
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
@@ -182,14 +181,16 @@ class Assignment(Base):
                                   info={"import_include": True})
 
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    participant = db.relationship("Participant", back_populates="assignments")
+    participant = db.relationship("Participant", back_populates="assignments",
+                                  info={"import_include": False})
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     activity = db.relationship("Activity", back_populates="assignments",
                                info={"import_include": True})
 
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
-    choice = db.relationship("Choice", back_populates="assignments")
+    choice = db.relationship("Choice", back_populates="assignments",
+                             info={"import_include": False})
 
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
     experiment = db.relationship("Experiment", back_populates="assignments")
@@ -381,7 +382,8 @@ class Choice(Base):
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
-    assignments = db.relationship("Assignment", back_populates="choice")
+    assignments = db.relationship("Assignment", back_populates="choice",
+                                  info={"import_include": False})
 
 
 class MediaItem(Base):
@@ -455,7 +457,7 @@ class Experiment(Base):
 
     name = db.Column(db.String(150), index=True, nullable=False,
                      info={"label": "Name"})
-    created = db.Column(db.DateTime)
+    created = db.Column(db.DateTime, info={"import_include": False})
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
@@ -480,7 +482,6 @@ class Dataset(Base):
     Relationships:
         O2M with MediaItem (parent)
         M2M with Question
-        M2M with Participant
     """
     name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
     uri = db.Column(db.String(200), info={"label": "URI"})
@@ -488,5 +489,3 @@ class Dataset(Base):
     media_items = db.relationship("MediaItem", back_populates="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table,
                                 back_populates="datasets")
-    participant = db.relationship("Participant",
-                                  secondary=participant_dataset_table)

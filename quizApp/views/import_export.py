@@ -1,5 +1,17 @@
 """Functions for importing and exporting data via XLSX files.
+
+When exporting data, we grab everything from the database and exclude the
+columns that have export_include: False in their info attributes.
+
+When generating a template for imports, we include exclude columns that have
+import_include: False in their info attributes.
+
+When importing from a spreadsheet, we will process every column (regardless of
+info attribute). However, in some cases certain columns need to be filled out
+earlier than others. This is why we use a special method on each model to
+populate an object. 
 """
+import pdb
 import os
 from collections import OrderedDict, defaultdict
 import tempfile
@@ -12,19 +24,24 @@ from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 from quizApp import db
 from quizApp import models
 
-SHEET_NAME_MAPPING = {
-    "Datasets": models.Dataset,
-    "Activities": models.Activity,
-    "Experiments": models.Experiment,
-    "Media items": models.MediaItem,
-    "Participant Experiments": models.ParticipantExperiment,
-    "Assignments": models.Assignment,
-}
+SHEET_NAME_MAPPING = OrderedDict([
+    ("Choices", models.Choice),
+    ("Experiments", models.Experiment),
+    ("Participant Experiments", models.ParticipantExperiment),
+    ("Datasets", models.Dataset),
+    ("Media items", models.MediaItem),
+    ("Activities", models.Activity),
+    ("Assignments", models.Assignment),
+])
 
 
 def export_to_workbook():
     """Retrieve elements from thed database and save them to a workbook.
     Return the filename of the workbook.
+
+    When we export to a workbook, we export almost everything. To prevent
+    a field from being exported, add `"export_include": False` to a field's
+    `info` dictionary.
     """
 
     workbook = Workbook()
@@ -42,23 +59,70 @@ def export_to_workbook():
     return file_name[1]
 
 
-def model_to_sheet_headers(model):
-    """Given a model, put all columns whose info contains "export-include":
-    True into a list of headers.
+def include_column(model, column, prop, key):
+    """Determine if a column should be included in exporting.
     """
+    include = True
+    if isinstance(prop, ColumnProperty):
+        info = prop.columns[0].info
+    elif isinstance(prop, RelationshipProperty):
+        info = prop.info
 
+    include = info.get(key, True)
+
+    # If we are looking at a foreign key and this foreign key also
+    # includes a backref field, don't put the foreign key into the sheet
+    # it is better to include the backref because we automatically run
+    # validation on the backref
+    if column[-3:] == "_id" and \
+            column[:-3] in inspect(model).attrs and \
+            key not in info:
+        include = False
+
+    return include
+
+
+def header_from_property(prop):
+    """Given a property, return its name for use in sheet headers.
+    """
+    return prop.parent.class_.__tablename__ + "_" + prop.key
+
+
+def header_to_field_name(header, model):
+    """Reverse header_from_property - given a header and a model, return the
+    actual name of the field.
+    """
+    prefix = model.__tabename__ + "_"
+    
+    if name[:len(prefix)] != prefix:
+        # Sanity check failed
+        raise ValueError("Incorrect header/model combination")
+
+    return header[len(prefix):]
+
+
+def model_to_sheet_headers(model):
+    """Given a model, put all columns whose info contains "import_include":
+    True into a list of headers.
+
+    This method also inspects all polymorphisms of the given model.
+    """
     headers = []
-    for column, prop in inspect(model).attrs.items():
-        if isinstance(prop, ColumnProperty):
-            info = prop.columns[0].info
-        elif isinstance(prop, RelationshipProperty):
-            info = prop.info
 
-        include = info.get("import_include", False)
+    polymorphisms = inspect(model).mapper.polymorphic_map.values()
+    if not polymorphisms:
+        polymorphisms = [model]
 
-        if include:
-            headers.append(column)
+    seen_columns = set()
 
+    for polymorphism in polymorphisms:
+        for column, prop in get_field_order(polymorphism):
+            if include_column(model, column, prop, "import_include") and \
+                    column not in seen_columns:
+                headers.append(header_from_property(prop))
+                seen_columns.add(column)
+
+    pdb.set_trace()
     return [headers]
 
 
@@ -102,19 +166,46 @@ def field_to_string(obj, column):
     return value
 
 
+def get_field_order(model):
+    try:
+        field_order = model.Meta.field_order
+    except AttributeError:
+        field_order = ('*',)
+
+    visited = set()
+    ordered_fields = []
+    fields = {f[0]: f for f in inspect(model).attrs.items()}
+
+    # Reorder the fields based on field_order, if it exists.
+    for field_mask in field_order:
+        if field_mask not in visited:
+            if field_mask == '*':
+                for field_name, field in fields.items():
+                    if field_name in visited or field_name in field_order:
+                        continue
+                    ordered_fields.append(field)
+            elif field_mask in fields:
+                ordered_fields.append(fields[field_mask])
+            visited.add(field_mask)
+
+    return ordered_fields
+
+
 def object_list_to_sheet(object_list):
     """Given a list of objects, iterate over all of them and create a list
     of lists that can be written using write_list_to_sheet.
 
     The first row returned will be a header row. All fields will be included
-    unless a field contains export-include: False in its info attibute.
+    unless a field contains export_include: False in its info attibute.
     """
     sheet = [[]]
     for obj in object_list:
         row = [""] * len(sheet[0])
 
-        for column, prop in inspect(type(obj)).attrs.items():
-            include = prop.info.get("export_include", True)
+        ordered_fields = get_field_order(type(obj))
+
+        for column, prop in ordered_fields:
+            include = include_column(type(obj), column, prop, "export_include")
 
             if not include:
                 continue
@@ -165,12 +256,16 @@ def populate_field(model, obj, field_name, value, pk_mapping):
             values = str(value).split(",")
             for fk in values:
                 fk = int(float(fk))  # goddamn stupid excel
-                column.append(get_object_from_id(remote_model, fk,
-                                                 pk_mapping))
+                collection_item = get_object_from_id(remote_model, fk,
+                                                     pk_mapping)
+                if collection_item:
+                    column.append(collection_item)
         else:
             value = int(float(value))  # goddamn stupid excel
-            setattr(obj, field_name, get_object_from_id(remote_model, value,
-                                                        pk_mapping))
+            collection_item = get_object_from_id(remote_model, value,
+                                                 pk_mapping)
+            if collection_item:
+                setattr(obj, field_name, collection_item)
     elif field.primary_key:
         pk_mapping[model.__tablename__][int(float(value))] = obj
     elif isinstance(field_attrs, ColumnProperty):
@@ -187,43 +282,45 @@ def get_object_from_id(model, obj_id, pk_mapping):
         return model.query.get(obj_id)
 
 
-def import_data_from_workbook(workbook, experiment):
+def instantiate_model(model, headers, row):
+    model_mapper = inspect(model).mapper
+    if not model_mapper.polymorphic_identity:
+        return model()
+
+    
+    polymorphic_index = headers.index(model_mapper.polymorphic_on.name)
+    polymorphic_type = row[polymorphic_index].value
+    return model_mapper.polymorphic_map[polymorphic_type].class_()
+
+
+def import_data_from_workbook(workbook):
     """Given an excel workbook, read in the sheets and save them to the
     database.
-    TODO: this doesn't need experiment for general importation
     """
-    models_mapping = OrderedDict([
-        ("Participant Experiments", models.ParticipantExperiment),
-        ("Assignments", models.Assignment),
-    ])
     pk_mapping = defaultdict(dict)
 
-    for sheet_name, model in models_mapping.iteritems():
-        sheet = workbook.get_sheet_by_name(sheet_name)
+    for sheet_name, model in SHEET_NAME_MAPPING.iteritems():
+        try:
+            sheet = workbook.get_sheet_by_name(sheet_name)
+        except KeyError:
+            # This model is not present in the workbook
+            continue 
 
-        headers = [c.value for c in sheet.rows[0]]
+        headers = [header_to_field_name(c.value, model) for c in sheet.rows[0]]
 
         for row in sheet.rows[1:]:
-            obj = model()
+            obj = instantiate_model(model, headers, row)
 
-            associate_obj_with_experiment(obj, experiment)
-
+            row_has_data = False
             for col_index, cell in enumerate(row):
-                value = cell.value
-                populate_field(model, obj, headers[col_index], value,
-                               pk_mapping)
+                if not cell.value:
+                    continue
+                row_has_data = True
+                with db.session.no_autoflush:
+                    populate_field(type(obj), obj, headers[col_index],
+                                   cell.value, pk_mapping)
 
-            db.session.add(obj)
+            if row_has_data:
+                db.session.add(obj)
 
-
-def associate_obj_with_experiment(obj, experiment):
-    """Given an object and an experiment, associate them.
-
-    This is mostly simple but requires some corner cases. For example, since we
-    do not generate participant experiments with user IDs but rather as
-    templates, we store them in Experiment.participant_experiment_templates.
-    """
-    if hasattr(obj, "experiments"):
-        obj.experiments.append(experiment)
-    elif hasattr(obj, "experiment"):
-        obj.experiment = experiment
+        db.session.commit()

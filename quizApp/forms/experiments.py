@@ -66,14 +66,6 @@ class ScaleForm(MultipleChoiceForm):
                                 for c in choice_pool]
 
 
-class ImportAssignmentForm(Form):
-    """Provide a FileField for an xlsx upload.
-    """
-
-    assignments = FileField("Import assignments", validators=[DataRequired()])
-    submit = SubmitField("Submit")
-
-
 class CreateExperimentForm(OrderFormMixin, ModelForm):
     """Form for creating or updating an experiment's properties.
     """

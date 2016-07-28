@@ -3,13 +3,15 @@ blueprints.
 """
 import os
 
-from flask import Blueprint, render_template, send_file
+from flask import Blueprint, render_template, send_file, jsonify
 from openpyxl import Workbook
 from flask_security import roles_required
 
+import openpyxl
 from quizApp import models
 from quizApp.config import basedir
 from quizApp.views import import_export
+from quizApp.forms.core import ImportDataForm
 
 
 core = Blueprint("core", __name__, url_prefix="/")
@@ -38,11 +40,24 @@ def export():
 def import_template():
     """Send the user a blank excel sheet that can be filled out and used to
     populate an experiment's activity list.
+
+    The process is essentially:
+
+    1. Get a list of models to include
+
+    2. From each model, get all its polymorphisms
+
+    3. For each model, get all fields that should be included in the import
+    template, including any fields from polymorphisms
+
+    4. Create a workbook with as many sheets as models, with one row in each
+    sheet, containing the name of the included fields
     """
 
     sheets = {
         "Assignments": models.Assignment,
-        "Participant Experiments": models.ParticipantExperiment
+        "Participant Experiments": models.ParticipantExperiment,
+        "Activities": models.Activity,
     }
 
     documentation = [
@@ -55,7 +70,6 @@ def import_template():
 
     workbook = Workbook()
     workbook.remove_sheet(workbook.active)
-
     for sheet_name, model in sheets.iteritems():
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
@@ -69,3 +83,25 @@ def import_template():
     file_name = os.path.join(basedir, "import-template.xlsx")
     workbook.save(file_name)
     return send_file(file_name, as_attachment=True)
+
+
+@core.route('import', methods=["POST"])
+@roles_required("experimenter")
+def import_data():
+    """Given an uploaded spreadsheet, import data from the spreadsheet
+    into the database.
+    """
+    import_data_form = ImportDataForm()
+
+    if not import_data_form.validate():
+        return jsonify({"success": 0, "errors": import_data_form.errors})
+
+    workbook = openpyxl.load_workbook(import_data_form.data.data)
+
+    # for part_exp in experiment.participant_experiments:
+    #     db.session.delete(part_exp)
+    # db.session.commit()
+
+    import_export.import_data_from_workbook(workbook)
+
+    return jsonify({"success": 1})

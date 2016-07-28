@@ -15,7 +15,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
-    get_question_form, ImportAssignmentForm
+    get_question_form
 from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
@@ -285,36 +285,10 @@ def settings_experiment(experiment_id):
 
     delete_experiment_form = DeleteObjectForm()
 
-    import_assignment_form = ImportAssignmentForm()
-
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
-                           import_assignment_form=import_assignment_form,
                            update_experiment_form=update_experiment_form,
                            delete_experiment_form=delete_experiment_form)
-
-
-@experiments.route(ASSIGNMENTS_ROUTE + 'import', methods=["POST"])
-@roles_required("experimenter")
-def import_assignments(experiment_id):
-    """Given an uploaded spreadsheet, remove this experiment's assignments
-    and replace them with the new, given assignments.
-    """
-    experiment = validate_model_id(Experiment, experiment_id)
-    import_assignment_form = ImportAssignmentForm()
-
-    if not import_assignment_form.validate():
-        return jsonify({"success": 0, "errors": import_assignment_form.errors})
-
-    workbook = openpyxl.load_workbook(import_assignment_form.assignments.data)
-
-    # for part_exp in experiment.participant_experiments:
-    #     db.session.delete(part_exp)
-    # db.session.commit()
-
-    import_export.import_data_from_workbook(workbook, experiment)
-
-    return jsonify({"success": 1})
 
 
 def get_question_stats(assignment, question_stats):
