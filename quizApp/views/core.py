@@ -29,25 +29,7 @@ def export():
     """Send the user a breakddown of datasets, activities, etc. for use in
     making assignments.
     """
-
-    sheets = {
-        "Datasets": models.Dataset.query,
-        "Activities": models.Activity.query,
-        "Experiments": models.Experiment.query,
-        "Media items": models.MediaItem.query,
-    }
-
-    workbook = Workbook()
-    workbook.remove_sheet(workbook.active)
-
-    for sheet_name, query in sheets.iteritems():
-        current_sheet = workbook.create_sheet()
-        current_sheet.title = sheet_name
-        sheet_data = import_export.object_list_to_sheet(query.all())
-        import_export.write_list_to_sheet(sheet_data, current_sheet)
-
-    file_name = os.path.join(basedir, "export.xlsx")
-    workbook.save(file_name)
+    file_name = import_export.export_to_workbook()
     return send_file(file_name, as_attachment=True)
 
 

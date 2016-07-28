@@ -312,7 +312,7 @@ def import_assignments(experiment_id):
     #     db.session.delete(part_exp)
     # db.session.commit()
 
-    import_export.create_assignments_from_workbook(workbook, experiment)
+    import_export.import_data_from_workbook(workbook, experiment)
 
     return jsonify({"success": 1})
 

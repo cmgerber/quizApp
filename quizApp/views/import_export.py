@@ -1,6 +1,7 @@
 """Functions for importing and exporting data via XLSX files.
 """
-
+from openpyxl import Workbook
+import tempfile
 from collections import OrderedDict, defaultdict
 from sqlalchemy import inspect
 from sqlalchemy.orm.interfaces import ONETOMANY, MANYTOMANY
@@ -9,6 +10,28 @@ import pdb
 
 from quizApp import db
 from quizApp import models
+
+SHEET_NAME_MAPPING = {
+    "Datasets": models.Dataset,
+    "Activities": models.Activity,
+    "Experiments": models.Experiment,
+    "Media items": models.MediaItem,
+}
+
+def export_to_workbook():
+
+    workbook = Workbook()
+    workbook.remove_sheet(workbook.active)
+
+    for sheet_name, model in SHEET_NAME_MAPPING.iteritems():
+        current_sheet = workbook.create_sheet()
+        current_sheet.title = sheet_name
+        sheet_data = object_list_to_sheet(model.query.all())
+        write_list_to_sheet(sheet_data, current_sheet)
+
+    file_name = tempfile.mkstemp(".xlsx")
+    workbook.save(file_name[1])
+    return file_name[1]
 
 
 def model_to_sheet_headers(model):
@@ -46,7 +69,6 @@ def relationship_to_string(field, value):
     """Given a relationship, convert it to a comma separated list of integers.
     """
     ids = []
-    remote_model = field.property.mapper.class_
     direction = field.property.direction
     if direction in (MANYTOMANY, ONETOMANY):
         for obj in value:
@@ -58,10 +80,15 @@ def relationship_to_string(field, value):
 
 
 def field_to_string(obj, column):
+    """Given an object and a column name, convert the contents
+    of the column to a string. If it is a collection, return a
+    comma separated list of ids.
+    """
     model = type(obj)
     value = getattr(obj, column)
+    field_attrs = inspect(model).attrs[column]
 
-    if isinstance(prop, RelationshipProperty):
+    if isinstance(field_attrs, RelationshipProperty):
         value = relationship_to_string(getattr(model, column), value)
 
     return value
@@ -74,11 +101,11 @@ def object_list_to_sheet(object_list):
     The first row returned will be a header row. All fields will be included
     unless a field contains export-include: False in its info attibute.
     """
-    sheet = []
+    sheet = [[]]
     for obj in object_list:
         row = [""] * len(sheet[0])
 
-        for column, prop in inspect(model).attrs.items():
+        for column, prop in inspect(type(obj)).attrs.items():
             include = prop.info.get("export_include", True)
 
             if not include:
@@ -155,6 +182,7 @@ def get_object_from_id(model, obj_id, pk_mapping):
 def import_data_from_workbook(workbook, experiment):
     """Given an excel workbook, read in the sheets and save them to the
     database.
+    TODO: this doesn't need experiment for general importation
     """
     models_mapping = OrderedDict([
         ("Participant Experiments", models.ParticipantExperiment),
@@ -167,7 +195,7 @@ def import_data_from_workbook(workbook, experiment):
 
         headers = [c.value for c in sheet.rows[0]]
 
-        for row_index, row in enumerate(sheet.rows[1:], 1):
+        for row in sheet.rows[1:]:
             obj = model()
 
             associate_obj_with_experiment(obj, experiment)
