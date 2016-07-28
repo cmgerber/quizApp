@@ -5,6 +5,7 @@ from collections import OrderedDict, defaultdict
 from sqlalchemy import inspect
 from sqlalchemy.orm.interfaces import ONETOMANY, MANYTOMANY
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
+import pdb
 
 from quizApp import db
 from quizApp import models
@@ -41,37 +42,56 @@ def write_list_to_sheet(data_list, sheet):
             sheet.cell(row=r, column=c).value = data_list[r - 1][c - 1]
 
 
+def relationship_to_string(field, value):
+    """Given a relationship, convert it to a comma separated list of integers.
+    """
+    ids = []
+    remote_model = field.property.mapper.class_
+    direction = field.property.direction
+    if direction in (MANYTOMANY, ONETOMANY):
+        for obj in value:
+            ids.append(str(obj.id))
+        return ",".join(ids)
+    elif value:
+        return str(value.id)
+    return ""
+
+
+def field_to_string(obj, column):
+    model = type(obj)
+    value = getattr(obj, column)
+
+    if isinstance(prop, RelationshipProperty):
+        value = relationship_to_string(getattr(model, column), value)
+
+    return value
+
+
 def object_list_to_sheet(object_list):
-    """Given a list of objects, iterate over all of them and create an xlsx
-    sheet.
+    """Given a list of objects, iterate over all of them and create a list
+    of lists that can be written using write_list_to_sheet.
 
     The first row returned will be a header row. All fields will be included
     unless a field contains export-include: False in its info attibute.
-
-    Note: does not currently support printing relationships.
     """
-    headers = []
-    rows = []
+    sheet = []
     for obj in object_list:
-        row = [""] * len(headers)
-        for column, prop in inspect(type(obj)).attrs.items():
-            include = prop.info.get("export_include", True)
+        row = [""] * len(sheet[0])
 
-            if not isinstance(prop, ColumnProperty):
-                continue
+        for column, prop in inspect(model).attrs.items():
+            include = prop.info.get("export_include", True)
 
             if not include:
                 continue
 
-            if column not in headers:
-                headers.append(column)
+            if column not in sheet[0]:
+                sheet[0].append(column)
                 row.append("")
-            index = headers.index(column)
 
-            row[index] = getattr(obj, column)
-        rows.append(row)
-    sheet = [headers]
-    sheet.extend(rows)
+            index = sheet[0].index(column)
+
+            row[index] = field_to_string(obj, column)
+        sheet.append(row)
     return sheet
 
 
@@ -108,9 +128,9 @@ def populate_field(model, obj, field_name, value, pk_mapping):
         direction = field.property.direction
         if direction in (MANYTOMANY, ONETOMANY):
             values = str(value).split(",")
-            for fk_id in values:
-                fk_id = int(float(fk_id))  # goddamn stupid excel
-                column.append(get_object_from_id(remote_model, fk_id,
+            for fk in values:
+                fk = int(float(fk))  # goddamn stupid excel
+                column.append(get_object_from_id(remote_model, fk,
                                                  pk_mapping))
         else:
             value = int(float(value))  # goddamn stupid excel
@@ -132,7 +152,7 @@ def get_object_from_id(model, obj_id, pk_mapping):
         return model.query.get(obj_id)
 
 
-def create_assignments_from_workbook(workbook, experiment):
+def import_data_from_workbook(workbook, experiment):
     """Given an excel workbook, read in the sheets and save them to the
     database.
     """
@@ -145,14 +165,9 @@ def create_assignments_from_workbook(workbook, experiment):
     for sheet_name, model in models_mapping.iteritems():
         sheet = workbook.get_sheet_by_name(sheet_name)
 
-        headers = []
+        headers = [c.value for c in sheet.rows[0]]
 
-        for row_index, row in enumerate(sheet.rows):
-            if row_index == 0:
-                for col_index, cell in enumerate(row):
-                    headers.append(cell.value)
-                continue
-
+        for row_index, row in enumerate(sheet.rows[1:], 1):
             obj = model()
 
             associate_obj_with_experiment(obj, experiment)
