@@ -1,12 +1,12 @@
 """Functions for importing and exporting data via XLSX files.
 """
-from openpyxl import Workbook
-import tempfile
 from collections import OrderedDict, defaultdict
+import tempfile
+
+from openpyxl import Workbook
 from sqlalchemy import inspect
 from sqlalchemy.orm.interfaces import ONETOMANY, MANYTOMANY
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
-import pdb
 
 from quizApp import db
 from quizApp import models
@@ -18,7 +18,11 @@ SHEET_NAME_MAPPING = {
     "Media items": models.MediaItem,
 }
 
+
 def export_to_workbook():
+    """Retrieve elements from thed database and save them to a workbook.
+    Return the filename of the workbook.
+    """
 
     workbook = Workbook()
     workbook.remove_sheet(workbook.active)
