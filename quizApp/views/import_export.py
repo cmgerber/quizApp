@@ -24,13 +24,13 @@ from quizApp import db
 from quizApp import models
 
 SHEET_NAME_MAPPING = OrderedDict([
-    ("Choices", models.Choice),
     ("Experiments", models.Experiment),
     ("Participant Experiments", models.ParticipantExperiment),
     ("Datasets", models.Dataset),
     ("Media items", models.MediaItem),
-    ("Activities", models.Activity),
     ("Assignments", models.Assignment),
+    ("Activities", models.Activity),
+    ("Choices", models.Choice),
 ])
 
 
@@ -222,9 +222,11 @@ def object_list_to_sheet(object_list):
     return sheet
 
 
-def populate_field(model, obj, field_name, value, pk_mapping):
+def populate_field(obj, field_name, value, pk_mapping, args):
     """Populate a field on a certain object based on the value from an imported
-    spreadsheet.
+    spreadsheet. The field on obj will not be set, rather args will be
+    populated with the field's name and its value for use with the model's
+    import_dict method.
 
     This may involve doing a database lookup if the field in question is a
     relationship field.
@@ -238,39 +240,40 @@ def populate_field(model, obj, field_name, value, pk_mapping):
     are importing data.
 
     Arguments:
-        model - The sqlalchemy model that obj is an instance of.
         obj - The object whose fields need populating.
         field_name - A string containing the name of the field that should be
         populated.
         value - The value of the field, as read from the spreadsheet.
         pk_mapping - A mapping of any objects created in this import session
         that value may refer to.
+        args - A dictionary to set the field and its value in.
     """
+    model = type(obj)
     field_attrs = inspect(model).attrs[field_name]
     field = getattr(model, field_name)
-    column = getattr(obj, field_name)
     if isinstance(field_attrs, RelationshipProperty):
         # This is a relationship
         remote_model = field.property.mapper.class_
         direction = field.property.direction
         if direction in (MANYTOMANY, ONETOMANY):
+            args[field_name] = []
             values = str(value).split(",")
             for fk in values:
                 fk = int(float(fk))  # goddamn stupid excel
                 collection_item = get_object_from_id(remote_model, fk,
                                                      pk_mapping)
                 if collection_item:
-                    column.append(collection_item)
+                    args[field_name].append(collection_item)
         else:
             value = int(float(value))  # goddamn stupid excel
             collection_item = get_object_from_id(remote_model, value,
                                                  pk_mapping)
             if collection_item:
-                setattr(obj, field_name, collection_item)
+                args[field_name] = collection_item
     elif field.primary_key:
         pk_mapping[model.__tablename__][int(float(value))] = obj
     elif isinstance(field_attrs, ColumnProperty):
-        setattr(obj, field_name, value)
+        args[field_name] = value
 
 
 def get_object_from_id(model, obj_id, pk_mapping):
@@ -319,16 +322,16 @@ def import_data_from_workbook(workbook):
 
         for row in sheet.rows[1:]:
             obj = instantiate_model(model, headers, row)
+            obj_args = {}
 
-            row_has_data = False
             for col_index, cell in enumerate(row):
                 if not cell.value:
                     continue
-                row_has_data = True
-                populate_field(type(obj), obj, headers[col_index],
-                               cell.value, pk_mapping)
+                populate_field(obj, headers[col_index],
+                               cell.value, pk_mapping, obj_args)
 
-            if row_has_data:
+            if obj_args:
+                obj.import_dict(**obj_args)
                 db.session.add(obj)
 
         db.session.commit()

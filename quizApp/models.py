@@ -28,6 +28,18 @@ class Base(db.Model):
         if commit:
             db.session.commit()
 
+    def import_dict(self, **kwargs):
+        """Populate this object using data imported from a spreadsheet or
+        similar. This means that not all fields will be passed into this
+        function, however there are enough fields to populate all necessary
+        fields. Due to validators, some fields need to be populated before
+        others. Subclasses of Base to which this applies are expected to
+        override this method and implement their import correctly.
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
 roles_users = db.Table('roles_users',
                        db.Column('user_id', db.Integer(),
                                  db.ForeignKey('user.id')),
@@ -141,7 +153,8 @@ class ParticipantExperiment(Base):
         as this model is."""
         assert assignment.experiment == self.experiment
         assert assignment.participant == self.participant
-        assert assignment.activity in self.experiment.activities
+        assert assignment.activity in self.experiment.activities or \
+            not assignment.activity
         return assignment
 
 assignment_media_item_table = db.Table(
@@ -204,6 +217,18 @@ class Assignment(Base):
         db.ForeignKey("participant_experiment.id"))
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments")
+
+    def import_dict(self, **kwargs):
+        """If we are setting assignments, we need to update experiments to
+        match.
+        """
+        if "experiments" not in kwargs:
+            participant_experiment = kwargs.pop("participant_experiment")
+            if participant_experiment.experiment:
+                self.experiment = participant_experiment.experiment
+            self.participant_experiment = participant_experiment
+
+        super(Assignment, self).import_dict(**kwargs)
 
     @db.validates("activity")
     def validate_activity(self, _, activity):
@@ -269,6 +294,19 @@ class Activity(Base):
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
 
+    def import_dict(self, **kwargs):
+        """If we are setting assignments, we need to update experiments to
+        match.
+        """
+        if "experiments" not in kwargs:
+            assignments = kwargs.pop("assignments")
+            for assignment in assignments:
+                if assignment.experiment:
+                    self.experiments.append(assignment.experiment)
+                self.assignments.append(assignment)
+
+        super(Activity, self).import_dict(**kwargs)
+
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
         'polymorphic_on': type
@@ -309,9 +347,16 @@ class Question(Activity):
                                 })
     needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
 
-    choices = db.relationship("Choice", back_populates="question")
+    choices = db.relationship("Choice", back_populates="question",
+                              info={"import_include": False})
     datasets = db.relationship("Dataset", secondary=question_dataset_table,
                                back_populates="questions")
+
+    def import_dict(self, **kwargs):
+        if "num_media_items" in kwargs:
+            self.num_media_items = kwargs.pop("num_media_items")
+
+        super(Question, self).import_dict(**kwargs)
 
     __mapper_args__ = {
         'polymorphic_identity': 'question',
