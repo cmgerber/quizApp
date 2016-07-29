@@ -43,6 +43,8 @@ def test_participant_experiment_validators():
 
     part1 = ParticipantFactory()
     part2 = ParticipantFactory()
+    part1.save()
+    part2.save()
 
     part_exp.experiment = exp2
     part_exp.participant = part1
