@@ -9,7 +9,7 @@ import_include: False in their info attributes.
 When importing from a spreadsheet, we will process every column (regardless of
 info attribute). However, in some cases certain columns need to be filled out
 earlier than others. This is why we use a special method on each model to
-populate an object. 
+populate an object.
 """
 import os
 from collections import OrderedDict, defaultdict
@@ -92,7 +92,7 @@ def header_to_field_name(header, model):
     actual name of the field.
     """
     prefix = model.__tablename__ + "_"
-    
+
     if header[:len(prefix)] != prefix:
         # Sanity check failed
         raise ValueError("Incorrect header/model combination")
@@ -296,7 +296,7 @@ def instantiate_model(model, headers, row):
     model_mapper = inspect(model).mapper
     if not model_mapper.polymorphic_identity:
         return model()
-    
+
     polymorphic_index = headers.index(model_mapper.polymorphic_on.name)
     polymorphic_type = row[polymorphic_index].value
     return model_mapper.polymorphic_map[polymorphic_type].class_()
@@ -313,7 +313,7 @@ def import_data_from_workbook(workbook):
             sheet = workbook.get_sheet_by_name(sheet_name)
         except KeyError:
             # This model is not present in the workbook
-            continue 
+            continue
 
         headers = [header_to_field_name(c.value, model) for c in sheet.rows[0]]
 
@@ -325,9 +325,8 @@ def import_data_from_workbook(workbook):
                 if not cell.value:
                     continue
                 row_has_data = True
-                with db.session.no_autoflush:
-                    populate_field(type(obj), obj, headers[col_index],
-                                   cell.value, pk_mapping)
+                populate_field(type(obj), obj, headers[col_index],
+                               cell.value, pk_mapping)
 
             if row_has_data:
                 db.session.add(obj)

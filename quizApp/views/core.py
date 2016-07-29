@@ -2,6 +2,7 @@
 blueprints.
 """
 import os
+from collections import OrderedDict
 
 import openpyxl
 from flask import Blueprint, render_template, send_file, jsonify
@@ -53,11 +54,13 @@ def import_template():
     sheet, containing the name of the included fields
     """
 
-    sheets = {
-        "Assignments": models.Assignment,
-        "Participant Experiments": models.ParticipantExperiment,
-        "Activities": models.Activity,
-    }
+    sheets = OrderedDict([
+        ("Experiments", models.Experiment),
+        ("Participant Experiments", models.ParticipantExperiment),
+        ("Assignments", models.Assignment),
+        ("Activities", models.Activity),
+        ("Choices", models.Choice),
+    ])
 
     documentation = [
         ["Do not modify the first row in every sheet!"],

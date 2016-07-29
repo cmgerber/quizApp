@@ -132,7 +132,8 @@ class ParticipantExperiment(Base):
                                  back_populates="participant_experiments")
 
     assignments = db.relationship("Assignment",
-                                  back_populates="participant_experiment")
+                                  back_populates="participant_experiment",
+                                  info={"import_include": False})
 
     @db.validates('assignments')
     def validate_assignments(self, _, assignment):
@@ -188,21 +189,21 @@ class Assignment(Base):
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     activity = db.relationship("Activity", back_populates="assignments",
-                               info={"import_include": True})
+                               info={"import_include": False})
 
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
     choice = db.relationship("Choice", back_populates="assignments",
                              info={"import_include": False})
 
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
-    experiment = db.relationship("Experiment", back_populates="assignments")
+    experiment = db.relationship("Experiment", back_populates="assignments",
+                                 info={"import_include": False})
 
     participant_experiment_id = db.Column(
         db.Integer,
         db.ForeignKey("participant_experiment.id"))
     participant_experiment = db.relationship("ParticipantExperiment",
-                                             back_populates="assignments",
-                                             info={"import_include": True})
+                                             back_populates="assignments")
 
     @db.validates("activity")
     def validate_activity(self, _, activity):
@@ -261,7 +262,8 @@ class Activity(Base):
     type = db.Column(db.String(50), nullable=False)
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
-                                  back_populates="activities")
+                                  back_populates="activities",
+                                  info={"import_include": False})
 
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
@@ -466,12 +468,15 @@ class Experiment(Base):
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,
-                                 back_populates="experiments")
+                                 back_populates="experiments",
+                                 info={"import_include": False})
 
     participant_experiments = db.relationship("ParticipantExperiment",
-                                              back_populates="experiment")
+                                              back_populates="experiment",
+                                              info={"import_include": False})
 
-    assignments = db.relationship("Assignment", back_populates="experiment")
+    assignments = db.relationship("Assignment", back_populates="experiment",
+                                  info={"import_include": False})
 
 
 class Dataset(Base):
