@@ -83,3 +83,12 @@ def test_import_assignments(client, users):
     response = client.post(url)
     assert response.status_code == 200
     assert not json_success(response.data)
+
+
+def test_manage_form(client, users):
+    login_experimenter(client)
+    url = "/manage_data"
+
+    response = client.get(url)
+
+    assert response.status_code == 200

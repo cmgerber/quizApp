@@ -9,5 +9,6 @@ class ImportDataForm(Form):
     """Provide a FileField for an xlsx upload.
     """
 
-    data = FileField("Import data", validators=[DataRequired()])
+    data = FileField("Import data", validators=[DataRequired()],
+                     render_kw={"accept": ".xlsx"})
     submit = SubmitField("Submit")

@@ -27,7 +27,7 @@ def home():
 
 @core.route('export')
 @roles_required("experimenter")
-def export():
+def export_data():
     """Send the user a breakddown of datasets, activities, etc. for use in
     making assignments.
     """
@@ -103,10 +103,18 @@ def import_data():
 
     workbook = openpyxl.load_workbook(import_data_form.data.data)
 
-    # for part_exp in experiment.participant_experiments:
-    #     db.session.delete(part_exp)
-    # db.session.commit()
-
     import_export.import_data_from_workbook(workbook)
 
     return jsonify({"success": 1})
+
+
+@core.route('manage_data', methods=["GET"])
+@roles_required("experimenter")
+def manage_data():
+    """Show a form for uploading data and such.
+    """
+
+    import_data_form = ImportDataForm()
+
+    return render_template("core/manage_data.html",
+                           import_data_form=import_data_form)
