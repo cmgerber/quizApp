@@ -3,13 +3,13 @@ blueprints.
 """
 import os
 from collections import OrderedDict
+import tempfile
 
 import openpyxl
 from flask import Blueprint, render_template, send_file, jsonify
 from flask_security import roles_required
 
 from quizApp import models
-from quizApp.config import basedir
 from quizApp.views import import_export
 from quizApp.forms.core import ImportDataForm
 
@@ -32,7 +32,8 @@ def export():
     making assignments.
     """
     file_name = import_export.export_to_workbook()
-    return send_file(file_name, as_attachment=True)
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="quizapp_export.xlsx")
 
 
 @core.route('import_template')
@@ -82,9 +83,11 @@ def import_template():
     current_sheet.title = "Documentation"
     import_export.write_list_to_sheet(documentation, current_sheet)
 
-    file_name = os.path.join(basedir, "import-template.xlsx")
+    file_handle, file_name = tempfile.mkstemp(".xlsx")
+    os.close(file_handle)
     workbook.save(file_name)
-    return send_file(file_name, as_attachment=True)
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="import_template.xlsx")
 
 
 @core.route('import', methods=["POST"])
