@@ -69,19 +69,35 @@ def import_template():
         ["Use IDs from the export sheet to populate relationship columns."],
         [("If you want multiple objects in a relation, separate the IDs using"
           " commas.")],
+        [("There is no need to modify any sheet if you are not interested in "
+          "adding in objects of that type")],
+        [("Example: To make an experiment and use existing assignments for "
+          "the experiment, fill out the Experiments, Participant Experiment, "
+          "and Assignment sheets.")],
+        [("Example: To add assignments to an existing experiment, fill out "
+          "the Participant Experiment and Assignment sheet. For the "
+          "participant_experiment_experiment column, use the experiment_id "
+          "of the experiment you wish to modify. You can find this ID in the "
+          "export spreadsheet.")],
+        [("If you wish to do one the above as well as create new "
+          "activities, fill out the sheets mentioned above as well as the "
+          "Activities sheet. If you are making new multiple choice questions, "
+          "you'll also need to fill out the Choices sheet.")],
     ]
 
     workbook = openpyxl.Workbook()
     workbook.remove_sheet(workbook.active)
+
+    current_sheet = workbook.create_sheet()
+    current_sheet.title = "Documentation"
+    import_export.write_list_to_sheet(documentation, current_sheet)
+
     for sheet_name, model in sheets.iteritems():
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
         headers = import_export.model_to_sheet_headers(model)
         import_export.write_list_to_sheet(headers, current_sheet)
 
-    current_sheet = workbook.create_sheet()
-    current_sheet.title = "Documentation"
-    import_export.write_list_to_sheet(documentation, current_sheet)
 
     file_handle, file_name = tempfile.mkstemp(".xlsx")
     os.close(file_handle)
