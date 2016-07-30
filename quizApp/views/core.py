@@ -98,7 +98,6 @@ def import_template():
         headers = import_export.model_to_sheet_headers(model)
         import_export.write_list_to_sheet(headers, current_sheet)
 
-
     file_handle, file_name = tempfile.mkstemp(".xlsx")
     os.close(file_handle)
     workbook.save(file_name)
