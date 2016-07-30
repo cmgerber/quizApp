@@ -2,15 +2,16 @@
 blueprints.
 """
 import os
+from collections import OrderedDict
+import tempfile
 
-from flask import Blueprint, render_template, send_file
-from openpyxl import Workbook
-from sqlalchemy import inspect
-from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
+import openpyxl
+from flask import Blueprint, render_template, send_file, jsonify
 from flask_security import roles_required
 
 from quizApp import models
-from quizApp.config import basedir
+from quizApp.views import import_export
+from quizApp.forms.core import ImportDataForm
 
 
 core = Blueprint("core", __name__, url_prefix="/")
@@ -26,62 +27,13 @@ def home():
 
 @core.route('export')
 @roles_required("experimenter")
-def export():
+def export_data():
     """Send the user a breakddown of datasets, activities, etc. for use in
     making assignments.
     """
-
-    sheets = {
-        "Datasets": models.Dataset.query,
-        "Activities": models.Activity.query,
-        "Experiments": models.Experiment.query,
-        "Media items": models.MediaItem.query,
-    }
-
-    workbook = Workbook()
-    workbook.remove_sheet(workbook.active)
-
-    for sheet_name, query in sheets.iteritems():
-        current_sheet = workbook.create_sheet()
-        current_sheet.title = sheet_name
-        sheet_data = object_list_to_sheet(query.all())
-        write_list_to_sheet(sheet_data, current_sheet)
-
-    file_name = os.path.join(basedir, "export.xlsx")
-    workbook.save(file_name)
-    return send_file(file_name, as_attachment=True)
-
-
-def object_list_to_sheet(object_list):
-    """Given a list of objects, iterate over all of them and create an xlsx
-    sheet.
-
-    The first row returned will be a header row. All fields will be included
-    unless a field contains export-include: False in its info attibute.
-    """
-    headers = []
-    rows = []
-    for obj in object_list:
-        row = [""]*len(headers)
-        for column, prop in inspect(type(obj)).attrs.items():
-            include = prop.info.get("export_include", True)
-
-            if not isinstance(prop, ColumnProperty):
-                continue
-
-            if not include:
-                continue
-
-            if column not in headers:
-                headers.append(column)
-                row.append("")
-            index = headers.index(column)
-
-            row[index] = getattr(obj, column)
-        rows.append(row)
-    sheet = [headers]
-    sheet.extend(rows)
-    return sheet
+    file_name = import_export.export_to_workbook()
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="quizapp_export.xlsx")
 
 
 @core.route('import_template')
@@ -89,65 +41,95 @@ def object_list_to_sheet(object_list):
 def import_template():
     """Send the user a blank excel sheet that can be filled out and used to
     populate an experiment's activity list.
+
+    The process is essentially:
+
+    1. Get a list of models to include
+
+    2. From each model, get all its polymorphisms
+
+    3. For each model, get all fields that should be included in the import
+    template, including any fields from polymorphisms
+
+    4. Create a workbook with as many sheets as models, with one row in each
+    sheet, containing the name of the included fields
     """
 
-    sheets = {
-        "Assignments": models.Assignment,
-        "Participant Experiments": models.ParticipantExperiment
-    }
+    sheets = OrderedDict([
+        ("Experiments", models.Experiment),
+        ("Participant Experiments", models.ParticipantExperiment),
+        ("Assignments", models.Assignment),
+        ("Activities", models.Activity),
+        ("Choices", models.Choice),
+    ])
 
     documentation = [
         ["Do not modify the first row in every sheet!"],
         ["Simply add in your data in the rows undeneath it."],
         ["Use IDs from the export sheet to populate relationship columns."],
         [("If you want multiple objects in a relation, separate the IDs using"
-          "commas.")],
+          " commas.")],
+        [("There is no need to modify any sheet if you are not interested in "
+          "adding in objects of that type")],
+        [("Example: To make an experiment and use existing assignments for "
+          "the experiment, fill out the Experiments, Participant Experiment, "
+          "and Assignment sheets.")],
+        [("Example: To add assignments to an existing experiment, fill out "
+          "the Participant Experiment and Assignment sheet. For the "
+          "participant_experiment_experiment column, use the experiment_id "
+          "of the experiment you wish to modify. You can find this ID in the "
+          "export spreadsheet.")],
+        [("If you wish to do one the above as well as create new "
+          "activities, fill out the sheets mentioned above as well as the "
+          "Activities sheet. If you are making new multiple choice questions, "
+          "you'll also need to fill out the Choices sheet.")],
     ]
 
-    workbook = Workbook()
+    workbook = openpyxl.Workbook()
     workbook.remove_sheet(workbook.active)
+
+    current_sheet = workbook.create_sheet()
+    current_sheet.title = "Documentation"
+    import_export.write_list_to_sheet(documentation, current_sheet)
 
     for sheet_name, model in sheets.iteritems():
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
-        headers = model_to_sheet_headers(model)
-        write_list_to_sheet(headers, current_sheet)
+        headers = import_export.model_to_sheet_headers(model)
+        import_export.write_list_to_sheet(headers, current_sheet)
 
-    current_sheet = workbook.create_sheet()
-    current_sheet.title = "Documentation"
-    write_list_to_sheet(documentation, current_sheet)
-
-    file_name = os.path.join(basedir, "import-template.xlsx")
+    file_handle, file_name = tempfile.mkstemp(".xlsx")
+    os.close(file_handle)
     workbook.save(file_name)
-    return send_file(file_name, as_attachment=True)
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="import_template.xlsx")
 
 
-def model_to_sheet_headers(model):
-    """Given a model, put all columns whose info contains "export-include":
-    True into a list of headers.
+@core.route('import', methods=["POST"])
+@roles_required("experimenter")
+def import_data():
+    """Given an uploaded spreadsheet, import data from the spreadsheet
+    into the database.
+    """
+    import_data_form = ImportDataForm()
+
+    if not import_data_form.validate():
+        return jsonify({"success": 0, "errors": import_data_form.errors})
+
+    workbook = openpyxl.load_workbook(import_data_form.data.data)
+
+    import_export.import_data_from_workbook(workbook)
+
+    return jsonify({"success": 1})
+
+
+@core.route('manage_data', methods=["GET"])
+@roles_required("experimenter")
+def manage_data():
+    """Show a form for uploading data and such.
     """
 
-    headers = []
-    for column, prop in inspect(model).attrs.items():
-        if isinstance(prop, ColumnProperty):
-            info = prop.columns[0].info
-        elif isinstance(prop, RelationshipProperty):
-            info = prop.info
+    import_data_form = ImportDataForm()
 
-        include = info.get("import_include", False)
-
-        if include:
-            headers.append(column)
-
-    return [headers]
-
-
-def write_list_to_sheet(data_list, sheet):
-    """Given a list and a sheet, write out the list to the sheet.
-    The list should be two dimensional, with each list in the list representing
-    a row.
-    """
-
-    for r in xrange(1, len(data_list) + 1):
-        for c in xrange(1, len(data_list[r - 1]) + 1):
-            sheet.cell(row=r, column=c).value = data_list[r - 1][c - 1]
+    return render_template("core/manage_data.html",
+                           import_data_form=import_data_form)

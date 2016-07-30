@@ -11,6 +11,7 @@ from quizApp import models
 from tests.auth import login_experimenter, get_participant
 from tests.factories import ActivityFactory, MediaItemFactory, \
     create_experiment, DatasetFactory
+from tests.helpers import json_success
 
 
 def test_import_template(client, users):
@@ -57,3 +58,37 @@ def test_export_template(client, users):
         worksheet = workbook.get_sheet_by_name(sheet)
         # We should have as many rows as objects plus a header row
         assert len(worksheet.rows) == num_objects + 1
+
+
+def test_import_assignments(client, users):
+    login_experimenter(client)
+    url = "/import"
+    for i in xrange(0, 4):
+        media_item = MediaItemFactory(id=i)
+        db.session.add(media_item)
+    db.session.commit()
+
+    response = client.post(url,
+                           data={"data":
+                                 open("tests/data/import.xlsx")})
+    assert response.status_code == 200
+    assert json_success(response.data)
+
+    assert models.Experiment.query.count() == 2
+    assert models.ParticipantExperiment.query.count() == 4
+    assert models.Assignment.query.count() == 4
+    assert models.Activity.query.count() == 7
+    assert models.Choice.query.count() == 11
+
+    response = client.post(url)
+    assert response.status_code == 200
+    assert not json_success(response.data)
+
+
+def test_manage_form(client, users):
+    login_experimenter(client)
+    url = "/manage_data"
+
+    response = client.get(url)
+
+    assert response.status_code == 200
