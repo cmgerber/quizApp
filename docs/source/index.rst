@@ -6,12 +6,17 @@
 Welcome to QuizApp's documentation!
 ===================================
 
+QuizApp is a platform for conducting experiments in the form of online surveys.
+It is highly generalized, which makes it useful for a wide variety of
+experiments.
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-    Modules <modules.rst>
+   understanding_models
+   modules
 
 Indices and tables
 ==================
@@ -19,4 +24,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
