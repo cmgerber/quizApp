@@ -1,4 +1,6 @@
 [![codecov](https://codecov.io/gh/PlasmaSheep/quizApp/branch/develop/graph/badge.svg)](https://codecov.io/gh/PlasmaSheep/quizApp)
+[![Documentation Status](https://readthedocs.org/projects/quizapp/badge/?version=latest)](http://quizapp.readthedocs.io/en/latest/?badge=latest)
+
 
 Platform for asking questions based on visualizations.
 
