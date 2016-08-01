@@ -16,6 +16,7 @@ Contents:
    :maxdepth: 2
 
    understanding_models
+   import_export
    modules
 
 Indices and tables
