@@ -3,6 +3,8 @@
 This script is adapted from akuznets0v/quickstart-mturk.
 """
 
+import yaml
+import pdb
 from boto.mturk.connection import MTurkConnection
 from boto.mturk.question import ExternalQuestion
 from boto.mturk.qualification import Qualifications
@@ -17,6 +19,10 @@ REWARD_AMOUNT = 0
 def main():
     """Post a HIT to amazon.
     """
+    with open("instance/mturk.yaml") as f:
+        config = yaml.load(f)
+
+    pdb.set_trace()
     # This allows us to specify whether we are pushing to the sandbox or live
     # site.
     if DEV_ENVIROMENT_BOOLEAN:
@@ -24,9 +30,10 @@ def main():
     else:
         AMAZON_HOST = "mechanicalturk.amazonaws.com"
 
-    connection = MTurkConnection(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                 aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                 host=AMAZON_HOST)
+    connection = MTurkConnection(
+        aws_access_key_id=config["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=config["AWS_SECRET_ACCESS_KEY"],
+        host=AMAZON_HOST)
 
     # frame_height in pixels
     frame_height = 800
