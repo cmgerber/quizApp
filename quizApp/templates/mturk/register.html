@@ -1,0 +1,12 @@
+{% extends 'header.html' %}
+
+{% block title %}
+Dataset List
+{% endblock %}
+
+{% block content %}
+<p>Hello!</p>
+{% for key, value in request.args.iteritems() %}
+<p>{{ key }}: {{ value }}</p>
+{% endfor %}
+{% endblock %}
