@@ -4,12 +4,10 @@ This script is adapted from akuznets0v/quickstart-mturk.
 """
 
 import yaml
-import pdb
 from boto.mturk.connection import MTurkConnection
 from boto.mturk.question import ExternalQuestion
 from boto.mturk.qualification import Qualifications
 from boto.mturk.price import Price
-from instance.instance_config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 DEV_ENVIROMENT_BOOLEAN = True
 DEBUG = True
@@ -22,7 +20,6 @@ def main():
     with open("instance/mturk.yaml") as f:
         config = yaml.load(f)
 
-    pdb.set_trace()
     # This allows us to specify whether we are pushing to the sandbox or live
     # site.
     if DEV_ENVIROMENT_BOOLEAN:
