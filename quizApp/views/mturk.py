@@ -10,4 +10,4 @@ mturk = Blueprint("mturk", __name__, url_prefix="/mturk")
 def register():
     """Register this amturk user.
     """
-    return render_template("mturk/register", request=request)
+    return render_template("mturk/register.html", request=request)
