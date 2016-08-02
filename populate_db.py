@@ -10,6 +10,7 @@ import random
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
         ForeignKeyConstraint
+from flask_security.utils import encrypt_password
 
 from clear_db import clear_db
 from quizApp import create_app
@@ -189,7 +190,7 @@ def create_participant(pid, experiments, roles):
     participant = Participant(
         id=pid,
         email=str(pid),
-        password=str(pid),
+        password=encrypt_password(str(pid)),
         opt_in=False,
         active=True,
         roles=roles
@@ -230,7 +231,7 @@ def get_students():
 
     root = User(
         email="experimenter@example.com",
-        password="foobar",
+        password=encrypt_password("foobar"),
         active=True,
         roles=[experimenter_role]
     )
