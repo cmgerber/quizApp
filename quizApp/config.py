@@ -13,6 +13,7 @@ class Config(object):
     DEBUG = False
     TESTING = False
     SECRET_KEY = "---"
+    SECURITY_PASSWORD_SALT = "---"
     WTF_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     EXPERIMENTS_PLACEHOLDER_GRAPH = "missing.png"
@@ -24,7 +25,7 @@ class Production(Config):
     """
     DEBUG = False
     TESTING = False
-    # SECURITY_PASSWORD_HASH = "bcrypt"
+    SECURITY_PASSWORD_HASH = "bcrypt"
 
 
 class Development(Config):
@@ -36,6 +37,7 @@ class Development(Config):
     SECRET_KEY = "Foobar"
     SECURITY_SEND_REGISTER_EMAIL = False
     SQLALCHEMY_ECHO = True
+    SECURITY_PASSWORD_HASH = "bcrypt"
 
 
 class Testing(Config):
