@@ -18,6 +18,7 @@ Contents:
    getting_started
    understanding_models
    import_export
+   mturk
    modules
 
 Indices and tables
