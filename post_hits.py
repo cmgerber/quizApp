@@ -44,6 +44,15 @@ HIT_MAX_ASSIGNMENTS = 15
 """int: Amount of independent copies of the task (turkers can only see one)
 """
 
+QUIZAPP_DOMAIN = "quizapp.tech"
+"""str: The domain name for the quizapp instance you wish to use to serve your
+HIT
+"""
+
+EXPERIMENT_ID = 0
+"""int: the ID of the experiment to use for the HIT
+"""
+
 
 def main():
     """Post a HIT to amazon.
@@ -76,8 +85,8 @@ def main():
     # This url will be the url of your application, with appropriate GET
     # parameters
 
-    url = ("https://104.236.112.220/mturk/register?"
-           "experiment_id={}").format(EXPERIMENT_ID)
+    url = "https://{}/mturk/register?experiment_id={}".format(QUIZAPP_DOMAIN,
+                                                              EXPERIMENT_ID)
     questionform = ExternalQuestion(url, frame_height)
     create_hit_result = connection.create_hit(
         title=HIT_TITLE,

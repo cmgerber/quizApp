@@ -373,6 +373,9 @@ def finalize_experiment(experiment_id):
 @roles_required("participant")
 def done_experiment(_):
     """Show the user a screen indicating that they are finished.
+
+    TODO: needs to be some kind of mturk tie-in, as well as checking that the
+    user is truly done.
     """
     return render_template("experiments/done_experiment.html")
 

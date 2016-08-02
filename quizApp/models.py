@@ -91,6 +91,10 @@ class Participant(User):
 
     Attributes:
         opt_in (bool): Has this user opted in to data collection?
+        foreign_id (str): If the user is coming from an external source (e.g.
+            canvas, mechanical turk) it may be necessary to record their user
+            ID on the other service (e.g. preventing multiple submission). This
+            field holds the foreign ID of this user.
         assignments (list of Assignments): List of assignments that this user
             has
         participant_experiments (list of ParticipantExperiments): List of
@@ -98,6 +102,7 @@ class Participant(User):
     """
 
     opt_in = db.Column(db.Boolean)
+    foreign_id = db.Column(db.Integer)
 
     assignments = db.relationship("Assignment", back_populates="participant")
     experiments = db.relationship("ParticipantExperiment",
