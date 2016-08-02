@@ -14,6 +14,27 @@ DEBUG = True
 REWARD_AMOUNT = 0
 
 
+HIT_TITLE = "Dummy title"
+"""str: Title for this HIT
+"""
+
+HIT_DESCRIPTION = "Dummy description"
+"""str: Description for this HIT
+"""
+
+HIT_KEYWORDS = ["dummy", "keywords"]
+"""list: Keywords for this HIT
+"""
+
+HIT_DURATION = 60 * 60
+"""int: Duration of this HIT, in seconds
+"""
+
+HIT_MAX_ASSIGNMENTS = 15
+"""int: Amount of independent copies of the task (turkers can only see one)
+"""
+
+
 def main():
     """Post a HIT to amazon.
     """
@@ -48,14 +69,11 @@ def main():
     url = "https://104.236.112.220/mturk/register"
     questionform = ExternalQuestion(url, frame_height)
     create_hit_result = connection.create_hit(
-        title="Insert the title of your HIT",
-        description="Insert your description here",
-        keywords=["add", "some", "keywords"],
-        # duration is in seconds
-        duration=60 * 60,
-        # max_assignments will set the amount of independent copies of the task
-        # (turkers can only see one)
-        max_assignments=15,
+        title=HIT_TITLE,
+        description=HIT_DESCRIPTION,
+        keywords=HIT_KEYWORDS,
+        duration=HIT_DURATION,
+        max_assignments=HIT_MAX_ASSIGNMENTS,
         question=questionform,
         reward=Price(amount=REWARD_AMOUNT),
         # Determines information returned by method in API, not super important
