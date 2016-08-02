@@ -9,10 +9,19 @@ from boto.mturk.question import ExternalQuestion
 from boto.mturk.qualification import Qualifications
 from boto.mturk.price import Price
 
+# Config variables
 DEV_ENVIROMENT_BOOLEAN = True
-DEBUG = True
-REWARD_AMOUNT = 0
+"""bool: if True, then post the HIT to the mturk sandbox. Otherwise, post to
+the live site.
+"""
 
+REWARD_AMOUNT = 0
+"""float: The dollar amount to give turkers for completing the HIT.
+"""
+
+EXPERIMENT_ID = 0
+"""int: ID of the experiment you wish to post.
+"""
 
 def main():
     """Post a HIT to amazon.
@@ -45,7 +54,8 @@ def main():
     # This url will be the url of your application, with appropriate GET
     # parameters
 
-    url = "https://104.236.112.220/mturk/register"
+    url = ("https://104.236.112.220/mturk/register?"
+           "experiment_id={}").format(EXPERIMENT_ID)
     questionform = ExternalQuestion(url, frame_height)
     create_hit_result = connection.create_hit(
         title="Insert the title of your HIT",
