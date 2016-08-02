@@ -8,9 +8,9 @@ The primary way of importing and exporting data is through the `/manage_data`
 page. There are two operations you can do on this page: importing and
 exporting.
 
-=========
+*********
 Exporting
-=========
+*********
 
 To export a dump of all data in the database, click on the `Export` link.
 Alternatively, you can visit the `/export_data` page. This will take some time
@@ -20,9 +20,9 @@ types of objects in the database, and the column headers are in the format
 `<table_name>_<database_column_name>`. Each row in every tab represents one
 database record.
 
-=========
+*********
 Importing
-=========
+*********
 
 To import data into the database, you must first fill out a spreadsheet in a
 particular way. First click on the "Download Template" link. This template
@@ -46,7 +46,7 @@ such:
     one relations.
 
 You may be asking where you find the IDs for your associations. There are two
-possibilities here. 
+possibilities here.
 
 1. You want to relate an object you are importing with another object you are
    importing (e.g. you are creating an Experiment in your import sheet and want
