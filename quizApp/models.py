@@ -496,7 +496,7 @@ class Experiment(Base):
         activities (list of Activity): What Activities are included in this
             Experiment's ParticipantExperiments
         participant_experiments (list of ParticiapntExperiment): List of
-            ParticipantExperiments that are associated with this Experiment 
+            ParticipantExperiments that are associated with this Experiment
         assignments (list of Assignment): Assignments that are present in this
             Experiment's ParticipantExperiments
     """
