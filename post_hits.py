@@ -9,9 +9,19 @@ from boto.mturk.question import ExternalQuestion
 from boto.mturk.qualification import Qualifications
 from boto.mturk.price import Price
 
+# Config variables
 DEV_ENVIROMENT_BOOLEAN = True
-DEBUG = True
+"""bool: if True, then post the HIT to the mturk sandbox. Otherwise, post to
+the live site.
+"""
+
 REWARD_AMOUNT = 0
+"""float: The dollar amount to give turkers for completing the HIT.
+"""
+
+EXPERIMENT_ID = 0
+"""int: ID of the experiment you wish to post.
+"""
 
 
 HIT_TITLE = "Dummy title"
