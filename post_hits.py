@@ -19,7 +19,7 @@ REWARD_AMOUNT = 0
 """float: The dollar amount to give turkers for completing the HIT.
 """
 
-EXPERIMENT_ID = 0
+EXPERIMENT_ID = 1
 """int: ID of the experiment you wish to post.
 """
 

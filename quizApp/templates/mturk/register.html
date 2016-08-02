@@ -6,6 +6,8 @@ Dataset List
 
 {% block content %}
 <p>Hello!</p>
+<p>You are looking at the listing for experiment ID# {{ experiment.id }}.</p>
+<p>{{ experiment.blurb }}</p>
 {% for key, value in request.args.iteritems() %}
 <p>{{ key }}: {{ value }}</p>
 {% endfor %}

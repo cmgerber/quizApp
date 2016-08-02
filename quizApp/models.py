@@ -102,7 +102,7 @@ class Participant(User):
     """
 
     opt_in = db.Column(db.Boolean)
-    foreign_id = db.Column(db.Integer)
+    foreign_id = db.Column(db.String(100))
 
     assignments = db.relationship("Assignment", back_populates="participant")
     experiments = db.relationship("ParticipantExperiment",
