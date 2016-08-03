@@ -6,13 +6,11 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import os
-import pdb
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm.session import make_transient
 
 from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
@@ -49,7 +47,6 @@ def get_or_create_participant_experiment(experiment):
     experiment ParticipantExperiment pool, copy it to be the current user's
     ParticipantExperiment record, and return that.
     """
-    pdb.set_trace()
     try:
         participant_experiment = ParticipantExperiment.query.\
             filter_by(participant_id=current_user.id).\
@@ -410,7 +407,7 @@ def done_experiment(experiment_id):
 
     """
     validate_model_id(Experiment, experiment_id)
-    part_exp = get_participant_experiment_or_abort(experiment_id)
+    get_participant_experiment_or_abort(experiment_id)
 
     return render_template("experiments/done_experiment.html")
 
