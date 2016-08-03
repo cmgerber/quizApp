@@ -62,3 +62,6 @@ target/
 
 # Instance config
 instance/*
+
+# Any new graphs, by default
+quizApp/static/graphs/*
