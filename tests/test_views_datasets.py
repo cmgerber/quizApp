@@ -249,11 +249,14 @@ def test_update_media_item(client, users):
         assert file_storage_mock.save.called_once()
         assert str(graph.id) in file_storage_mock.save.call_args[0][0]
 
-        db.session.refresh(graph)
-        file_storage_mock.reset_mock()
-        response = client.put(url,
-                              data={"graph": open("tests/data/graph.png")})
-        assert response.status_code == 200
-        assert json_success(response.data)
-        assert file_storage_mock.save.called_once()
-        assert str(graph.path) in file_storage_mock.save.call_args[0][0]
+        with mock.patch("quizApp.views.datasets.os.path.isfile",
+                        autospec=True) as isfile_mock:
+            isfile_mock.return_value=True
+            db.session.refresh(graph)
+            file_storage_mock.reset_mock()
+            response = client.put(url,
+                                  data={"graph": open("tests/data/graph.png")})
+            assert response.status_code == 200
+            assert json_success(response.data)
+            assert file_storage_mock.save.called_once()
+            assert str(graph.path) in file_storage_mock.save.call_args[0][0]
