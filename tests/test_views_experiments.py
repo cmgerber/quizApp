@@ -77,6 +77,8 @@ def test_experiments_authed_experimenter(client, users):
     assert "Hello experimenter" in response.data
 
     exp = ExperimentFactory()
+    part_exp = ParticipantExperiment()
+    exp.participant_experiments.append(part_exp)
     exp.save()
 
     exp_url = "/experiments/" + str(exp.id)
