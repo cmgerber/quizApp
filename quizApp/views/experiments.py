@@ -108,9 +108,10 @@ def read_experiment(experiment_id):
     """View the landing page of an experiment, along with the ability to start.
     """
     experiment = validate_model_id(Experiment, experiment_id)
-    participant_experiment = get_or_create_participant_experiment(experiment)
-    if current_user.has_role("participant"):
 
+    if current_user.has_role("participant"):
+        participant_experiment = get_or_create_participant_experiment(
+            experiment)
         if len(participant_experiment.assignments) == 0:
             assignment = None
         else:
