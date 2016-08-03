@@ -1,6 +1,7 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
+import random
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -10,6 +11,7 @@ from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.session import make_transient
 
 from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
@@ -36,6 +38,32 @@ def get_participant_experiment_or_abort(experiment_id, code=400):
             filter_by(experiment_id=experiment_id).one()
     except NoResultFound:
         abort(code)
+
+
+def get_or_create_participant_experiment(experiment):
+    """Attempt to retrieve the ParticipantExperiment record for the current
+    user in the given Experiment.
+
+    If no such record exists, grab a random ParticipantExperiment record in the
+    experiment ParticipantExperiment pool, copy it to be the current user's
+    ParticipantExperiment record, and return that.
+    """
+    try:
+        participant_experiment = ParticipantExperiment.query.\
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=experiment.id).one()
+    except NoResultFound:
+        try:
+            participant_experiment = random.choice(
+                experiment.participant_experiment_pool)
+        except IndexError:
+            return None
+        db.session.expunge(participant_experiment)
+        make_transient(participant_experiment)
+        participant_experiment.participant = current_user
+        participant_experiment.save()
+
+    return participant_experiment
 
 
 @experiments.route('/', methods=["GET"])
@@ -80,18 +108,19 @@ def create_experiment():
 def read_experiment(experiment_id):
     """View the landing page of an experiment, along with the ability to start.
     """
-    exp = validate_model_id(Experiment, experiment_id)
+    experiment = validate_model_id(Experiment, experiment_id)
+    participant_experiment = get_or_create_participant_experiment(experiment)
     if current_user.has_role("participant"):
-        part_exp = get_participant_experiment_or_abort(experiment_id)
 
-        if len(part_exp.assignments) == 0:
+        if len(participant_experiment.assignments) == 0:
             assignment = None
         else:
-            assignment = part_exp.assignments[0]
+            assignment = participant_experiment.assignments[0]
     else:
         assignment = None
 
-    return render_template("experiments/read_experiment.html", experiment=exp,
+    return render_template("experiments/read_experiment.html",
+                           experiment=experiment,
                            assignment=assignment)
 
 

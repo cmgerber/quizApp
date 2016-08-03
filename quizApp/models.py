@@ -522,6 +522,11 @@ class Experiment(Base):
                                               back_populates="experiment",
                                               info={"import_include": False})
 
+    participant_experiment_pool = db.relationship(
+        "ParticipantExperiment",
+        back_populates="experiment",
+        info={"import_include": False})
+
     assignments = db.relationship("Assignment", back_populates="experiment",
                                   info={"import_include": False})
 
