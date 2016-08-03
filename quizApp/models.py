@@ -120,7 +120,8 @@ class ParticipantExperiment(Base):
     Essentially, this tracks the progress of each User in each Experiment.
 
     Attributes:
-        activities (set): Order of activities for this user in this experiment
+        activities (list of Activity): Order of activities for this
+            user in this experiment
         progress (int): Which question the user is currently working on.
         complete (bool): True if the user has finalized their responses, False
             otherwise
@@ -521,11 +522,6 @@ class Experiment(Base):
     participant_experiments = db.relationship("ParticipantExperiment",
                                               back_populates="experiment",
                                               info={"import_include": False})
-
-    participant_experiment_pool = db.relationship(
-        "ParticipantExperiment",
-        back_populates="experiment",
-        info={"import_include": False})
 
     assignments = db.relationship("Assignment", back_populates="experiment",
                                   info={"import_include": False})

@@ -53,14 +53,17 @@ def get_or_create_participant_experiment(experiment):
             filter_by(participant_id=current_user.id).\
             filter_by(experiment_id=experiment.id).one()
     except NoResultFound:
+        pool = ParticipantExperiment.query.\
+            filter_by(participant_id=None).\
+            filter_by(experiment_id=experiment.id).all()
         try:
-            participant_experiment = random.choice(
-                experiment.participant_experiment_pool)
+            participant_experiment = random.choice(pool)
         except IndexError:
             return None
         db.session.expunge(participant_experiment)
         make_transient(participant_experiment)
         participant_experiment.participant = current_user
+        participant_experiment.id = None
         participant_experiment.save()
 
     return participant_experiment
