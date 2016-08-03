@@ -251,7 +251,7 @@ def test_update_media_item(client, users):
 
         with mock.patch("quizApp.views.datasets.os.path.isfile",
                         autospec=True) as isfile_mock:
-            isfile_mock.return_value=True
+            isfile_mock.return_value = True
             db.session.refresh(graph)
             file_storage_mock.reset_mock()
             response = client.put(url,
