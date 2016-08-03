@@ -409,6 +409,35 @@ def test_finalize_experiment(client, users):
     assert response.status_code == 400
 
 
+def test_done_experiment(client, users):
+    login_participant(client)
+    participant = get_participant()
+
+    experiment = create_experiment(3, 1)
+    experiment.save()
+    participant_experiment = experiment.participant_experiments[0]
+    participant_experiment.participant = participant
+    participant_experiment.save()
+
+    url = "/experiments/" + str(experiment.id) + "/done"
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    experiment2 = create_experiment(3, 1)
+    experiment2.save()
+
+    url = "/experiments/" + str(experiment2.id) + "/done"
+
+    response = client.get(url)
+    assert response.status_code == 400
+
+    url = "/experiments/" + str(experiment2.id + 34) + "/done"
+
+    response = client.get(url)
+    assert response.status_code == 404
+
+
 def test_get_graph_url_filter():
     graph = GraphFactory()
 
