@@ -102,7 +102,7 @@ class Participant(User):
     """
 
     opt_in = db.Column(db.Boolean)
-    foreign_id = db.Column(db.Integer)
+    foreign_id = db.Column(db.String(100))
 
     assignments = db.relationship("Assignment", back_populates="participant")
     experiments = db.relationship("ParticipantExperiment",
@@ -120,7 +120,8 @@ class ParticipantExperiment(Base):
     Essentially, this tracks the progress of each User in each Experiment.
 
     Attributes:
-        activities (set): Order of activities for this user in this experiment
+        activities (list of Activity): Order of activities for this
+            user in this experiment
         progress (int): Which question the user is currently working on.
         complete (bool): True if the user has finalized their responses, False
             otherwise

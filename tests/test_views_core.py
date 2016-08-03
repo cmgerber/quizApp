@@ -8,7 +8,7 @@ from factory import create_batch
 from quizApp import db
 from quizApp import models
 
-from tests.auth import login_experimenter, get_participant
+from tests.auth import login_experimenter
 from tests.factories import ActivityFactory, MediaItemFactory, \
     create_experiment, DatasetFactory
 from tests.helpers import json_success
@@ -31,9 +31,7 @@ def test_import_template(client, users):
 def test_export_template(client, users):
     """Verify generation of exported data.
     """
-    participant = get_participant()
-
-    db.session.add(create_experiment(4, [participant]))
+    db.session.add(create_experiment(4, 1))
     db.session.add_all(create_batch(MediaItemFactory, 10))
     db.session.add_all(create_batch(ActivityFactory, 10))
     db.session.add_all(create_batch(DatasetFactory, 10))

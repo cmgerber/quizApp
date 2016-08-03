@@ -18,7 +18,6 @@ from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice, Role
 from quizApp import db
 from quizApp.config import basedir
-import pdb
 
 GRAPH_ROOT = "static/graphs"
 
@@ -381,7 +380,12 @@ def setup_db():
         get_choices()
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
+
+        for part_exp in ParticipantExperiment.query.all():
+            part_exp.participant = None
+            db.session.add(part_exp)
         db.session.commit()
+
 
 if __name__ == "__main__":
     setup_db()

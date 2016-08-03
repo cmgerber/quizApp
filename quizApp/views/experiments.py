@@ -1,6 +1,7 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
+import random
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -36,6 +37,32 @@ def get_participant_experiment_or_abort(experiment_id, code=400):
             filter_by(experiment_id=experiment_id).one()
     except NoResultFound:
         abort(code)
+
+
+def get_or_create_participant_experiment(experiment):
+    """Attempt to retrieve the ParticipantExperiment record for the current
+    user in the given Experiment.
+
+    If no such record exists, grab a random ParticipantExperiment record in the
+    experiment ParticipantExperiment pool, copy it to be the current user's
+    ParticipantExperiment record, and return that.
+    """
+    try:
+        participant_experiment = ParticipantExperiment.query.\
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=experiment.id).one()
+    except NoResultFound:
+        pool = ParticipantExperiment.query.\
+            filter_by(participant_id=None).\
+            filter_by(experiment_id=experiment.id).all()
+        try:
+            participant_experiment = random.choice(pool)
+        except IndexError:
+            return None
+        participant_experiment.participant = current_user
+        db.session.commit()
+
+    return participant_experiment
 
 
 @experiments.route('/', methods=["GET"])
@@ -80,18 +107,19 @@ def create_experiment():
 def read_experiment(experiment_id):
     """View the landing page of an experiment, along with the ability to start.
     """
-    exp = validate_model_id(Experiment, experiment_id)
+    experiment = validate_model_id(Experiment, experiment_id)
+    participant_experiment = get_or_create_participant_experiment(experiment)
     if current_user.has_role("participant"):
-        part_exp = get_participant_experiment_or_abort(experiment_id)
 
-        if len(part_exp.assignments) == 0:
+        if len(participant_experiment.assignments) == 0:
             assignment = None
         else:
-            assignment = part_exp.assignments[0]
+            assignment = participant_experiment.assignments[0]
     else:
         assignment = None
 
-    return render_template("experiments/read_experiment.html", experiment=exp,
+    return render_template("experiments/read_experiment.html",
+                           experiment=experiment,
                            assignment=assignment)
 
 
@@ -356,6 +384,9 @@ def confirm_done_experiment(experiment_id):
 def finalize_experiment(experiment_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
+
+    TODO: needs to be some kind of mturk tie-in, as well as checking that the
+    user is truly done.
     """
     validate_model_id(Experiment, experiment_id)
     part_exp = get_participant_experiment_or_abort(experiment_id)
@@ -371,12 +402,13 @@ def finalize_experiment(experiment_id):
 
 @experiments.route(EXPERIMENT_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
-def done_experiment(_):
+def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
 
-    TODO: needs to be some kind of mturk tie-in, as well as checking that the
-    user is truly done.
     """
+    validate_model_id(Experiment, experiment_id)
+    get_participant_experiment_or_abort(experiment_id)
+
     return render_template("experiments/done_experiment.html")
 
 
