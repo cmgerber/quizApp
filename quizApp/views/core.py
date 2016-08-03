@@ -9,7 +9,7 @@ import openpyxl
 from flask import Blueprint, render_template, send_file, jsonify
 from flask_security import roles_required
 
-from quizApp import models
+from quizApp import models, db
 from quizApp.views import import_export
 from quizApp.forms.core import ImportDataForm
 
@@ -135,18 +135,27 @@ def manage_data():
                            import_data_form=import_data_form)
 
 
+def query_exists(query):
+    """Given a query, return True if it would return any rows, and False
+    otherwise.
+    """
+    return db.session.query(query.exists()).scalar()
+
+
 @core.route("getting_started", methods=["GET"])
 @roles_required("experimenter")
 def getting_started():
     """Show some instructions for getting started with quizApp.
     """
-    experiments_empty = models.Experiment.query.count() == 0
-    activities_empty = models.Activity.query.count() == 0
-    datasets_empty = models.Dataset.query.count() == 0
-    assignments_empty = models.Assignment.query.count() == 0
+    experiments_done = query_exists(models.Experiment.query)
+    activities_done = query_exists(models.Activity.query)
+    datasets_done = query_exists(models.Dataset.query)
+    media_items_done = query_exists(models.MediaItem.query)
+    assignments_done = query_exists( models.Assignment.query)
 
     return render_template("core/getting_started.html",
-                           experiments_empty=experiments_empty,
-                           activities_empty=activities_empty,
-                           datasets_empty=datasets_empty,
-                           assignments_empty=assignments_empty)
+                           experiments_done=experiments_done,
+                           activities_done=activities_done,
+                           datasets_done=datasets_done,
+                           media_items_done=media_items_done,
+                           assignments_done=assignments_done)

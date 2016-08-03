@@ -5,12 +5,22 @@ Getting started
 
 {% block content %}
 <p>To start your first QuizApp experiment, perform the following steps.</p>
-<ol>
-  <li>Create an Experiment</li>
-  <li>Create some Datasets</li>
-  <li>Create some Media Items</li>
-  <li>Create some Activities</li>
-  <li>Upload your Assignments</li>
+{% set steps = (
+  ("experiments.read_experiments", "Create an Experiment", experiments_done),
+  ("datasets.read_datasets", "Create some Datasets", datasets_done),
+  ("datasets.read_datasets", "Create some Media Items in that Dataset", media_items_done),
+  ("activities.read_activities", "Create some Activities", activities_done),
+  ("core.manage_data", "Upload your Assignments", assignments_done)
+) %}
+<ol class="task-list">
+  {% for route, text, done in steps %}
+  <li {% if done %} class="done" {% endif %}>
+    {% if done %}
+    {{ macros.render_glyphicon("check") }}
+    {% endif %}
+    <a href="{{ url_for(route) }}">{{ text }}</a>
+  </li>
+  {% endfor %}
 </ol>
 <p>For more information, see the <a
   href="http://quizapp.readthedocs.io/en/latest/getting_started.html">QuizApp

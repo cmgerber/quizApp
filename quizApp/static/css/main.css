@@ -280,3 +280,7 @@ ul#answers {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
+
+.task-list > .done, .task-list > .done a {
+  color: green;
+}
