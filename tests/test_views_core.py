@@ -90,3 +90,12 @@ def test_manage_form(client, users):
     response = client.get(url)
 
     assert response.status_code == 200
+
+
+def test_getting_started(client, users):
+    login_experimenter(client)
+    url = "/getting_started"
+
+    response = client.get(url)
+
+    assert response.status_code == 200
