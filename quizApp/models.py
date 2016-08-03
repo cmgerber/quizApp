@@ -73,7 +73,6 @@ class User(Base, UserMixin):
 
     type = db.Column(db.String(50), nullable=False)
 
-
     def has_any_role(self, roles):
         """Given a list of Roles, return True if the user has at least one of
         them.

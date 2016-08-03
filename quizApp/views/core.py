@@ -140,7 +140,7 @@ def manage_data():
 def getting_started():
     """Show some instructions for getting started with quizApp.
     """
-    experiments_empty = models.Experiment.query.count() == 0 
+    experiments_empty = models.Experiment.query.count() == 0
     activities_empty = models.Activity.query.count() == 0
     datasets_empty = models.Dataset.query.count() == 0
     assignments_empty = models.Assignment.query.count() == 0

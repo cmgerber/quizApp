@@ -70,7 +70,6 @@ def update_dataset(dataset_id):
 
     db.session.commit()
 
-
     return jsonify({"success": 1})
 
 
