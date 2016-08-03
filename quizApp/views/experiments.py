@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import os
+import pdb
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request
@@ -48,6 +49,7 @@ def get_or_create_participant_experiment(experiment):
     experiment ParticipantExperiment pool, copy it to be the current user's
     ParticipantExperiment record, and return that.
     """
+    pdb.set_trace()
     try:
         participant_experiment = ParticipantExperiment.query.\
             filter_by(participant_id=current_user.id).\
@@ -60,11 +62,8 @@ def get_or_create_participant_experiment(experiment):
             participant_experiment = random.choice(pool)
         except IndexError:
             return None
-        db.session.expunge(participant_experiment)
-        make_transient(participant_experiment)
         participant_experiment.participant = current_user
-        participant_experiment.id = None
-        participant_experiment.save()
+        db.session.commit()
 
     return participant_experiment
 
@@ -388,6 +387,9 @@ def confirm_done_experiment(experiment_id):
 def finalize_experiment(experiment_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
+
+    TODO: needs to be some kind of mturk tie-in, as well as checking that the
+    user is truly done.
     """
     validate_model_id(Experiment, experiment_id)
     part_exp = get_participant_experiment_or_abort(experiment_id)
@@ -403,12 +405,13 @@ def finalize_experiment(experiment_id):
 
 @experiments.route(EXPERIMENT_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
-def done_experiment(_):
+def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
 
-    TODO: needs to be some kind of mturk tie-in, as well as checking that the
-    user is truly done.
     """
+    validate_model_id(Experiment, experiment_id)
+    part_exp = get_participant_experiment_or_abort(experiment_id)
+
     return render_template("experiments/done_experiment.html")
 
 

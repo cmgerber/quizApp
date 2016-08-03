@@ -5,6 +5,7 @@ import random
 import mock
 from datetime import datetime, timedelta
 
+import pdb
 from quizApp import db
 from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_participant_experiment_or_abort,\
@@ -190,6 +191,7 @@ def test_read_experiment(client, users):
     assert str(exp.participant_experiments[0].assignments[0].id) in \
         response.data
 
+    pdb.set_trace()
     exp.participant_experiments[0].assignments = []
     db.session.commit()
 
