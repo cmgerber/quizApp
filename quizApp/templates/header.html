@@ -1,3 +1,12 @@
+{% import 'macros.html' as macros %}
+{% set nav_tabs = (
+  ('experiments.read_experiments', "Experiments", ("experimenter", "participant")),
+  ('activities.read_activities', "Activities", ("experimenter",)),
+  ('datasets.read_datasets', "Datasets", ("experimenter",)),
+  ('core.manage_data', "Manage data", ("experimenter",)),
+  ('core.getting_started', macros.render_glyphicon("question-sign"), ("experimenter",)),
+) %}
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -29,24 +38,6 @@
             <li role="presentation">
               <a href="{{ url_for('security.logout') }}">Logout</a>
             </li>
-            <li role="presentation">
-              <a href="{{ url_for('experiments.read_experiments') }}">Experiments</a>
-            </li>
-            {% if current_user.has_role("experimenter") %}
-            <li role="presentation">
-              <a href="{{ url_for('activities.read_activities')
-                }}">Activities</a>
-            </li>
-            <li role="presentation">
-              <a href="{{ url_for('datasets.read_datasets')
-                }}">Datasets</a>
-            </li>
-            <li role="presentation">
-              <a href="{{ url_for('core.manage_data') }}">
-                Manage data
-              </a>
-            </li>
-            {% endif %}
             {% else %}
             <li role="presentation" class="active">
               <a href="{{ url_for('security.login') }}">Login</a>
@@ -61,6 +52,18 @@
           </ul>
         </nav>
         <h1 class="site-name">Quiz App</h1>
+        <ul class="nav nav-pills page-tabs">
+          {% if current_user.is_authenticated %}
+          {% for endpoint, name, roles in nav_tabs %}
+          {% if current_user.has_any_role(roles) %}
+          <li role="presentation"
+              {% if endpoint == request.endpoint %}class="active"{% endif %}>
+            <a href="{{ url_for(endpoint) }}">{{ name }}</a>
+          </li>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+        </ul>
       </div>
       <h2>{{ self.title() }}</h2>
       {% block content %}{% endblock %}

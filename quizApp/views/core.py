@@ -133,3 +133,20 @@ def manage_data():
 
     return render_template("core/manage_data.html",
                            import_data_form=import_data_form)
+
+
+@core.route("getting_started", methods=["GET"])
+@roles_required("experimenter")
+def getting_started():
+    """Show some instructions for getting started with quizApp.
+    """
+    experiments_empty = models.Experiment.query.count() == 0 
+    activities_empty = models.Activity.query.count() == 0
+    datasets_empty = models.Dataset.query.count() == 0
+    assignments_empty = models.Assignment.query.count() == 0
+
+    return render_template("core/getting_started.html",
+                           experiments_empty=experiments_empty,
+                           activities_empty=activities_empty,
+                           datasets_empty=datasets_empty,
+                           assignments_empty=assignments_empty)
