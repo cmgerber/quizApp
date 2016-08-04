@@ -47,11 +47,12 @@ def register():
                 foreign_id=request.args["workerId"],
                 email=request.args["workerId"],
                 password=encrypt_password(password))
-            participant.save()
             security.datastore.add_role_to_user(participant, "participant")
             security.datastore.activate_user(participant)
+            participant.save()
 
         login_user(participant)
 
-    return render_template("mturk/register.html", request=request,
+    return render_template("mturk/register.html",
+                           request=request,
                            experiment=experiment)
