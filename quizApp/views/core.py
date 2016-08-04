@@ -6,8 +6,9 @@ from collections import OrderedDict
 import tempfile
 
 import openpyxl
-from flask import Blueprint, render_template, send_file, jsonify
-from flask_security import roles_required
+from flask import Blueprint, render_template, send_file, jsonify, redirect, \
+    url_for
+from flask_security import roles_required, login_required, current_user
 
 from quizApp import models, db
 from quizApp.views import import_export
@@ -159,3 +160,14 @@ def getting_started():
                            datasets_done=datasets_done,
                            media_items_done=media_items_done,
                            assignments_done=assignments_done)
+
+
+@core.route("post_login", methods=["GET"])
+@login_required
+def post_login():
+    """Once a user has logged in, redirect them based on their role.
+    """
+    if current_user.has_role("experimenter"):
+        return redirect(url_for("core.getting_started"))
+    else:
+        return redirect(url_for("experiments.read_experiments"))

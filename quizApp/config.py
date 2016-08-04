@@ -9,16 +9,17 @@ class Config(object):
     """Global default config.
     """
 
-    WTF_CSRF_ENABLED = True
     DEBUG = False
-    TESTING = False
+    EXPERIMENTS_PLACEHOLDER_GRAPH = "missing.png"
+    GRAPH_DIRECTORY = "graphs"
     SECRET_KEY = "---"
     SECURITY_PASSWORD_SALT = "---"
-    WTF_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    GRAPH_DIRECTORY = "graphs"
-    EXPERIMENTS_PLACEHOLDER_GRAPH = "missing.png"
+    SECURITY_POST_LOGIN_VIEW = "core.post_login"
     SECURITY_REGISTERABLE = True
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    TESTING = False
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_METHODS = ["POST", "PUT", "PATCH", "DELETE"]
 
 
 class Production(Config):

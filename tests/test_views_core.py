@@ -8,7 +8,7 @@ from factory import create_batch
 from quizApp import db
 from quizApp import models
 
-from tests.auth import login_experimenter
+from tests.auth import login_experimenter, login_participant
 from tests.factories import ActivityFactory, MediaItemFactory, \
     create_experiment, DatasetFactory
 from tests.helpers import json_success
@@ -99,3 +99,19 @@ def test_getting_started(client, users):
     response = client.get(url)
 
     assert response.status_code == 200
+
+
+def test_post_login(client, users):
+    login_experimenter(client)
+    url = "/post_login"
+
+    response = client.get(url, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert "readthedocs" in response.data
+
+    login_participant(client)
+    response = client.get(url, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert "Experiment List" in response.data
