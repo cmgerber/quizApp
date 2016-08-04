@@ -9,6 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp.views.helpers import validate_model_id
 from quizApp.models import Experiment, Participant
+from quizApp import security
 from flask_security.utils import encrypt_password
 from flask_security import login_user
 
@@ -42,10 +43,17 @@ def register():
                                choice(string.ascii_uppercase + string.digits)
                                for _ in range(0, 15))
 
-            participant = Participant(foreign_id=request.args["workerId"],
-                                      email=request.args["workerId"],
-                                      password=encrypt_password(password))
-            participant.save()
+            participant_role = security.datastore.find_role("participant")
+            participant = security.datastore.create_user(
+                foreign_id=request.args["workerId"],
+                email=request.args["workerId"],
+                password=encrypt_password(password),
+                type="participant",
+                roles=participant_role)
+            # participant = Participant(foreign_id=request.args["workerId"],
+            #                           email=request.args["workerId"],
+            #                           password=encrypt_password(password))
+            # participant.save()
 
         login_user(participant)
 
