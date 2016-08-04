@@ -391,6 +391,7 @@ def test_finalize_experiment(client, users):
     experiment.save()
     participant_experiment = experiment.participant_experiments[0]
     participant_experiment.participant = participant
+    participant_experiment.complete = False
     participant_experiment.save()
 
     url = "/experiments/" + str(experiment.id) + "/finalize"
@@ -398,6 +399,11 @@ def test_finalize_experiment(client, users):
     response = client.patch(url)
     assert response.status_code == 200
     assert json_success(response.data)
+
+    url = "/experiments/" + str(experiment.id) + "/finalize"
+
+    response = client.patch(url)
+    assert response.status_code == 400
 
     url = "/experiments/" + str(experiment.id) + "/assignments/" + \
         str(experiment.participant_experiments[0].assignments[0].id)

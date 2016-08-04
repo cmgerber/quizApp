@@ -3,8 +3,9 @@
 
 import random
 import string
+import requests
 
-from flask import Blueprint, render_template, request, abort
+from flask import Blueprint, render_template, request, abort, session
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp.views.helpers import validate_model_id
@@ -50,9 +51,21 @@ def register():
             security.datastore.add_role_to_user(participant, "participant")
             security.datastore.activate_user(participant)
             participant.save()
+            session["experiment_post_finalize_handler"] = "mturk"
+            session["mturk_assignmentId"] = request.args["assignmentId"]
+            session["mturk_turkSubmitTo"] = request.args["turkSubmitTo"]
 
         login_user(participant)
 
     return render_template("mturk/register.html",
                            request=request,
                            experiment=experiment)
+
+
+def submit_assignment():
+    """Submit the current assignment back to amazon.
+    """
+    response = requests.post(
+        session["mturk_turkSubmitTo"],
+        data={"assignmentId": session["mturk_assignmentId"]})
+    print response.status_code

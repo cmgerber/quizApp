@@ -8,7 +8,7 @@ import json
 import os
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app, request
+    current_app, request, session
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -19,12 +19,17 @@ from quizApp.forms.experiments import CreateExperimentForm, \
 from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id
+from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 EXPERIMENT_ROUTE = "/<int:experiment_id>"
 ASSIGNMENTS_ROUTE = EXPERIMENT_ROUTE + "/assignments/"
 ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:a_id>"
+
+POST_FINALIZE_HANDLERS = {
+    "mturk": submit_assignment,
+}
 
 
 def get_participant_experiment_or_abort(experiment_id, code=400):
@@ -386,11 +391,13 @@ def finalize_experiment(experiment_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
 
-    TODO: needs to be some kind of mturk tie-in, as well as checking that the
-    user is truly done.
+    TODO: needs to be some kind of mturk tie-in
     """
     validate_model_id(Experiment, experiment_id)
     part_exp = get_participant_experiment_or_abort(experiment_id)
+
+    if part_exp.complete:
+        abort(400)
 
     part_exp.complete = True
 
@@ -409,6 +416,12 @@ def done_experiment(experiment_id):
     """
     validate_model_id(Experiment, experiment_id)
     get_participant_experiment_or_abort(experiment_id)
+
+    # Handle any post finalize actions, e.g. providing a button to submit a HIT
+    post_finalize = session.get("experiment_post_finalize_handler", None)
+    if post_finalize:
+        handler = POST_FINALIZE_HANDLERS[post_finalize]
+        handler()
 
     return render_template("experiments/done_experiment.html")
 

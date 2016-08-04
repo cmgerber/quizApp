@@ -17,7 +17,8 @@ def test_register(client, users):
     response = client.get("/mturk/register")
     assert response.status_code == 400
 
-    response = client.get("/mturk/register?experiment_id={}&workerId=4fsa".
+    response = client.get(("/mturk/register?experiment_id={}"
+                           "&workerId=4fsa&assignmentId=4&turkSubmitTo=4").
                           format(experiment.id))
 
     assert response.status_code == 200
