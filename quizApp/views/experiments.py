@@ -407,7 +407,6 @@ def finalize_experiment(experiment_id):
         handler = POST_FINALIZE_HANDLERS[post_finalize]
         handler()
 
-
     return jsonify({"success": 1,
                     "next_url": url_for('experiments.done_experiment',
                                         experiment_id=experiment_id)})

@@ -4,7 +4,6 @@ import json
 import random
 import mock
 from datetime import datetime, timedelta
-from flask import session
 
 from quizApp import db
 from quizApp.models import ParticipantExperiment
@@ -434,6 +433,7 @@ def test_finalize_experiment(client, users):
 
     mock_handler.assert_called_once()
 
+
 def test_done_experiment(client, users):
     login_participant(client)
     participant = get_participant()
@@ -495,3 +495,13 @@ def test_confirm_done_experiment(client, users):
 
     response = client.get(url)
     assert response.status_code == 404
+
+
+def test_results_experiment(client, users):
+    login_experimenter(client)
+
+    exp = create_experiment(1, 1)
+    exp.save()
+    url = "/experiments/" + str(exp.id) + "/results"
+    response = client.get(url)
+    assert response.status_code == 200
