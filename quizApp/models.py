@@ -214,8 +214,8 @@ class Assignment(Base):
     activity = db.relationship("Activity", back_populates="assignments",
                                info={"import_include": False})
 
-    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
-    choice = db.relationship("Choice", back_populates="assignments",
+    result_id = db.Column(db.Integer, db.ForeignKey("result.id"))
+    result = db.relationship("Result", back_populates="assignment",
                              info={"import_include": False})
 
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
@@ -264,6 +264,32 @@ class Assignment(Base):
             assert choice in self.activity.choices
 
         return choice
+
+
+class Result(Base):
+    """A Result is the outcome of a Participant completing an Activity.
+
+    Different Activities have different data that they generate, so this model
+    does not actually contain any information on the outcome of an Activity.
+    That is something that child classes of this class must define in their
+    schemas.
+
+    On the Assignment level, the type of Activity will determine the type of
+    Result.
+
+    Attributes:
+        assignment (Assignment): The Assignment that owns this Result.
+    """
+
+    assignment_id = db.Column(db.Integer, db.ForeignKey("assignment.id"))
+    assignment = db.relationship("Assignment", back_populates="result",
+                                 info={"import_include": False})
+
+
+class MultipleChoiceQuestionResult(Result):
+    """The Choice that a Participant picked in a MultipleChoiceQuestion.
+    """
+
 
 
 activity_experiment_table = db.Table(
@@ -427,8 +453,6 @@ class Choice(Base):
         label (string): The label for this choice (1,2,3,a,b,c etc)
         correct (bool): "True" if this choice is correct, "False" otherwise
         question (Question): Which Question owns this Choice
-        assignment (Assignment): Which Assignments had Participants pick this
-            Choice as the correct answer
     """
     choice = db.Column(db.String(200), nullable=False,
                        info={"label": "Choice"})
@@ -440,8 +464,6 @@ class Choice(Base):
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
-    assignments = db.relationship("Assignment", back_populates="choice",
-                                  info={"import_include": False})
 
 
 class MediaItem(Base):
