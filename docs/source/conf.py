@@ -178,10 +178,12 @@ html_theme = 'alabaster'
 # html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-html_sidebars = { '**': ['globaltoc.html',
-                         'relations.html',
-                         'sourcelink.html',
-                         'searchbox.html'], }
+
+html_sidebars = {
+    'index':    ['sourcelink.html', 'searchbox.html'],
+    '**':       ['localtoc.html', 'relations.html', 'sourcelink.html',
+                 'searchbox.html']
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.

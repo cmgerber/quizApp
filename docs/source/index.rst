@@ -10,20 +10,4 @@ QuizApp is a platform for conducting experiments in the form of online surveys.
 It is highly generalized, which makes it useful for a wide variety of
 experiments.
 
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-   getting_started
-   understanding_models
-   import_export
-   mturk
-   modules
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. include:: contents.rst
