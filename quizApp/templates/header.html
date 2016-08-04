@@ -1,10 +1,10 @@
 {% import 'macros.html' as macros %}
 {% set nav_tabs = (
+  ('core.getting_started', "Getting started", ("experimenter",)),
   ('experiments.read_experiments', "Experiments", ("experimenter", "participant")),
   ('activities.read_activities', "Activities", ("experimenter",)),
   ('datasets.read_datasets', "Datasets", ("experimenter",)),
   ('core.manage_data', "Manage data", ("experimenter",)),
-  ('core.getting_started', macros.render_glyphicon("question-sign"), ("experimenter",)),
 ) %}
 
 <!DOCTYPE html>
