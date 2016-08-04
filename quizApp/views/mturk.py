@@ -43,17 +43,13 @@ def register():
                                choice(string.ascii_uppercase + string.digits)
                                for _ in range(0, 15))
 
-            participant_role = security.datastore.find_role("participant")
-            participant = security.datastore.create_user(
+            participant = Participant(
                 foreign_id=request.args["workerId"],
                 email=request.args["workerId"],
-                password=encrypt_password(password),
-                type="participant",
-                roles=participant_role)
-            # participant = Participant(foreign_id=request.args["workerId"],
-            #                           email=request.args["workerId"],
-            #                           password=encrypt_password(password))
-            # participant.save()
+                password=encrypt_password(password))
+            participant.save()
+            security.datastore.add_role_to_user(participant, "participant")
+            security.datastore.activate_user(participant)
 
         login_user(participant)
 

@@ -2,6 +2,7 @@
 
 """Using excel files, populate the database with some placeholder data.
 """
+import pdb
 from datetime import datetime, timedelta
 import os
 import csv
@@ -16,7 +17,7 @@ from clear_db import clear_db
 from quizApp import create_app
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice, Role
-from quizApp import db
+from quizApp import db, security
 from quizApp.config import basedir
 
 GRAPH_ROOT = "static/graphs"
@@ -182,7 +183,7 @@ PARTICIPANT_QUESTION_LIST = \
  [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
  [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
-def create_participant(pid, experiments, roles):
+def create_participant(pid, experiments):
     """Given an ID number, create a participant record, adding them to each
     of the given experiments.
     """
@@ -192,8 +193,8 @@ def create_participant(pid, experiments, roles):
         password=encrypt_password(str(pid)),
         opt_in=False,
         active=True,
-        roles=roles
     )
+    security.datastore.add_role_to_user(participant, "participant")
     for exp in experiments:
         part_exp = ParticipantExperiment(
             progress=0,
@@ -209,8 +210,8 @@ def get_students():
     heuristic_participant_id_list = []
     experiments = Experiment.query.all()
 
-    participant_role = Role(name="participant", description="Participant role")
-    experimenter_role = Role(name="experimenter", description="Experimenter role")
+    security.datastore.create_role(name="participant")
+    security.datastore.create_role(name="experimenter")
 
     with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
         participant_reader = csv.DictReader(participants_csv)
@@ -220,22 +221,17 @@ def get_students():
 
             if questions_id:
                 question_participant_id_list.append(questions_id)
-                create_participant(questions_id, experiments,
-                                   [participant_role])
+                create_participant(questions_id, experiments)
 
             if heuristics_id:
                 heuristic_participant_id_list.append(heuristics_id)
-                create_participant(heuristics_id, experiments,
-                                   [participant_role])
-
-    root = User(
+                create_participant(heuristics_id, experiments)
+    security.datastore.create_user(
         email="experimenter@example.com",
         password=encrypt_password("foobar"),
         active=True,
-        roles=[experimenter_role]
+        roles=["experimenter"]
     )
-
-    db.session.add(root)
 
     return question_participant_id_list, heuristic_participant_id_list
 
@@ -380,6 +376,7 @@ def setup_db():
         get_choices()
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
+        pdb.set_trace()
 
         for part_exp in ParticipantExperiment.query.all():
             part_exp.participant = None
