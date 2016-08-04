@@ -22,3 +22,9 @@ def test_register(client):
 
     assert response.status_code == 302
     assert Participant.query.count() == 1
+
+    response = client.get("/mturk/register?experiment_id={}&workerId=4fsa".
+                          format(experiment.id))
+
+    assert response.status_code == 302
+    assert Participant.query.count() == 1
