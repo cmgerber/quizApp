@@ -5,7 +5,7 @@ from quizApp.models import Participant
 from tests.factories import ExperimentFactory
 
 
-def test_register(client):
+def test_register(client, users):
     experiment = ExperimentFactory()
     experiment.save()
 
@@ -21,11 +21,13 @@ def test_register(client):
                           format(experiment.id))
 
     assert response.status_code == 200
-    assert str(experiment.id) in response.data
-    assert Participant.query.count() == 1
+    assert "/experiments" in response.data
+
+    # one from users fixture, one from views
+    assert Participant.query.count() == 2
 
     response = client.get("/mturk/register?experiment_id={}&workerId=4fsa".
                           format(experiment.id))
 
     assert response.status_code == 200
-    assert Participant.query.count() == 1
+    assert Participant.query.count() == 2
