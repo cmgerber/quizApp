@@ -1,6 +1,5 @@
 """Tests for core views.
 """
-import pdb
 import tempfile
 
 from openpyxl import load_workbook
