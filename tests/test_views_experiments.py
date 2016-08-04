@@ -4,12 +4,13 @@ import json
 import random
 import mock
 from datetime import datetime, timedelta
+from flask import session
 
 from quizApp import db
 from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_participant_experiment_or_abort,\
     get_next_assignment_url, get_graph_url_filter, \
-    get_or_create_participant_experiment
+    get_or_create_participant_experiment, POST_FINALIZE_HANDLERS
 from tests.factories import ExperimentFactory, create_experiment, \
     GraphFactory
 from tests.auth import login_participant, get_participant, \
@@ -417,6 +418,21 @@ def test_finalize_experiment(client, users):
 
     assert response.status_code == 400
 
+    experiment2 = create_experiment(3, 1)
+    experiment2.save()
+    participant_experiment2 = experiment2.participant_experiments[0]
+    participant_experiment2.participant = participant
+    participant_experiment2.complete = False
+    participant_experiment2.save()
+
+    mock_handler = mock.MagicMock()
+    POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
+    url = "/experiments/" + str(experiment2.id) + "/finalize"
+    with client.session_transaction() as sess:
+        sess["experiment_post_finalize_handler"] = "test_handler"
+    client.patch(url)
+
+    mock_handler.assert_called_once()
 
 def test_done_experiment(client, users):
     login_participant(client)
