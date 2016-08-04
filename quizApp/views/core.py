@@ -151,7 +151,7 @@ def getting_started():
     activities_done = query_exists(models.Activity.query)
     datasets_done = query_exists(models.Dataset.query)
     media_items_done = query_exists(models.MediaItem.query)
-    assignments_done = query_exists( models.Assignment.query)
+    assignments_done = query_exists(models.Assignment.query)
 
     return render_template("core/getting_started.html",
                            experiments_done=experiments_done,
