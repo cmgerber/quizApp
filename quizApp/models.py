@@ -73,6 +73,12 @@ class User(Base, UserMixin):
 
     type = db.Column(db.String(50), nullable=False)
 
+    def has_any_role(self, roles):
+        """Given a list of Roles, return True if the user has at least one of
+        them.
+        """
+        return any(self.has_role(role) for role in roles)
+
     __mapper_args__ = {
         'polymorphic_identity': 'user',
         'polymorphic_on': type

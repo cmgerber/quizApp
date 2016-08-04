@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 from quizApp import db
 from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_participant_experiment_or_abort,\
-    get_next_assignment_url, get_graph_url_filter
+    get_next_assignment_url, get_graph_url_filter, \
+    get_or_create_participant_experiment
 from tests.factories import ExperimentFactory, create_experiment, \
     GraphFactory
 from tests.auth import login_participant, get_participant, \
@@ -446,3 +447,29 @@ def test_get_graph_url_filter():
     url = get_graph_url_filter(graph)
 
     assert "missing" in url
+
+
+def test_get_or_create_participant_experiment(client, users):
+    login_participant(client)
+    experiment = create_experiment(1, 1)
+    experiment.participant_experiments = []
+    experiment.save()
+
+    result = get_or_create_participant_experiment(experiment)
+    assert result is None
+
+
+def test_confirm_done_experiment(client, users):
+    login_participant(client)
+    experiment = create_experiment(1, 1)
+    experiment.save()
+
+    url = "/experiments/" + str(experiment.id) + "/confirm_done"
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    url = "/experiments/" + str(experiment.id + 4) + "/confirm_done"
+
+    response = client.get(url)
+    assert response.status_code == 404
