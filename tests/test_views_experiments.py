@@ -7,14 +7,23 @@ from datetime import datetime, timedelta
 
 from quizApp import db
 from quizApp.models import ParticipantExperiment
-from quizApp.views.experiments import get_participant_experiment_or_abort,\
-    get_next_assignment_url, get_graph_url_filter, \
-    get_or_create_participant_experiment, POST_FINALIZE_HANDLERS
+from quizApp.views.experiments import get_next_assignment_url, \
+    get_graph_url_filter, POST_FINALIZE_HANDLERS,\
+    get_participant_experiment_or_abort
 from tests.factories import ExperimentFactory, create_experiment, \
     GraphFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
+
+
+@mock.patch('quizApp.views.experiments.abort', autospec=True)
+def test_get_participant_experiment_or_abort(abort_mock, client):
+    """Make sure get_participant_experiment_or_abort actually aborts.
+    """
+    get_participant_experiment_or_abort(5, 500)
+
+    abort_mock.assert_called_once_with(500)
 
 
 def test_experiments(client):
@@ -168,15 +177,6 @@ def test_create_experiment(client, users):
     data = json.loads(response.data)
     assert data["success"] == 0
     assert data["errors"]
-
-
-@mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_participant_experiment_or_abort(abort_mock, client):
-    """Make sure get_participant_experiment_or_abort actually aborts.
-    """
-    get_participant_experiment_or_abort(5, 500)
-
-    abort_mock.assert_called_once_with(500)
 
 
 def test_read_experiment(client, users):
@@ -469,16 +469,6 @@ def test_get_graph_url_filter():
     url = get_graph_url_filter(graph)
 
     assert "missing" in url
-
-
-def test_get_or_create_participant_experiment(client, users):
-    login_participant(client)
-    experiment = create_experiment(1, 1)
-    experiment.participant_experiments = []
-    experiment.save()
-
-    result = get_or_create_participant_experiment(experiment)
-    assert result is None
 
 
 def test_confirm_done_experiment(client, users):

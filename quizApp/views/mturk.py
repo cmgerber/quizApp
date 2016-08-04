@@ -6,9 +6,10 @@ import string
 import requests
 
 from flask import Blueprint, render_template, request, abort, session
+from flask import redirect, url_for
 from sqlalchemy.orm.exc import NoResultFound
 
-from quizApp.views.helpers import validate_model_id
+from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.models import Experiment, Participant
 from quizApp import security
 from flask_security.utils import encrypt_password
@@ -56,6 +57,11 @@ def register():
             session["mturk_turkSubmitTo"] = request.args["turkSubmitTo"]
 
         login_user(participant)
+        # get first assignment and send there
+
+        return redirect(url_for("experiments.read_assignment",
+                                a_id=get_first_assignment(experiment).id,
+                                experiment_id=experiment.id))
 
     return render_template("mturk/register.html",
                            request=request,

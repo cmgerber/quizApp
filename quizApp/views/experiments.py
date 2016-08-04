@@ -1,7 +1,6 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-import random
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -18,7 +17,7 @@ from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
 from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
-from quizApp.views.helpers import validate_model_id
+from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
@@ -42,32 +41,6 @@ def get_participant_experiment_or_abort(experiment_id, code=400):
             filter_by(experiment_id=experiment_id).one()
     except NoResultFound:
         abort(code)
-
-
-def get_or_create_participant_experiment(experiment):
-    """Attempt to retrieve the ParticipantExperiment record for the current
-    user in the given Experiment.
-
-    If no such record exists, grab a random ParticipantExperiment record in the
-    experiment ParticipantExperiment pool, copy it to be the current user's
-    ParticipantExperiment record, and return that.
-    """
-    try:
-        participant_experiment = ParticipantExperiment.query.\
-            filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=experiment.id).one()
-    except NoResultFound:
-        pool = ParticipantExperiment.query.\
-            filter_by(participant_id=None).\
-            filter_by(experiment_id=experiment.id).all()
-        try:
-            participant_experiment = random.choice(pool)
-        except IndexError:
-            return None
-        participant_experiment.participant = current_user
-        db.session.commit()
-
-    return participant_experiment
 
 
 @experiments.route('/', methods=["GET"])
@@ -115,12 +88,7 @@ def read_experiment(experiment_id):
     experiment = validate_model_id(Experiment, experiment_id)
 
     if current_user.has_role("participant"):
-        participant_experiment = get_or_create_participant_experiment(
-            experiment)
-        if len(participant_experiment.assignments) == 0:
-            assignment = None
-        else:
-            assignment = participant_experiment.assignments[0]
+        assignment = get_first_assignment(experiment)
     else:
         assignment = None
 
