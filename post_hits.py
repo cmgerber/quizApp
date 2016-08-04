@@ -49,10 +49,6 @@ QUIZAPP_DOMAIN = "quizapp.tech"
 HIT
 """
 
-EXPERIMENT_ID = 0
-"""int: the ID of the experiment to use for the HIT
-"""
-
 
 def main():
     """Post a HIT to amazon.

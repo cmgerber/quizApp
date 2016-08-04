@@ -6,6 +6,7 @@ import string
 
 from flask import Blueprint, render_template, request, abort, redirect, \
     url_for
+from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp.views.helpers import validate_model_id
 from quizApp.models import Experiment, Participant
@@ -32,15 +33,21 @@ def register():
 
     if "workerId" in request.args:
         # The worker has accepted this HIT
-        # Generate a new participant record
-        password = ''.join(random.SystemRandom().
-                           choice(string.ascii_uppercase + string.digits)
-                           for _ in range(0, 15))
 
-        participant = Participant(foreign_id=request.args["workerId"],
-                                  email=request.args["workerId"],
-                                  password=encrypt_password(password))
-        participant.save()
+        try:
+            participant = Participant.query.\
+                filter_by(email=request.args["workerId"]).one()
+        except NoResultFound:
+            # Generate a new participant record
+            password = ''.join(random.SystemRandom().
+                               choice(string.ascii_uppercase + string.digits)
+                               for _ in range(0, 15))
+
+            participant = Participant(foreign_id=request.args["workerId"],
+                                      email=request.args["workerId"],
+                                      password=encrypt_password(password))
+            participant.save()
+
         login_user(participant)
 
         return redirect(url_for("experiments.read_experiment",
