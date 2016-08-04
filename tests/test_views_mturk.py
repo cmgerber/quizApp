@@ -20,11 +20,12 @@ def test_register(client):
     response = client.get("/mturk/register?experiment_id={}&workerId=4fsa".
                           format(experiment.id))
 
-    assert response.status_code == 302
+    assert response.status_code == 200
+    assert str(experiment.id) in response.data
     assert Participant.query.count() == 1
 
     response = client.get("/mturk/register?experiment_id={}&workerId=4fsa".
                           format(experiment.id))
 
-    assert response.status_code == 302
+    assert response.status_code == 200
     assert Participant.query.count() == 1

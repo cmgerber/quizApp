@@ -4,8 +4,7 @@
 import random
 import string
 
-from flask import Blueprint, render_template, request, abort, redirect, \
-    url_for
+from flask import Blueprint, render_template, request, abort
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp.views.helpers import validate_model_id
@@ -49,9 +48,6 @@ def register():
             participant.save()
 
         login_user(participant)
-
-        return redirect(url_for("experiments.read_experiment",
-                                experiment_id=experiment.id))
 
     return render_template("mturk/register.html", request=request,
                            experiment=experiment)
