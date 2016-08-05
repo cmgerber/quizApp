@@ -50,7 +50,8 @@ def register():
             participant.save()
             session["experiment_post_finalize_handler"] = "mturk"
             session["mturk_assignmentId"] = request.args["assignmentId"]
-            session["mturk_turkSubmitTo"] = request.args["turkSubmitTo"]
+            session["mturk_post_url"] = request.args["turkSubmitTo"] + \
+                "/mturk/externalSubmit"
             session["mturk_hitId"] = request.args["hitId"]
 
         login_user(participant)
