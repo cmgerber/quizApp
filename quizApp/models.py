@@ -450,8 +450,9 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-        flash_duration (int): How long to display the MediaItem (-1 for
-            indefinitely)
+        flash (bool): If True, flash the MediaItem for flash_duration
+        milliseconds
+        flash_duration (int): How long to display the MediaItem in milliseconds
         name (str): Name for this Media Item
         assignments (list of Assignment): Which Assignments display this
             MediaItem
@@ -462,8 +463,10 @@ class MediaItem(Base):
         "Assignment",
         secondary=assignment_media_item_table,
         back_populates="media_items")
+    flash = db.Column(db.Boolean,
+                      info={"label": "Flash this MediaItem when displaying?"})
     flash_duration = db.Column(db.Integer, nullable=False, default=-1,
-                               info={"label": "Flash duration"})
+                               info={"label": "Flash duration (ms)"})
     dataset = db.relationship("Dataset", back_populates="media_items")
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
     type = db.Column(db.String(80), nullable=False)

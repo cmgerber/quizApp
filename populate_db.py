@@ -55,16 +55,6 @@ QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
                          "rating": "question_mc_singleselect_scale",
                          "pre_test": "question"}
 
-def get_random_duration():
-    """Get a random duration for a question.
-    """
-    # 50% chance of indefinite display
-    duration = random.randint(-1, 0)
-
-    if duration == 0:
-        duration = random.randint(500, 1500)
-
-    return duration
 
 def get_questions():
     """Populate the database with questions based on csv files.
@@ -141,7 +131,8 @@ def get_choices():
             graph = Graph(
                 id=graph["graph_id"],
                 dataset_id=int(graph["dataset"])+1,
-                flash_duration=get_random_duration(),
+                flash=bool(random.getrandbits(1)),
+                flash_duration=random.randint(500, 1500),
                 path=os.path.join(basedir, GRAPH_ROOT,
                                       graph["graph_location"]))
             db.session.add(graph)
