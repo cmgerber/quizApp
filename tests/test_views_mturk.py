@@ -20,7 +20,8 @@ def test_register(client, users):
     assert response.status_code == 400
 
     response = client.get(("/mturk/register?experiment_id={}"
-                           "&workerId=4fsa&assignmentId=4&turkSubmitTo=4").
+                           "&workerId=4fsa&assignmentId=4&turkSubmitTo=4"
+                           "&hitId=5").
                           format(experiment.id))
 
     assert response.status_code == 302
@@ -28,19 +29,20 @@ def test_register(client, users):
     # one from users fixture, one from views
     assert Participant.query.count() == 2
 
-    response = client.get("/mturk/register?experiment_id={}&workerId=4fsa".
+    response = client.get(("/mturk/register?experiment_id={}"
+                           "&workerId=4fsa&assignmentId=4&turkSubmitTo=4"
+                           "&hitId=5").
                           format(experiment.id))
 
     assert response.status_code == 302
     assert Participant.query.count() == 2
 
 
-@mock.patch("quizApp.views.mturk.requests")
 @mock.patch.dict("quizApp.views.mturk.session", values={
-    "mturk_turkSubmitTo": "foobar", "mturk_assignmentId": "barbaz"})
-def test_submit_assignment(requests_mock, app):
+    "mturk_turkSubmitTo": "foobar", "mturk_assignmentId": "barbaz",
+    "mturk_hitId": "qux"})
+def test_submit_assignment(app):
     with app.app_context():
-        mturk.submit_assignment()
-    requests_mock.post.assert_called_once_with(
-        "foobar",
-        data={"assignmentId": "barbaz"})
+        form = mturk.submit_assignment()
+    assert "foobar" in form
+    assert "barbaz" in form

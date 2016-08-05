@@ -2,7 +2,6 @@
 
 """Using excel files, populate the database with some placeholder data.
 """
-import pdb
 from datetime import datetime, timedelta
 import os
 import csv
@@ -376,11 +375,9 @@ def setup_db():
         get_choices()
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
-        pdb.set_trace()
 
         for part_exp in ParticipantExperiment.query.all():
             part_exp.participant = None
-            db.session.add(part_exp)
         db.session.commit()
 
 

@@ -24,6 +24,8 @@
     {{ render_date_time_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'FileField' %}
     {{ render_file_field(field, label_visible, **kwargs) }}
+  {% elif field.type == "HiddenField" %}
+    {{ render_string_field(field, False, **kwargs) }}
   {% else %}
     {{ render_string_field(field, label_visible, **kwargs) }}
 	{% endif %}

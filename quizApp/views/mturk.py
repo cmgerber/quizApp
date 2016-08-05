@@ -2,13 +2,13 @@
 """
 import random
 import string
-import requests
 
-from flask import Blueprint, render_template, request, abort, session
+from flask import Blueprint, render_template, request, session
 from flask import redirect, url_for
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.forms.mturk import PostbackForm
 from quizApp.models import Experiment, Participant
 from quizApp import security
 from flask_security.utils import encrypt_password
@@ -25,10 +25,7 @@ def register():
     record in our database. Log in the user. Redirect them to the experiment
     landing page.
     """
-    try:
-        experiment_id = request.args["experiment_id"]
-    except KeyError:
-        abort(400)
+    experiment_id = request.args["experiment_id"]
 
     experiment = validate_model_id(Experiment, experiment_id)
 
@@ -54,6 +51,7 @@ def register():
             session["experiment_post_finalize_handler"] = "mturk"
             session["mturk_assignmentId"] = request.args["assignmentId"]
             session["mturk_turkSubmitTo"] = request.args["turkSubmitTo"]
+            session["mturk_hitId"] = request.args["hitId"]
 
         login_user(participant)
         # get first assignment and send there
@@ -70,7 +68,9 @@ def register():
 def submit_assignment():
     """Submit the current assignment back to amazon.
     """
-    response = requests.post(
-        session["mturk_turkSubmitTo"],
-        data={"assignmentId": session["mturk_assignmentId"]})
-    print response.status_code
+    postback_form = PostbackForm()
+    return render_template("mturk/postback.html",
+                           mturk_turkSubmitTo=session["mturk_turkSubmitTo"],
+                           mturk_assignmentId=session["mturk_assignmentId"],
+                           mturk_hitId=session["mturk_hitId"],
+                           postback_form=postback_form)

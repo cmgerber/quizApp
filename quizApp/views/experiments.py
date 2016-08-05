@@ -369,12 +369,6 @@ def finalize_experiment(experiment_id):
 
     db.session.commit()
 
-    # Handle any post finalize actions, e.g. providing a button to submit a HIT
-    post_finalize = session.get("experiment_post_finalize_handler", None)
-    if post_finalize:
-        handler = POST_FINALIZE_HANDLERS[post_finalize]
-        handler()
-
     return jsonify({"success": 1,
                     "next_url": url_for('experiments.done_experiment',
                                         experiment_id=experiment_id)})
@@ -384,12 +378,18 @@ def finalize_experiment(experiment_id):
 @roles_required("participant")
 def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
-
     """
+    # Handle any post finalize actions, e.g. providing a button to submit a HIT
+    post_finalize = session.get("experiment_post_finalize_handler", None)
+    addendum = None
+    if post_finalize:
+        handler = POST_FINALIZE_HANDLERS[post_finalize]
+        addendum = handler()
     validate_model_id(Experiment, experiment_id)
     get_participant_experiment_or_abort(experiment_id)
 
-    return render_template("experiments/done_experiment.html")
+    return render_template("experiments/done_experiment.html",
+                           addendum=addendum)
 
 
 @experiments.app_template_filter("datetime_format")
