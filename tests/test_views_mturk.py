@@ -1,6 +1,7 @@
 """Test amazon turk views.
 """
 import mock
+from flask import session
 
 from quizApp.models import Participant
 from quizApp.views import mturk
@@ -33,13 +34,14 @@ def test_register(client, users):
                            "&workerId=4fsa&assignmentId=4&turkSubmitTo=4"
                            "&hitId=5").
                           format(experiment.id))
+    assert "mturk/externalSubmit" in session["mturk_post_url"]
 
     assert response.status_code == 302
     assert Participant.query.count() == 2
 
 
 @mock.patch.dict("quizApp.views.mturk.session", values={
-    "mturk_turkSubmitTo": "foobar", "mturk_assignmentId": "barbaz",
+    "mturk_post_url": "foobar", "mturk_assignmentId": "barbaz",
     "mturk_hitId": "qux"})
 def test_submit_assignment(app):
     with app.app_context():

@@ -71,7 +71,7 @@ def submit_assignment():
     """
     postback_form = PostbackForm()
     return render_template("mturk/postback.html",
-                           mturk_turkSubmitTo=session["mturk_turkSubmitTo"],
+                           mturk_post_url=session["mturk_post_url"],
                            mturk_assignmentId=session["mturk_assignmentId"],
                            mturk_hitId=session["mturk_hitId"],
                            postback_form=postback_form)
