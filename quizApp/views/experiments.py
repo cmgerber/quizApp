@@ -1,14 +1,13 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-import random
 from collections import defaultdict
 from datetime import datetime
 import json
 import os
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app, request
+    current_app, request, session
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -18,13 +17,18 @@ from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
 from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
-from quizApp.views.helpers import validate_model_id
+from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 EXPERIMENT_ROUTE = "/<int:experiment_id>"
 ASSIGNMENTS_ROUTE = EXPERIMENT_ROUTE + "/assignments/"
 ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:a_id>"
+
+POST_FINALIZE_HANDLERS = {
+    "mturk": submit_assignment,
+}
 
 
 def get_participant_experiment_or_abort(experiment_id, code=400):
@@ -37,32 +41,6 @@ def get_participant_experiment_or_abort(experiment_id, code=400):
             filter_by(experiment_id=experiment_id).one()
     except NoResultFound:
         abort(code)
-
-
-def get_or_create_participant_experiment(experiment):
-    """Attempt to retrieve the ParticipantExperiment record for the current
-    user in the given Experiment.
-
-    If no such record exists, grab a random ParticipantExperiment record in the
-    experiment ParticipantExperiment pool, copy it to be the current user's
-    ParticipantExperiment record, and return that.
-    """
-    try:
-        participant_experiment = ParticipantExperiment.query.\
-            filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=experiment.id).one()
-    except NoResultFound:
-        pool = ParticipantExperiment.query.\
-            filter_by(participant_id=None).\
-            filter_by(experiment_id=experiment.id).all()
-        try:
-            participant_experiment = random.choice(pool)
-        except IndexError:
-            return None
-        participant_experiment.participant = current_user
-        db.session.commit()
-
-    return participant_experiment
 
 
 @experiments.route('/', methods=["GET"])
@@ -110,12 +88,7 @@ def read_experiment(experiment_id):
     experiment = validate_model_id(Experiment, experiment_id)
 
     if current_user.has_role("participant"):
-        participant_experiment = get_or_create_participant_experiment(
-            experiment)
-        if len(participant_experiment.assignments) == 0:
-            assignment = None
-        else:
-            assignment = participant_experiment.assignments[0]
+        assignment = get_first_assignment(experiment)
     else:
         assignment = None
 
@@ -385,12 +358,12 @@ def confirm_done_experiment(experiment_id):
 def finalize_experiment(experiment_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
-
-    TODO: needs to be some kind of mturk tie-in, as well as checking that the
-    user is truly done.
     """
     validate_model_id(Experiment, experiment_id)
     part_exp = get_participant_experiment_or_abort(experiment_id)
+
+    if part_exp.complete:
+        abort(400)
 
     part_exp.complete = True
 
@@ -405,12 +378,18 @@ def finalize_experiment(experiment_id):
 @roles_required("participant")
 def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
-
     """
+    # Handle any post finalize actions, e.g. providing a button to submit a HIT
+    post_finalize = session.pop("experiment_post_finalize_handler", None)
+    addendum = None
+    if post_finalize:
+        handler = POST_FINALIZE_HANDLERS[post_finalize]
+        addendum = handler()
     validate_model_id(Experiment, experiment_id)
     get_participant_experiment_or_abort(experiment_id)
 
-    return render_template("experiments/done_experiment.html")
+    return render_template("experiments/done_experiment.html",
+                           addendum=addendum)
 
 
 @experiments.app_template_filter("datetime_format")

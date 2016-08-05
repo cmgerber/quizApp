@@ -7,14 +7,23 @@ from datetime import datetime, timedelta
 
 from quizApp import db
 from quizApp.models import ParticipantExperiment
-from quizApp.views.experiments import get_participant_experiment_or_abort,\
-    get_next_assignment_url, get_graph_url_filter, \
-    get_or_create_participant_experiment
+from quizApp.views.experiments import get_next_assignment_url, \
+    get_graph_url_filter, POST_FINALIZE_HANDLERS,\
+    get_participant_experiment_or_abort
 from tests.factories import ExperimentFactory, create_experiment, \
     GraphFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
+
+
+@mock.patch('quizApp.views.experiments.abort', autospec=True)
+def test_get_participant_experiment_or_abort(abort_mock, client):
+    """Make sure get_participant_experiment_or_abort actually aborts.
+    """
+    get_participant_experiment_or_abort(5, 500)
+
+    abort_mock.assert_called_once_with(500)
 
 
 def test_experiments(client):
@@ -168,15 +177,6 @@ def test_create_experiment(client, users):
     data = json.loads(response.data)
     assert data["success"] == 0
     assert data["errors"]
-
-
-@mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_participant_experiment_or_abort(abort_mock, client):
-    """Make sure get_participant_experiment_or_abort actually aborts.
-    """
-    get_participant_experiment_or_abort(5, 500)
-
-    abort_mock.assert_called_once_with(500)
 
 
 def test_read_experiment(client, users):
@@ -391,6 +391,7 @@ def test_finalize_experiment(client, users):
     experiment.save()
     participant_experiment = experiment.participant_experiments[0]
     participant_experiment.participant = participant
+    participant_experiment.complete = False
     participant_experiment.save()
 
     url = "/experiments/" + str(experiment.id) + "/finalize"
@@ -398,6 +399,11 @@ def test_finalize_experiment(client, users):
     response = client.patch(url)
     assert response.status_code == 200
     assert json_success(response.data)
+
+    url = "/experiments/" + str(experiment.id) + "/finalize"
+
+    response = client.patch(url)
+    assert response.status_code == 400
 
     url = "/experiments/" + str(experiment.id) + "/assignments/" + \
         str(experiment.participant_experiments[0].assignments[0].id)
@@ -410,6 +416,32 @@ def test_finalize_experiment(client, users):
                             )
 
     assert response.status_code == 400
+
+
+def test_done_experiment_hook(client, users):
+    login_participant(client)
+    participant = get_participant()
+
+    experiment2 = create_experiment(3, 1)
+    experiment2.save()
+    participant_experiment2 = experiment2.participant_experiments[0]
+    participant_experiment2.participant = participant
+    participant_experiment2.complete = False
+    participant_experiment2.save()
+
+    mock_handler = mock.MagicMock()
+    POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
+
+    url = "/experiments/" + str(experiment2.id) + "/done"
+    with client.session_transaction() as sess:
+        sess["experiment_post_finalize_handler"] = "test_handler"
+    response = client.get(url)
+    assert response.status_code == 200
+
+    with client.session_transaction() as sess:
+        sess["experiment_post_finalize_handler"] = None
+
+    mock_handler.assert_called_once()
 
 
 def test_done_experiment(client, users):
@@ -449,16 +481,6 @@ def test_get_graph_url_filter():
     assert "missing" in url
 
 
-def test_get_or_create_participant_experiment(client, users):
-    login_participant(client)
-    experiment = create_experiment(1, 1)
-    experiment.participant_experiments = []
-    experiment.save()
-
-    result = get_or_create_participant_experiment(experiment)
-    assert result is None
-
-
 def test_confirm_done_experiment(client, users):
     login_participant(client)
     experiment = create_experiment(1, 1)
@@ -473,3 +495,13 @@ def test_confirm_done_experiment(client, users):
 
     response = client.get(url)
     assert response.status_code == 404
+
+
+def test_results_experiment(client, users):
+    login_experimenter(client)
+
+    exp = create_experiment(1, 1)
+    exp.save()
+    url = "/experiments/" + str(exp.id) + "/results"
+    response = client.get(url)
+    assert response.status_code == 200
