@@ -25,15 +25,21 @@ GRAPH_ROOT = "static/graphs"
 def get_experiments():
     """Populate the database with initial experiments.
     """
+    blurb = ("You will be asked to respond to a series of multiple choice"
+    " questions regarding various graphs and visualizations.")
+
     pre_test = Experiment(name="pre_test",
+                          blurb=blurb,
                           start=datetime.now(),
                           stop=datetime.now() + timedelta(days=3))
 
     test = Experiment(name="test",
+                      blurb=blurb,
                       start=datetime.now(),
                       stop=datetime.now() + timedelta(days=5))
 
     post_test = Experiment(name="post_test",
+                           blurb=blurb,
                            start=datetime.now() + timedelta(days=-3),
                            stop=datetime.now())
 
@@ -376,8 +382,6 @@ def setup_db():
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
 
-        for part_exp in ParticipantExperiment.query.all():
-            part_exp.participant = None
         db.session.commit()
 
 
