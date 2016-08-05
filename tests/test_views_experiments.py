@@ -431,11 +431,15 @@ def test_done_experiment_hook(client, users):
 
     mock_handler = mock.MagicMock()
     POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
+
     url = "/experiments/" + str(experiment2.id) + "/done"
     with client.session_transaction() as sess:
         sess["experiment_post_finalize_handler"] = "test_handler"
     response = client.get(url)
     assert response.status_code == 200
+
+    with client.session_transaction() as sess:
+        sess["experiment_post_finalize_handler"] = None
 
     mock_handler.assert_called_once()
 
