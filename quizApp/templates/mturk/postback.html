@@ -1,5 +1,5 @@
 {% import "macros.html" as macros %}
-<form method="POST" action="{{ mturk_turkSubmitTo }}">
+<form method="POST" action="{{ mturk_post_url }}">
   {{ macros.render_field(postback_form.hitId, value=mturk_hitId) }}
   {{ macros.render_field(postback_form.assignmentId, value=mturk_assignmentId) }}
   {{ macros.render_field(postback_form.submit) }}
