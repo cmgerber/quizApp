@@ -1,6 +1,5 @@
 """These are views for interfacing with amazon mechanical turk.
 """
-
 import random
 import string
 import requests

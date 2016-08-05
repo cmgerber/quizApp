@@ -1,7 +1,9 @@
 """Test amazon turk views.
 """
-from quizApp.models import Participant
+import mock
 
+from quizApp.models import Participant
+from quizApp.views import mturk
 from tests.factories import create_experiment
 
 
@@ -31,3 +33,14 @@ def test_register(client, users):
 
     assert response.status_code == 302
     assert Participant.query.count() == 2
+
+
+@mock.patch("quizApp.views.mturk.requests")
+@mock.patch.dict("quizApp.views.mturk.session", values={
+    "mturk_turkSubmitTo": "foobar", "mturk_assignmentId": "barbaz"})
+def test_submit_assignment(requests_mock, app):
+    with app.app_context():
+        mturk.submit_assignment()
+    requests_mock.post.assert_called_once_with(
+        "foobar",
+        data={"assignmentId": "barbaz"})
