@@ -25,7 +25,9 @@ def test_register(client, users):
                            "&hitId=5").
                           format(experiment.id))
 
-    assert response.status_code == 302
+    assert response.status_code == 200
+    assert "/experiments/{}/assignments/".format(experiment.id) in \
+        response.data
 
     # one from users fixture, one from views
     assert Participant.query.count() == 2
@@ -36,7 +38,9 @@ def test_register(client, users):
                           format(experiment.id))
     assert "mturk/externalSubmit" in session["mturk_post_url"]
 
-    assert response.status_code == 302
+    assert "/experiments/{}/assignments/".format(experiment.id) in \
+        response.data
+    assert response.status_code == 200
     assert Participant.query.count() == 2
 
 
