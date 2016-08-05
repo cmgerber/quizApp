@@ -417,6 +417,11 @@ def test_finalize_experiment(client, users):
 
     assert response.status_code == 400
 
+
+def test_done_experiment_hook(client, users):
+    login_participant(client)
+    participant = get_participant()
+
     experiment2 = create_experiment(3, 1)
     experiment2.save()
     participant_experiment2 = experiment2.participant_experiments[0]
@@ -426,10 +431,15 @@ def test_finalize_experiment(client, users):
 
     mock_handler = mock.MagicMock()
     POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
-    url = "/experiments/" + str(experiment2.id) + "/finalize"
+
+    url = "/experiments/" + str(experiment2.id) + "/done"
     with client.session_transaction() as sess:
         sess["experiment_post_finalize_handler"] = "test_handler"
-    client.patch(url)
+    response = client.get(url)
+    assert response.status_code == 200
+
+    with client.session_transaction() as sess:
+        sess["experiment_post_finalize_handler"] = None
 
     mock_handler.assert_called_once()
 
