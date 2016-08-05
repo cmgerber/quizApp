@@ -380,7 +380,7 @@ def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
     """
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
-    post_finalize = session.get("experiment_post_finalize_handler", None)
+    post_finalize = session.pop("experiment_post_finalize_handler", None)
     addendum = None
     if post_finalize:
         handler = POST_FINALIZE_HANDLERS[post_finalize]

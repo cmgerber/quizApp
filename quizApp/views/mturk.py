@@ -11,7 +11,7 @@ from quizApp.forms.mturk import PostbackForm
 from quizApp.models import Experiment, Participant
 from quizApp import security
 from flask_security.utils import encrypt_password
-from flask_security import login_user
+from flask_security import login_user, logout_user
 
 mturk = Blueprint("mturk", __name__, url_prefix="/mturk")
 
@@ -27,6 +27,8 @@ def register():
     experiment_id = request.args["experiment_id"]
 
     experiment = validate_model_id(Experiment, experiment_id)
+
+    logout_user()  # In case a user is already logged in or anything like that
 
     if "workerId" in request.args:
         # The worker has accepted this HIT
