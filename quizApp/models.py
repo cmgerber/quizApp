@@ -216,7 +216,7 @@ class Assignment(Base):
 
     result_id = db.Column(db.Integer, db.ForeignKey("result.id"))
     result = db.relationship("Result", back_populates="assignment",
-                             info={"import_include": False})
+                             info={"import_include": False}, uselist=False)
 
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
     experiment = db.relationship("Experiment", back_populates="assignments",
@@ -281,15 +281,32 @@ class Result(Base):
         assignment (Assignment): The Assignment that owns this Result.
     """
 
-    assignment_id = db.Column(db.Integer, db.ForeignKey("assignment.id"))
     assignment = db.relationship("Assignment", back_populates="result",
-                                 info={"import_include": False})
+                                 uselist=False)
+    type = db.Column(db.String(50))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "result",
+        "polymorphic_on": type,
+    }
 
 
 class MultipleChoiceQuestionResult(Result):
     """The Choice that a Participant picked in a MultipleChoiceQuestion.
     """
+    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
+    choice = db.relationship("Choice", back_populates="results")
 
+    @db.validates("choice")
+    def validate_choice(self, _, choice):
+        """Make sure this Choice is a valid option for this Question.
+        """
+        assert choice in self.assignment.activity.choices
+        return choice
+
+    __mapper_args__ = {
+        "polymorphic_identity": "mc_question_result",
+    }
 
 
 activity_experiment_table = db.Table(
@@ -464,6 +481,8 @@ class Choice(Base):
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
+    results = db.relationship("MultipleChoiceQuestionResult",
+                              back_populates="choice")
 
 
 class MediaItem(Base):

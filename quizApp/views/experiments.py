@@ -16,7 +16,7 @@ from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
 from quizApp.models import Choice, Experiment, Assignment, \
-    ParticipantExperiment, Activity, Participant
+    ParticipantExperiment, Activity, Participant, MultipleChoiceQuestionResult
 from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.mturk import submit_assignment
 
@@ -162,8 +162,8 @@ def read_question(experiment, question, assignment):
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
 
-    if assignment.choice_id:
-        question_form.choices.default = str(assignment.choice_id)
+    if assignment.result:
+        question_form.choices.default = str(assignment.result.choice_id)
         question_form.process()
 
     question_form.comment.data = assignment.comment
@@ -233,9 +233,12 @@ def update_question_assignment(part_exp, assignment):
                                         int(question_form.choices.data), 400)
 
     # User has answered this question successfully
-    this_index = part_exp.assignments.index(assignment)
-    assignment.choice_id = selected_choice.id
+    result = MultipleChoiceQuestionResult(
+        assignment=assignment,
+        choice=Choice.query.get(selected_choice.id))
+    db.session.add(result)
     assignment.comment = question_form.comment.data
+    this_index = part_exp.assignments.index(assignment)
 
     if this_index == part_exp.progress:
         part_exp.progress += 1
@@ -303,10 +306,10 @@ def get_question_stats(assignment, question_stats):
             "question_text": question.question,
         }
 
-    if assignment.choice:
+    if assignment.result:
         question_stats[question.id]["num_responses"] += 1
 
-        if assignment.choice.correct:
+        if assignment.result:
             question_stats[question.id]["num_correct"] += 1
 
 

@@ -8,7 +8,7 @@ from sqlalchemy import inspect
 from tests.factories import ExperimentFactory, ParticipantFactory, \
     ChoiceFactory, QuestionFactory
 from quizApp.models import ParticipantExperiment, Assignment, Role, Activity, \
-    Question, Graph
+    Question, Graph, MultipleChoiceQuestionResult
 
 
 def test_db_rollback1():
@@ -80,23 +80,23 @@ def test_assignment_validators():
     question = Question()
     question.num_media_items = -1
 
-    assn.choice = choice
-
     question.experiments.append(exp)
 
     assn.activity = question
+    result = MultipleChoiceQuestionResult()
+    assn.result = result
 
     with pytest.raises(AssertionError):
-        assn.choice = choice
+        result.choice = choice
 
     question.choices.append(choice)
 
-    assn.choice = choice
+    assn.result = result
 
     # Test the media item number validations
     question = QuestionFactory()
     question.experiments.append(exp)
-    assn.choice = None
+    assn.result = None
 
     question.num_media_items == len(assn.media_items) + 1
 
