@@ -8,7 +8,8 @@ from sqlalchemy import inspect
 from tests.factories import ExperimentFactory, ParticipantFactory, \
     ChoiceFactory, QuestionFactory
 from quizApp.models import ParticipantExperiment, Assignment, Role, Activity, \
-    Question, Graph, MultipleChoiceQuestionResult
+    Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
+    FreeAnswerQuestion, FreeAnswerQuestionResult
 
 
 def test_db_rollback1():
@@ -84,30 +85,68 @@ def test_assignment_validators():
 
     assn.activity = question
     result = MultipleChoiceQuestionResult()
-    assn.result = result
+    result.choice = choice
 
     with pytest.raises(AssertionError):
-        result.choice = choice
+        assn.result = result
 
     question.choices.append(choice)
 
     assn.result = result
 
     # Test the media item number validations
-    question = QuestionFactory()
-    question.experiments.append(exp)
-    assn.result = None
-
-    question.num_media_items == len(assn.media_items) + 1
+    question2 = QuestionFactory()
+    question2.experiments.append(exp)
+    question2.num_media_items == len(assn.media_items) + 1
 
     with pytest.raises(AssertionError):
-        assn.activity = question
+        assn.activity = question2
 
-    question.num_media_items = -1
-    assn.activity = question
+    question2.num_media_items = -1
+    assn.activity = question2
 
-    question.num_media_items = len(assn.media_items)
-    assn.activity = question
+    question2.num_media_items = len(assn.media_items)
+    assn.activity = question2
+
+
+def test_result_validators():
+    """Test for various result validators.
+    """
+    # Make sure types are correct
+    choice = ChoiceFactory()
+    mc_question = MultipleChoiceQuestion(num_media_items=-1)
+    mc_result = MultipleChoiceQuestionResult(choice=choice)
+    fa_question = FreeAnswerQuestion(num_media_items=-1)
+    fa_result = FreeAnswerQuestionResult()
+    assignment = Assignment()
+
+    experiment = ExperimentFactory()
+    assignment.experiment = experiment
+    mc_question.experiments.append(experiment)
+
+    assignment.activity = mc_question
+
+    with pytest.raises(AssertionError):
+        assignment.result = mc_result
+
+    mc_question.choices.append(choice)
+    assignment.result = mc_result
+
+    assignment = Assignment()
+    assignment.experiment = experiment
+    mc_question.experiments.append(experiment)
+    assignment.activity = mc_question
+
+    with pytest.raises(AssertionError):
+        assignment.result = fa_result
+
+    assignment = Assignment()
+    assignment.experiment = experiment
+    fa_question.experiments.append(experiment)
+    assignment.activity = fa_question
+
+    with pytest.raises(AssertionError):
+        assignment.result = mc_result
 
 
 def test_graph_filename():

@@ -265,6 +265,13 @@ class Assignment(Base):
 
         return choice
 
+    @db.validates("result")
+    def validate_result(self, _, result):
+        """Make sure that this assignment has the correct type of result.
+        """
+        assert isinstance(result, self.activity.Meta.result_class)
+        return result
+
 
 class Result(Base):
     """A Result is the outcome of a Participant completing an Activity.
@@ -297,16 +304,21 @@ class MultipleChoiceQuestionResult(Result):
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
     choice = db.relationship("Choice", back_populates="results")
 
-    @db.validates("choice")
-    def validate_choice(self, _, choice):
+    @db.event.listens_for(Result.assignment, "set", propagate=True)
+    def validate_choice(self, value, *_):
         """Make sure this Choice is a valid option for this Question.
         """
-        assert choice in self.assignment.activity.choices
-        return choice
+        assert self.choice in value.activity.choices
 
     __mapper_args__ = {
         "polymorphic_identity": "mc_question_result",
     }
+
+
+class FreeAnswerQuestionResult(Result):
+    """What a Participant entered into a text box.
+    """
+    result = db.Column(db.String(500))
 
 
 activity_experiment_table = db.Table(
@@ -336,6 +348,10 @@ class Activity(Base):
         assignments (list of Assignment): What Assignments include this
             Activity
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
     experiments = db.relationship("Experiment",
@@ -419,6 +435,11 @@ class Question(Activity):
 class MultipleChoiceQuestion(Question):
     """A MultipleChoiceQuestion has one or more choices that are correct.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = MultipleChoiceQuestionResult
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc',
     }
@@ -456,6 +477,10 @@ class ScaleQuestion(SingleSelectQuestion):
 class FreeAnswerQuestion(Question):
     """A FreeAnswerQuestion allows a Participant to enter an arbitrary answer.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = FreeAnswerQuestionResult
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_freeanswer',

@@ -1,6 +1,7 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
+
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -234,8 +235,8 @@ def update_question_assignment(part_exp, assignment):
 
     # User has answered this question successfully
     result = MultipleChoiceQuestionResult(
-        assignment=assignment,
         choice=Choice.query.get(selected_choice.id))
+    result.assignment = assignment
     db.session.add(result)
     assignment.comment = question_form.comment.data
     this_index = part_exp.assignments.index(assignment)
