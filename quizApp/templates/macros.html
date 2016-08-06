@@ -198,11 +198,17 @@ $(function () {
 {% endmacro %}
 
 {% macro import_datatables() %}
-<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js')}}"></script>
-<script src="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"></script>
-<link href="{{ url_for('static', filename='css/dataTables.bootstrap.min.css') }}" rel="stylesheet">
-<script src="{{ url_for('static', filename='js/enable_dataTables.js')
-}}"></script>
+<script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"
+        integrity="sha384-89aj/hOsfOyfD0Ll+7f2dobA15hDyiNb8m1dJ+rJuqgrGR+PVqNU8pybx4pbF3Cc"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.min.js"
+        integrity="sha384-SR1gffNfWzqensZ3u8O8AkytPBwtg4pKQuOrHUvvCuAxqcoAE4LWPryg4o+1Y9uP"
+        crossorigin="anonymous"></script>
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css"
+      integrity="sha384-p/NQoT0G1WaSOtpkNLDWe2nWstNl65yswLy5523OUNaS0Zg+2Pw+6P2OID9vA74O"
+      crossorigin="anonymous">
+<script src="{{ url_for('static', filename='js/enable_dataTables.js')}}"></script>
 {% endmacro %}
 
 {% macro render_media_item(media_item) %}
