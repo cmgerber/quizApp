@@ -15,7 +15,7 @@ For more detailed installation instructions, check out the
 
 ## Running
 
-    python runserver.py
+    ./manage.py run
 
 ## Using
 
@@ -24,7 +24,7 @@ then navigate to this address in a browser to use the quiz platform.
 
 ## Testing
 
-    ./runtests.sh
+    ./manage.py test
 
 ## Branches
 
