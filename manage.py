@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 """Management script for common operations.
 """
-
+import os
 import click
-import pytest
 from flask.cli import FlaskGroup
 from quizApp import create_app
 
@@ -28,10 +27,9 @@ def test():
     """Set the app config to testing and run pytest, passing along command
     line args.
     """
-    return pytest.main(["--cov=quizApp",
-                        "--flake8",
-                        "--pylint",
-                        "./"])
+    # This looks stupid, but see
+    # https://github.com/pytest-dev/pytest/issues/1357
+    os.system('py.test --cov=quizApp --flake8 --pylint ./')
 
 if __name__ == '__main__':
     cli()
