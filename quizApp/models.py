@@ -580,6 +580,8 @@ class Experiment(Base):
             ParticipantExperiments that are associated with this Experiment
         assignments (list of Assignment): Assignments that are present in this
             Experiment's ParticipantExperiments
+        disable_previous (bool): If True, don't allow Participants to view and
+            modify previous activities.
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -588,6 +590,10 @@ class Experiment(Base):
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
+    disable_previous = db.Column(db.Boolean,
+                                 info={"label": ("Don't let participants go "
+                                                 "back after submitting an "
+                                                 "activity?")})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,
