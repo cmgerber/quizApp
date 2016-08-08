@@ -1,7 +1,6 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -145,6 +144,10 @@ def read_assignment(experiment_id, a_id):
     if assignment not in part_exp.assignments:
         abort(400)
 
+    if experiment.disable_previous and part_exp.progress > \
+            part_exp.assignments.index(assignment) and not part_exp.complete:
+        abort(400)
+
     activity = validate_model_id(Activity, assignment.activity_id)
 
     if "question" in activity.type:
@@ -159,7 +162,6 @@ def read_question(experiment, question, assignment):
     This function assumes that all necessary error checking has been done on
     its parameters.
     """
-
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
 
@@ -186,7 +188,7 @@ def read_question(experiment, question, assignment):
 
     previous_assignment = None
 
-    if this_index - 1 > -1:
+    if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = part_exp.assignments[this_index - 1]
 
     return render_template("experiments/read_question.html", exp=experiment,
@@ -203,7 +205,7 @@ def update_assignment(experiment_id, a_id):
     """Record a user's answer to this assignment
     """
     assignment = validate_model_id(Assignment, a_id)
-    validate_model_id(Experiment, experiment_id)
+    experiment = validate_model_id(Experiment, experiment_id)
     part_exp = assignment.participant_experiment
 
     if part_exp.participant != current_user:
@@ -212,14 +214,20 @@ def update_assignment(experiment_id, a_id):
     if part_exp.complete:
         abort(400)
 
+    if experiment.disable_previous and part_exp.progress > \
+            part_exp.assignments.index(assignment):
+        abort(400)
+
+    this_index = part_exp.assignments.index(assignment)
+
     if "question" in assignment.activity.type:
-        return update_question_assignment(part_exp, assignment)
+        return update_question_assignment(part_exp, assignment, this_index)
 
     # Pass for now
     return jsonify({"success": 1})
 
 
-def update_question_assignment(part_exp, assignment):
+def update_question_assignment(part_exp, assignment, this_index):
     """Update an assignment whose activity is a question.
     """
     question = assignment.activity
@@ -239,12 +247,11 @@ def update_question_assignment(part_exp, assignment):
     result.assignment = assignment
     db.session.add(result)
     assignment.comment = question_form.comment.data
-    this_index = part_exp.assignments.index(assignment)
+
+    next_url = get_next_assignment_url(part_exp, this_index)
 
     if this_index == part_exp.progress:
         part_exp.progress += 1
-
-    next_url = get_next_assignment_url(part_exp, this_index)
 
     db.session.commit()
     return jsonify({"success": 1, "next_url": next_url})
