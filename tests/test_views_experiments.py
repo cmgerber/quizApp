@@ -253,6 +253,25 @@ def test_read_assignment(client, users):
         assert response.status_code == 200
         assert json_success(response.data)
 
+    for assignment in participant_experiment.assignments:
+        # Make sure we can read it
+        question = assignment.activity
+        response = client.get(url + str(assignment.id))
+        assert response.status_code == 200
+        assert question.question in response.data
+
+    experiment.disable_previous = True
+    db.session.commit()
+
+    response = client.get(url + str(participant_experiment.assignments[0].id))
+    assert response.status_code == 400
+
+    response = client.patch(
+        url + str(participant_experiment.assignments[0].id),
+        data={"choices": str(participant_experiment.assignments[0].
+                             activity.choices[0].id)})
+    assert response.status_code == 400
+
     response = client.patch("/experiments/" + str(experiment.id) + "/finalize")
     assert response.status_code == 200
     assert json_success(response.data)

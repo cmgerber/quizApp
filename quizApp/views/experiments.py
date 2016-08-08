@@ -145,7 +145,7 @@ def read_assignment(experiment_id, a_id):
         abort(400)
 
     if experiment.disable_previous and part_exp.progress > \
-            part_exp.assignments.index(assignment):
+            part_exp.assignments.index(assignment) and not part_exp.complete:
         abort(400)
 
     activity = validate_model_id(Activity, assignment.activity_id)
