@@ -214,9 +214,9 @@ class Assignment(Base):
     activity = db.relationship("Activity", back_populates="assignments",
                                info={"import_include": False})
 
-    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
-    choice = db.relationship("Choice", back_populates="assignments",
-                             info={"import_include": False})
+    result_id = db.Column(db.Integer, db.ForeignKey("result.id"))
+    result = db.relationship("Result", back_populates="assignment",
+                             info={"import_include": False}, uselist=False)
 
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
     experiment = db.relationship("Experiment", back_populates="assignments",
@@ -265,6 +265,61 @@ class Assignment(Base):
 
         return choice
 
+    @db.validates("result")
+    def validate_result(self, _, result):
+        """Make sure that this assignment has the correct type of result.
+        """
+        assert isinstance(result, self.activity.Meta.result_class)
+        return result
+
+
+class Result(Base):
+    """A Result is the outcome of a Participant completing an Activity.
+
+    Different Activities have different data that they generate, so this model
+    does not actually contain any information on the outcome of an Activity.
+    That is something that child classes of this class must define in their
+    schemas.
+
+    On the Assignment level, the type of Activity will determine the type of
+    Result.
+
+    Attributes:
+        assignment (Assignment): The Assignment that owns this Result.
+    """
+
+    assignment = db.relationship("Assignment", back_populates="result",
+                                 uselist=False)
+    type = db.Column(db.String(50))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "result",
+        "polymorphic_on": type,
+    }
+
+
+class MultipleChoiceQuestionResult(Result):
+    """The Choice that a Participant picked in a MultipleChoiceQuestion.
+    """
+    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
+    choice = db.relationship("Choice", back_populates="results")
+
+    @db.event.listens_for(Result.assignment, "set", propagate=True)
+    def validate_choice(self, value, *_):
+        """Make sure this Choice is a valid option for this Question.
+        """
+        assert self.choice in value.activity.choices
+
+    __mapper_args__ = {
+        "polymorphic_identity": "mc_question_result",
+    }
+
+
+class FreeAnswerQuestionResult(Result):
+    """What a Participant entered into a text box.
+    """
+    result = db.Column(db.String(500))
+
 
 activity_experiment_table = db.Table(
     "activity_experiment", db.metadata,
@@ -293,6 +348,10 @@ class Activity(Base):
         assignments (list of Assignment): What Assignments include this
             Activity
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
     experiments = db.relationship("Experiment",
@@ -376,6 +435,11 @@ class Question(Activity):
 class MultipleChoiceQuestion(Question):
     """A MultipleChoiceQuestion has one or more choices that are correct.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = MultipleChoiceQuestionResult
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc',
     }
@@ -413,6 +477,10 @@ class ScaleQuestion(SingleSelectQuestion):
 class FreeAnswerQuestion(Question):
     """A FreeAnswerQuestion allows a Participant to enter an arbitrary answer.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = FreeAnswerQuestionResult
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_freeanswer',
@@ -427,8 +495,6 @@ class Choice(Base):
         label (string): The label for this choice (1,2,3,a,b,c etc)
         correct (bool): "True" if this choice is correct, "False" otherwise
         question (Question): Which Question owns this Choice
-        assignment (Assignment): Which Assignments had Participants pick this
-            Choice as the correct answer
     """
     choice = db.Column(db.String(200), nullable=False,
                        info={"label": "Choice"})
@@ -440,8 +506,8 @@ class Choice(Base):
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
-    assignments = db.relationship("Assignment", back_populates="choice",
-                                  info={"import_include": False})
+    results = db.relationship("MultipleChoiceQuestionResult",
+                              back_populates="choice")
 
 
 class MediaItem(Base):
