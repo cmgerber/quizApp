@@ -403,17 +403,19 @@ def finalize_experiment(experiment_id):
 def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
     """
+    validate_model_id(Experiment, experiment_id)
+    participant_experiment = get_participant_experiment_or_abort(experiment_id)
+
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)
     addendum = None
     if post_finalize:
         handler = POST_FINALIZE_HANDLERS[post_finalize]
         addendum = handler()
-    validate_model_id(Experiment, experiment_id)
-    get_participant_experiment_or_abort(experiment_id)
 
     return render_template("experiments/done_experiment.html",
-                           addendum=addendum)
+                           addendum=addendum,
+                           participant_experiment=participant_experiment)
 
 
 @experiments.app_template_filter("datetime_format")
