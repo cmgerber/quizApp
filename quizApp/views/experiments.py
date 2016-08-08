@@ -219,11 +219,9 @@ def update_assignment(experiment_id, a_id):
         abort(400)
 
     this_index = part_exp.assignments.index(assignment)
+
     if "question" in assignment.activity.type:
         return update_question_assignment(part_exp, assignment, this_index)
-
-    if this_index == part_exp.progress:
-        part_exp.progress += 1
 
     # Pass for now
     return jsonify({"success": 1})
@@ -251,6 +249,9 @@ def update_question_assignment(part_exp, assignment, this_index):
     assignment.comment = question_form.comment.data
 
     next_url = get_next_assignment_url(part_exp, this_index)
+
+    if this_index == part_exp.progress:
+        part_exp.progress += 1
 
     db.session.commit()
     return jsonify({"success": 1, "next_url": next_url})
