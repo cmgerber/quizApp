@@ -24,24 +24,26 @@ Thank you for participating.</h3>
   </thead>
   <tbody>
     {% for assignment in participant_experiment.assignments %}
-    <tr class="{% if assignment.result.choice.correct %}
-    success
-    {% else%}
-    danger
-    {% endif %}">
-      <td><a href="{{ url_for('experiments.read_assignment',
-      experiment_id=participant_experiment.experiment.id,
-      a_id=assignment.id) }}">{{ assignment.id }}</a>
-      </td>
-      <td>
-        {% if assignment.result.choice.correct %}
-        {{ macros.render_glyphicon("ok") }}
-        {% else %}
-        {{ macros.render_glyphicon("remove") }}
-        {% endif %}
-      </td>
-      <td>{{ assignment.activity.explanation }}</td>
-    </tr>
+    {% if assignment.result %}
+      <tr class="{% if assignment.result.choice.correct %}
+      success
+      {% else%}
+      danger
+      {% endif %}">
+        <td><a href="{{ url_for('experiments.read_assignment',
+        experiment_id=participant_experiment.experiment.id,
+        a_id=assignment.id) }}">{{ assignment.id }}</a>
+        </td>
+        <td>
+          {% if assignment.result.choice.correct %}
+          {{ macros.render_glyphicon("ok") }}
+          {% else %}
+          {{ macros.render_glyphicon("remove") }}
+          {% endif %}
+        </td>
+        <td>{{ assignment.activity.explanation }}</td>
+      </tr>
+    {% endif %}
     {% endfor %}
   </tbody>
 </table>
