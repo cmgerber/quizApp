@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 import os
 
+import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request, session
 from flask_security import login_required, current_user, roles_required
@@ -252,6 +253,13 @@ def update_question_assignment(part_exp, assignment, this_index):
 
     if this_index == part_exp.progress:
         part_exp.progress += 1
+
+    # Record time to solve
+    if question_form.render_time.data and question_form.submit_time.data:
+        render_datetime = dateutil.parser.parse(question_form.render_time.data)
+        submit_datetime = dateutil.parser.parse(question_form.submit_time.data)
+        time_to_submit = submit_datetime - render_datetime
+        question.time_to_submit = time_to_submit
 
     db.session.commit()
     return jsonify({"success": 1, "next_url": next_url})

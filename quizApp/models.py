@@ -400,6 +400,8 @@ class Question(Activity):
             they picked what they did after they answer the question.
         num_media_items (int): How many MediaItems should be shown when
             displaying this question
+        time_to_submit (timedelta): Time from the question being rendered to
+            the question being submitted.
         choices (list of Choice): What Choices this Question has
         datasets (list of Dataset): Which Datasets this Question can pull
             MediaItems from. If this is empty, this Question can use MediaItems
@@ -415,6 +417,7 @@ class Question(Activity):
                                     "label": "Number of media items to show"
                                 })
     needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
+    time_to_submit = db.Column(db.Interval())
 
     choices = db.relationship("Choice", back_populates="question",
                               info={"import_include": False})

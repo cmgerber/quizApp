@@ -4,7 +4,7 @@
 from datetime import datetime
 
 from flask_wtf import Form
-from wtforms import SubmitField, RadioField, TextAreaField
+from wtforms import SubmitField, RadioField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired
 from wtforms_alchemy import ModelForm
 
@@ -33,6 +33,8 @@ class QuestionForm(Form):
     """
     submit = SubmitField("Submit")
     comment = TextAreaField()
+    render_time = HiddenField()
+    submit_time = HiddenField()
 
     def populate_choices(self, choice_pool):
         """Child classes should implement this themselves for choice selection.

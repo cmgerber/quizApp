@@ -4,6 +4,7 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/activity_timing.js') }}"></script>
 <script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {% endblock %}
@@ -26,7 +27,10 @@ Quiz
 <div id='question'>
   <h3>{{ question.question }}</h3>
   <form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
-  a_id=assignment.id)}}" method="patch" id="question-submit-form">
+  a_id=assignment.id)}}" method="patch" id="question-submit-form"
+  class="timed-form">
+    {{ macros.render_field(mc_form.render_time) }}
+    {{ macros.render_field(mc_form.submit_time) }}
     {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
     {% if question.needs_comment %}
     <p>Why do you think this is the correct choice?</p>
