@@ -28,13 +28,19 @@ class LikertField(RadioField):
     pass
 
 
-class QuestionForm(Form):
+class ActivityForm(Form):
+    """Form for rendering a general Activity. Mostly just for keeping track of
+    render and submit time.
+    """
+    render_time = HiddenField()
+    submit_time = HiddenField()
+
+
+class QuestionForm(ActivityForm):
     """Form for rendering a general Question.
     """
     submit = SubmitField("Submit")
     comment = TextAreaField()
-    render_time = HiddenField()
-    submit_time = HiddenField()
 
     def populate_choices(self, choice_pool):
         """Child classes should implement this themselves for choice selection.
@@ -55,7 +61,7 @@ class MultipleChoiceForm(QuestionForm):
                                 for c in choice_pool]
 
 
-class ScaleForm(MultipleChoiceForm):
+class ScaleForm(QuestionForm):
     """Form for rendering a likert scale question.
     """
     choices = LikertField(validators=[DataRequired()])

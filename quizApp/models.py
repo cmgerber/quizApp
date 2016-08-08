@@ -341,6 +341,8 @@ class Activity(Base):
     Attributes:
         type (string): Discriminator column that determines what kind
             of Activity this is.
+        time_to_submit (timedelta): Time from the question being rendered to
+            the question being submitted.
         category (string): A description of this assignment's category, for the
             users' convenience.
         experiments (list of Experiment): What Experiments include this
@@ -354,6 +356,7 @@ class Activity(Base):
         result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
+    time_to_submit = db.Column(db.Interval())
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities",
@@ -400,8 +403,6 @@ class Question(Activity):
             they picked what they did after they answer the question.
         num_media_items (int): How many MediaItems should be shown when
             displaying this question
-        time_to_submit (timedelta): Time from the question being rendered to
-            the question being submitted.
         choices (list of Choice): What Choices this Question has
         datasets (list of Dataset): Which Datasets this Question can pull
             MediaItems from. If this is empty, this Question can use MediaItems
@@ -417,7 +418,6 @@ class Question(Activity):
                                     "label": "Number of media items to show"
                                 })
     needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
-    time_to_submit = db.Column(db.Interval())
 
     choices = db.relationship("Choice", back_populates="question",
                               info={"import_include": False})

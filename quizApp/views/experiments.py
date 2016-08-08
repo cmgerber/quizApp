@@ -255,6 +255,9 @@ def update_question_assignment(part_exp, assignment, this_index):
         part_exp.progress += 1
 
     # Record time to solve
+    # You may think it makes sense to have this in update_assignment, but we
+    # first need to know if the submission was successful, which depends on the
+    # kind of assignment.
     if question_form.render_time.data and question_form.submit_time.data:
         render_datetime = dateutil.parser.parse(question_form.render_time.data)
         submit_datetime = dateutil.parser.parse(question_form.submit_time.data)
