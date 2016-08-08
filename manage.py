@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """Management script for common operations.
 """
-import os
+import sys
+import subprocess
 import click
 from flask.cli import FlaskGroup
 from quizApp import create_app
@@ -29,7 +30,11 @@ def test():
     """
     # This looks stupid, but see
     # https://github.com/pytest-dev/pytest/issues/1357
-    os.system('py.test --cov=quizApp --flake8 --pylint ./')
+    sys.exit(subprocess.call(['py.test',
+                              '--cov=quizApp',
+                              '--flake8',
+                              '--pylint',
+                              './']))
 
 if __name__ == '__main__':
     cli()
