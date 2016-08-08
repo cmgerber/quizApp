@@ -244,6 +244,7 @@ def test_read_assignment(client, users):
         question = assignment.activity
         response = client.get(url + str(assignment.id))
         assert question.question in response.data
+        assert "Time elapsed" not in response.data
 
         # And save a random question
         choice = random.choice(assignment.activity.choices)
@@ -337,11 +338,20 @@ def test_update_assignment(client, users):
 
     choice = random.choice(assignment.activity.choices)
 
+    time_to_submit = timedelta(hours=1)
+    start_ts = datetime.now()
+    render_ts = start_ts.isoformat()
+    submit_ts = (start_ts + time_to_submit).isoformat()
+
     response = client.patch(url,
-                            data={"choices": choice.id}
+                            data={"choices": choice.id,
+                                  "render_time": render_ts,
+                                  "submit_time": submit_ts}
                             )
 
+    db.session.refresh(assignment)
     assert response.status_code == 200
+    assert assignment.activity.time_to_submit == time_to_submit
     assert json_success(response.data)
 
     # Make sure we can edit choices

@@ -31,6 +31,7 @@ def get_experiments():
     pre_test = Experiment(name="pre_test",
                           blurb=blurb,
                           disable_previous=True,
+                          show_timers=True,
                           start=datetime.now(),
                           stop=datetime.now() + timedelta(days=3))
 

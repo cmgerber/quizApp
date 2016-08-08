@@ -341,6 +341,8 @@ class Activity(Base):
     Attributes:
         type (string): Discriminator column that determines what kind
             of Activity this is.
+        time_to_submit (timedelta): Time from the question being rendered to
+            the question being submitted.
         category (string): A description of this assignment's category, for the
             users' convenience.
         experiments (list of Experiment): What Experiments include this
@@ -354,6 +356,7 @@ class Activity(Base):
         result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
+    time_to_submit = db.Column(db.Interval())
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities",
@@ -582,6 +585,8 @@ class Experiment(Base):
             Experiment's ParticipantExperiments
         disable_previous (bool): If True, don't allow Participants to view and
             modify previous activities.
+        show_timers (bool): If True, display a timer on each activity
+            expressing how long the user has been viewing this activity.
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -594,6 +599,8 @@ class Experiment(Base):
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "
                                                  "activity?")})
+    show_timers = db.Column(db.Boolean,
+                            info={"label": "Show timers on activities?"})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,
