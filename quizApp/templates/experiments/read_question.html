@@ -4,16 +4,19 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/jquery.runner-min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/activity_timing.js') }}"></script>
 <script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}
-Quiz
-{% endblock %}
+Quiz{% endblock %}
 
 {% block content %}
+{% if exp.show_timers and not experiment_complete %}
+Time elapsed: <span class="stopwatch"></span>
+{% endif %}
 {% for media_item in assignment.media_items %}
 <div class="row media-item-container"
   {% if not experiment_complete and media_item.flash %}

@@ -585,6 +585,8 @@ class Experiment(Base):
             Experiment's ParticipantExperiments
         disable_previous (bool): If True, don't allow Participants to view and
             modify previous activities.
+        show_timers (bool): If True, display a timer on each activity
+            expressing how long the user has been viewing this activity.
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -597,6 +599,8 @@ class Experiment(Base):
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "
                                                  "activity?")})
+    show_timers = db.Column(db.Boolean,
+                            info={"label": "Show timers on activities?"})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,

@@ -244,6 +244,7 @@ def test_read_assignment(client, users):
         question = assignment.activity
         response = client.get(url + str(assignment.id))
         assert question.question in response.data
+        assert "Time elapsed" not in response.data
 
         # And save a random question
         choice = random.choice(assignment.activity.choices)

@@ -192,8 +192,10 @@ def read_question(experiment, question, assignment):
     if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = part_exp.assignments[this_index - 1]
 
-    return render_template("experiments/read_question.html", exp=experiment,
-                           question=question, assignment=assignment,
+    return render_template("experiments/read_question.html",
+                           exp=experiment,
+                           question=question,
+                           assignment=assignment,
                            mc_form=question_form,
                            next_url=next_url,
                            explanation=explanation,

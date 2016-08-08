@@ -8,4 +8,7 @@ $(document).ready(function() {
     var submit_time_field = $.find("#submit_time");
     $(submit_time_field).val(date)
   })
+
+  $(".stopwatch").runner();
+  $(".stopwatch").runner('start');
 })
