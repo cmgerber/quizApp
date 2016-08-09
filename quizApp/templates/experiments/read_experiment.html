@@ -7,6 +7,9 @@
 
 {% block title %}
 {{ experiment.name }}
+{% if current_user.has_role("experimenter") %}
+ - Preview
+{% endif %}
 {% endblock %}
 
 {% import 'macros.html' as macros %}
@@ -22,5 +25,7 @@
     {% else %}
       <p>You are done with this experiment.</p>
     {% endif %}
+  {% else %}
+  <a href="{{ url_for('experiments.read_experiments') }}" class="btn btn-primary" role="button">Back to experiment listing</a> 
   {% endif %}
 {% endblock %}
