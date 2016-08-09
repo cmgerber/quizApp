@@ -39,9 +39,9 @@ Thank you for participating.</h3>
         </td>
         <td>
           {% if assignment.result.choice.correct %}
-          {{ macros.render_glyphicon("ok") }}
+          {{ macros.render_glyphicon("ok") }} Correct
           {% else %}
-          {{ macros.render_glyphicon("remove") }}
+          {{ macros.render_glyphicon("remove") }} Incorrect
           {% endif %}
         </td>
         <td>{{ assignment.score }}</td>
