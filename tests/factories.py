@@ -34,6 +34,7 @@ class ChoiceFactory(factory.Factory):
     correct = factory.Faker("boolean")
     points = factory.Faker('pyint')
 
+
 class ActivityFactory(factory.Factory):
     class Meta:
         model = models.Activity

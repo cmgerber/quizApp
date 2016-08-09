@@ -192,6 +192,8 @@ def read_question(experiment, question, assignment):
     if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = part_exp.assignments[this_index - 1]
 
+    cumulative_score = assignment.participant_experiment.score
+
     return render_template("experiments/read_question.html",
                            exp=experiment,
                            question=question,
@@ -199,6 +201,7 @@ def read_question(experiment, question, assignment):
                            mc_form=question_form,
                            next_url=next_url,
                            explanation=explanation,
+                           cumulative_score=cumulative_score,
                            experiment_complete=part_exp.complete,
                            previous_assignment=previous_assignment)
 
@@ -410,10 +413,6 @@ def done_experiment(experiment_id):
     validate_model_id(Experiment, experiment_id)
     participant_experiment = get_participant_experiment_or_abort(experiment_id)
 
-    total_score = 0
-    for assignment in participant_experiment.assignments:
-        total_score += assignment.get_score()
-
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)
     addendum = None
@@ -423,7 +422,6 @@ def done_experiment(experiment_id):
 
     return render_template("experiments/done_experiment.html",
                            addendum=addendum,
-                           total_score=total_score,
                            participant_experiment=participant_experiment)
 
 

@@ -352,8 +352,7 @@ def test_update_assignment(client, users):
     db.session.refresh(assignment)
 
     assert response.status_code == 200
-    assert session["cumulative_score"] == assignment.get_score()
-    assert assignment.activity.time_to_submit == time_to_submit
+    assert assignment.time_to_submit == time_to_submit
     assert json_success(response.data)
 
     # Make sure we can edit choices

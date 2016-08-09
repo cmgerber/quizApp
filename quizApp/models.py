@@ -131,8 +131,6 @@ class ParticipantExperiment(Base):
         progress (int): Which question the user is currently working on.
         complete (bool): True if the user has finalized their responses, False
             otherwise
-        score (int): The number of points accrued in this Experiment by this
-            Participant
         participant (Participant): Which Participant this refers to
         experiment (Experiment): Which Experiment this refers to
         assignments (list of Assignment): The assignments that this Participant
@@ -147,8 +145,6 @@ class ParticipantExperiment(Base):
                          info={"import_include": False})
     complete = db.Column(db.Boolean, default=False,
                          info={"import_include": False})
-    score = db.Column(db.Integer,
-                      info={"import_include": False})
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     participant = db.relationship("Participant", back_populates="experiments",
@@ -161,6 +157,21 @@ class ParticipantExperiment(Base):
     assignments = db.relationship("Assignment",
                                   back_populates="participant_experiment",
                                   info={"import_include": False})
+
+    @property
+    def score(self):
+        """Return the cumulative score of all assignments in this
+        ParticipantExperiment,
+
+        Currently this iterates through all assignments. Profiling will be
+        required to see if this is too slow.
+        """
+        score = 0
+
+        for assignment in self.assignments[:self.progress]:
+            score += assignment.score
+
+        return score
 
     @db.validates('assignments')
     def validate_assignments(self, _, assignment):
@@ -232,7 +243,8 @@ class Assignment(Base):
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments")
 
-    def get_score(self):
+    @property
+    def score(self):
         """Get the score for this assignment.
 
         This method simply passes `result` to the `activity`'s `get_score`
@@ -629,7 +641,7 @@ class Experiment(Base):
             modify previous activities.
         show_timers (bool): If True, display a timer on each activity
             expressing how long the user has been viewing this activity.
-        show_score (bool): If True, show the participant a cumulative score on
+        show_scores (bool): If True, show the participant a cumulative score on
             every activity.
     """
 
@@ -639,9 +651,9 @@ class Experiment(Base):
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
-    show_score = db.Column(db.Boolean,
-                           info={"label": ("Show score tally during the"
-                                           " experiment?")})
+    show_scores = db.Column(db.Boolean,
+                            info={"label": ("Show score tally during the"
+                                            " experiment?")})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "

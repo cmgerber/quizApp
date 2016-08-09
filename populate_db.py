@@ -32,6 +32,7 @@ def get_experiments():
                           blurb=blurb,
                           disable_previous=True,
                           show_timers=True,
+                          show_scores=True,
                           start=datetime.now(),
                           stop=datetime.now() + timedelta(days=3))
 
