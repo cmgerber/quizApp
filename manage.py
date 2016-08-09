@@ -6,6 +6,7 @@ import subprocess
 import click
 from flask.cli import FlaskGroup
 from quizApp import create_app
+from scripts import populate_db
 
 
 @click.pass_context
@@ -35,6 +36,13 @@ def test():
                               '--flake8',
                               '--pylint',
                               './']))
+
+
+@cli.command("populate-db")
+def run_populate_db():
+    """Run the populate_db.py script.
+    """
+    populate_db.setup_db()
 
 if __name__ == '__main__':
     cli()

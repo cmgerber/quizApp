@@ -8,7 +8,7 @@ Platform for asking questions based on visualizations.
 
     pip install -r requirements.txt
     mysql -u root -p < setup_db.sql
-    python populate_students_db.py
+    ./manage.py poplate-db
 
 For more detailed installation instructions, check out the
 [documentation](https://quizapp.readthedocs.io/en/latest/getting_started.html).
