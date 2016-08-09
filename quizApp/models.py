@@ -647,7 +647,7 @@ class ScorecardSettings(Base):
     Attributes:
         display_scorecard (bool): Whether or not to display this scorecard at
             all.
-        display_points (bool): Whether or not to display a tally of points.
+        display_score (bool): Whether or not to display a tally of points.
         display_time (bool): Whether or not to display a count of how much time
             elapsed.
         display_correctness (bool): Whether or not to display correctness
@@ -658,8 +658,8 @@ class ScorecardSettings(Base):
 
     display_scorecard = db.Column(db.Boolean,
                                   info={"label": "Display scorecards?"})
-    display_points = db.Column(db.Boolean,
-                               info={"label": "Display points on scorecard?"})
+    display_score = db.Column(db.Boolean,
+                              info={"label": "Display points on scorecard?"})
     display_time = db.Column(db.Boolean,
                              info={"label": "Display time on scorecard?"})
     display_correctness = db.Column(db.Boolean,

@@ -21,6 +21,14 @@ from quizApp.config import basedir
 
 GRAPH_ROOT = "static/graphs"
 
+def randomize_scorecard_settings(scorecard):
+    """Generate some random data for this scorecard
+    """
+    settings = ["display_scorecard", "display_score", "display_correctness",
+                "display_time", "display_feedback"]
+
+    for setting in settings:
+        setattr(scorecard, setting, bool(random.getrandbits(1)))
 
 def get_experiments():
     """Populate the database with initial experiments.
@@ -97,6 +105,7 @@ def get_questions():
                 num_media_items=1,
                 category=random.choice(categories),
                 needs_comment=needs_comment)
+            randomize_scorecard_settings(question.scorecard_settings)
 
 
             if "scale" in question.type:
