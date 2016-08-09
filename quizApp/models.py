@@ -228,6 +228,14 @@ class Assignment(Base):
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments")
 
+    def get_score(self):
+        """Get the score for this assignment.
+
+        This method simply passes `result` to the `activity`'s `get_score`
+        method and returns the result.
+        """
+        return self.activity.get_score(self.result)
+
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
         match.
@@ -318,7 +326,7 @@ class MultipleChoiceQuestionResult(Result):
 class FreeAnswerQuestionResult(Result):
     """What a Participant entered into a text box.
     """
-    result = db.Column(db.String(500))
+    text = db.Column(db.String(500))
 
 
 activity_experiment_table = db.Table(
@@ -365,6 +373,15 @@ class Activity(Base):
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
+
+    def get_score(self, result):
+        """Get the participant's score for this Activity.
+
+        Given a Result object, an Activity subclass should be able to
+        "score" the result in some way, and return an integer quantifying the
+        Participant's performance.
+        """
+        pass
 
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
@@ -443,6 +460,15 @@ class MultipleChoiceQuestion(Question):
         """
         result_class = MultipleChoiceQuestionResult
 
+    def get_score(self, result):
+        """If this Question was answered, return the point value of this
+        choice. Otherwise return 0.
+        """
+        try:
+            return result.choice.points
+        except AttributeError:
+            return 0
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc',
     }
@@ -485,6 +511,13 @@ class FreeAnswerQuestion(Question):
         """
         result_class = FreeAnswerQuestionResult
 
+    def get_score(self, result):
+        """If this Question was answered, return 1.
+        """
+        if result.text:
+            return 1
+        return 0
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_freeanswer',
     }
@@ -498,6 +531,8 @@ class Choice(Base):
         label (string): The label for this choice (1,2,3,a,b,c etc)
         correct (bool): "True" if this choice is correct, "False" otherwise
         question (Question): Which Question owns this Choice
+        points (int): How many points the Participant gets for picking this
+            choice
     """
     choice = db.Column(db.String(200), nullable=False,
                        info={"label": "Choice"})
@@ -506,6 +541,7 @@ class Choice(Base):
     correct = db.Column(db.Boolean,
                         info={"label": "Correct?"})
 
+    points = db.Column(db.Integer)
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 

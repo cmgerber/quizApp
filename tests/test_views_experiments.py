@@ -451,7 +451,7 @@ def test_done_experiment_hook(client, users):
     login_participant(client)
     participant = get_participant()
 
-    experiment2 = create_experiment(3, 1)
+    experiment2 = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment2.save()
     participant_experiment2 = experiment2.participant_experiments[0]
     participant_experiment2.participant = participant
@@ -477,7 +477,7 @@ def test_done_experiment(client, users):
     login_participant(client)
     participant = get_participant()
 
-    experiment = create_experiment(3, 1)
+    experiment = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment.save()
     participant_experiment = experiment.participant_experiments[0]
     participant_experiment.participant = participant

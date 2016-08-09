@@ -406,6 +406,10 @@ def done_experiment(experiment_id):
     validate_model_id(Experiment, experiment_id)
     participant_experiment = get_participant_experiment_or_abort(experiment_id)
 
+    total_score = 0
+    for assignment in participant_experiment.assignments:
+        total_score += assignment.get_score()
+
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)
     addendum = None
@@ -415,6 +419,7 @@ def done_experiment(experiment_id):
 
     return render_template("experiments/done_experiment.html",
                            addendum=addendum,
+                           total_score=total_score,
                            participant_experiment=participant_experiment)
 
 

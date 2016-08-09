@@ -14,11 +14,14 @@ Thank you for participating.</h3>
 
 <p>How you did:</p>
 
+<p>You scored a total of {{ total_score }} points.</p>
+
 <table class="table table-striped">
   <thead>
     <tr>
       <th>Assignment</th>
       <th>Correct?</th>
+      <th>Score</th>
       <th>Feedback</th>
     </tr>
   </thead>
@@ -41,6 +44,7 @@ Thank you for participating.</h3>
           {{ macros.render_glyphicon("remove") }}
           {% endif %}
         </td>
+        <td>{{ assignment.get_score() }}</td>
         <td>{{ assignment.activity.explanation }}</td>
       </tr>
     {% endif %}
