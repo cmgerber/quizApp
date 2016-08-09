@@ -2,22 +2,34 @@
 """
 
 from wtforms import SubmitField
-from wtforms_alchemy import ModelForm
+from wtforms_alchemy import ModelForm, ModelFormField
 
-from quizApp.forms.common import ListObjectForm, OrderFormMixin
-from quizApp.models import Choice, Question
+from quizApp.forms.common import ListObjectForm, OrderFormMixin,\
+    ScorecardSettingsForm
+from quizApp.models import Choice, Question, Activity
 
 
-class QuestionForm(OrderFormMixin, ModelForm):
+class ActivityForm(OrderFormMixin, ModelForm):
+    """Generalized class for creation/updating of Activities
+    """
+    class Meta(object):
+        """Specify model and field order.
+        """
+        model = Activity
+        order = ('*', 'scorecard_settings', 'submit')
+        exclude = ['time_to_submit']
+
+    scorecard_settings = ModelFormField(ScorecardSettingsForm)
+    submit = SubmitField("Submit")
+
+
+class QuestionForm(ActivityForm):
     """Form that can be used for creating or updating questions.
     """
     class Meta(object):
         """Specify model and field order.
         """
         model = Question
-        order = ('*', 'submit')
-
-    submit = SubmitField("Submit")
 
 
 class DatasetListForm(ListObjectForm):

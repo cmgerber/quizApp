@@ -6,6 +6,9 @@ from flask_wtf import Form
 from wtforms import SubmitField, SelectMultipleField, SelectField
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import CheckboxInput, ListWidget
+from wtforms_alchemy import ModelForm
+
+from quizApp.models import ScorecardSettings
 
 
 class MultiCheckboxField(SelectMultipleField):
@@ -96,3 +99,12 @@ class OrderFormMixin(object):
                 visited.add(field_name)
 
         self._fields = new_fields
+
+
+class ScorecardSettingsForm(ModelForm):
+    """Form for rendering scorecard options.
+    """
+    class Meta(object):
+        """Specify model.
+        """
+        model = ScorecardSettings

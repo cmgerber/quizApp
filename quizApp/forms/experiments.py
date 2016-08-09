@@ -6,9 +6,9 @@ from datetime import datetime
 from flask_wtf import Form
 from wtforms import SubmitField, RadioField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired
-from wtforms_alchemy import ModelForm
+from wtforms_alchemy import ModelForm, ModelFormField
 
-from quizApp.forms.common import OrderFormMixin
+from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm
 from quizApp.models import Experiment
 
 
@@ -82,8 +82,9 @@ class CreateExperimentForm(OrderFormMixin, ModelForm):
         """
         model = Experiment
         exclude = ['created']
-        order = ('*', 'submit')
+        order = ('*', 'scorecard_settings', 'submit')
 
+    scorecard_settings = ModelFormField(ScorecardSettingsForm)
     submit = SubmitField("Submit")
 
     def validate(self):

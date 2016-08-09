@@ -375,6 +375,8 @@ class Activity(Base):
             Activity
         assignments (list of Assignment): What Assignments include this
             Activity
+        scorecard_settings (ScorecardSettings): Settings for scorecards after
+            this Activity is done
     """
     class Meta(object):
         """Define what kind of Result we are looking for.
@@ -391,6 +393,17 @@ class Activity(Base):
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
+
+    scorecard_settings_id = db.Column(db.Integer,
+                                      db.ForeignKey("scorecard_settings.id"))
+    scorecard_settings = db.relationship("ScorecardSettings",
+                                         info={"import_include": False})
+
+    def __init__(self, *args, **kwargs):
+        """Make sure to populate scorecard_settings.
+        """
+        self.scorecard_settings = ScorecardSettings()
+        super(Activity, self).__init__(*args, **kwargs)
 
     def get_score(self, result):
         """Get the participant's score for this Activity.
@@ -623,6 +636,40 @@ class Graph(MediaItem):
     }
 
 
+class ScorecardSettings(Base):
+    """A ScorecardSettings object represents the configuration of some kind of
+    scorecard.
+
+    Scorecards may be shown after each Activity or after each Experiment (or
+    both). Since the configuration of the two scorecards is identical, it has
+    been refactored to this class.
+
+    Attributes:
+        display_scorecard (bool): Whether or not to display this scorecard at
+            all.
+        display_points (bool): Whether or not to display a tally of points.
+        display_time (bool): Whether or not to display a count of how much time
+            elapsed.
+        display_correctness (bool): Whether or not to display correctness
+            grades.
+        display_feedback (bool): Whether or not to display feedback on
+            responses.
+    """
+
+    display_scorecard = db.Column(db.Boolean,
+                                  info={"label": "Display scorecards?"})
+    display_points = db.Column(db.Boolean,
+                               info={"label": "Display points on scorecard?"})
+    display_time = db.Column(db.Boolean,
+                             info={"label": "Display time on scorecard?"})
+    display_correctness = db.Column(db.Boolean,
+                                    info={"label":
+                                          "Display correctness on scorecard?"})
+    display_feedback = db.Column(db.Boolean,
+                                 info={"label":
+                                       "Display feedback on scorecard?"})
+
+
 class Experiment(Base):
     """An Experiment contains a list of Activities.
 
@@ -643,6 +690,19 @@ class Experiment(Base):
             expressing how long the user has been viewing this activity.
         show_scores (bool): If True, show the participant a cumulative score on
             every activity.
+        scorecard_settings (ScorecardSettings): A ScorecardSettings instance
+            that determines how scorecards will be rendered in this Experiment.
+
+            If the ``display_scorecard`` field is ``False``, then no scorecards
+            will be displayed.
+
+            If the ``display_scorecard`` field is ``True``, then scorecards
+            will be displayed after Activities whose own ``ScorecardSettings``
+            objects specify that scorecards should be shown. They will be
+            rendered according to the ``ScorecardSettings`` of that Activity.
+
+            In addition, a scorecard will be rendered after the experiment
+            according to the Experiment's ``ScorecardSettings``.
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -672,6 +732,18 @@ class Experiment(Base):
 
     assignments = db.relationship("Assignment", back_populates="experiment",
                                   info={"import_include": False})
+
+    scorecard_settings_id = db.Column(db.Integer,
+                                      db.ForeignKey("scorecard_settings.id"))
+    scorecard_settings = db.relationship("ScorecardSettings",
+                                         uselist=False,
+                                         info={"import_include": False})
+
+    def __init__(self, *args, **kwargs):
+        """Make sure to populate scorecard_settings.
+        """
+        self.scorecard_settings = ScorecardSettings()
+        super(Experiment, self).__init__(*args, **kwargs)
 
 
 class Dataset(Base):
