@@ -43,6 +43,11 @@ def get_experiments():
                           show_scores=True,
                           start=datetime.now(),
                           stop=datetime.now() + timedelta(days=3))
+    pre_test.scorecard_settings.display_scorecard = True
+    pre_test.scorecard_settings.display_score = True
+    pre_test.scorecard_settings.display_correctness = True
+    pre_test.scorecard_settings.display_time = True
+    pre_test.scorecard_settings.display_feedback = True
 
     test = Experiment(name="test",
                       blurb=blurb,
