@@ -158,6 +158,21 @@ class ParticipantExperiment(Base):
                                   back_populates="participant_experiment",
                                   info={"import_include": False})
 
+    @property
+    def score(self):
+        """Return the cumulative score of all assignments in this
+        ParticipantExperiment,
+
+        Currently this iterates through all assignments. Profiling will be
+        required to see if this is too slow.
+        """
+        score = 0
+
+        for assignment in self.assignments[:self.progress]:
+            score += assignment.score
+
+        return score
+
     @db.validates('assignments')
     def validate_assignments(self, _, assignment):
         """The Assignments in this model must be related to the same Experiment
@@ -227,6 +242,17 @@ class Assignment(Base):
         db.ForeignKey("participant_experiment.id"))
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments")
+
+    @property
+    def score(self):
+        """Get the score for this assignment.
+
+        This method simply passes `result` to the `activity`'s `get_score`
+        method and returns the result.
+
+        Note that if there is no `activity` this will raise an AttributeError.
+        """
+        return self.activity.get_score(self.result)
 
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
@@ -318,7 +344,7 @@ class MultipleChoiceQuestionResult(Result):
 class FreeAnswerQuestionResult(Result):
     """What a Participant entered into a text box.
     """
-    result = db.Column(db.String(500))
+    text = db.Column(db.String(500))
 
 
 activity_experiment_table = db.Table(
@@ -365,6 +391,15 @@ class Activity(Base):
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
+
+    def get_score(self, result):
+        """Get the participant's score for this Activity.
+
+        Given a Result object, an Activity subclass should be able to
+        "score" the result in some way, and return an integer quantifying the
+        Participant's performance.
+        """
+        pass
 
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
@@ -443,6 +478,15 @@ class MultipleChoiceQuestion(Question):
         """
         result_class = MultipleChoiceQuestionResult
 
+    def get_score(self, result):
+        """If this Question was answered, return the point value of this
+        choice. Otherwise return 0.
+        """
+        try:
+            return result.choice.points
+        except AttributeError:
+            return 0
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc',
     }
@@ -485,6 +529,13 @@ class FreeAnswerQuestion(Question):
         """
         result_class = FreeAnswerQuestionResult
 
+    def get_score(self, result):
+        """If this Question was answered, return 1.
+        """
+        if result.text:
+            return 1
+        return 0
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_freeanswer',
     }
@@ -498,6 +549,8 @@ class Choice(Base):
         label (string): The label for this choice (1,2,3,a,b,c etc)
         correct (bool): "True" if this choice is correct, "False" otherwise
         question (Question): Which Question owns this Choice
+        points (int): How many points the Participant gets for picking this
+            choice
     """
     choice = db.Column(db.String(200), nullable=False,
                        info={"label": "Choice"})
@@ -506,6 +559,7 @@ class Choice(Base):
     correct = db.Column(db.Boolean,
                         info={"label": "Correct?"})
 
+    points = db.Column(db.Integer)
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
@@ -587,6 +641,8 @@ class Experiment(Base):
             modify previous activities.
         show_timers (bool): If True, display a timer on each activity
             expressing how long the user has been viewing this activity.
+        show_scores (bool): If True, show the participant a cumulative score on
+            every activity.
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -595,6 +651,9 @@ class Experiment(Base):
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
+    show_scores = db.Column(db.Boolean,
+                            info={"label": ("Show score tally during the"
+                                            " experiment?")})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "

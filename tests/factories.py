@@ -32,6 +32,7 @@ class ChoiceFactory(factory.Factory):
     choice = factory.Faker('text')
     label = factory.Iterator(['a', 'b', 'c', 'd'])
     correct = factory.Faker("boolean")
+    points = factory.Faker('pyint')
 
 
 class ActivityFactory(factory.Factory):

@@ -32,6 +32,7 @@ def get_experiments():
                           blurb=blurb,
                           disable_previous=True,
                           show_timers=True,
+                          show_scores=True,
                           start=datetime.now(),
                           stop=datetime.now() + timedelta(days=3))
 
@@ -108,9 +109,11 @@ def get_questions():
                     elif i == 5:
                         choice = "Very good"
 
-                    question.choices.append(Choice(choice=choice,
-                                                   label=str(i),
-                                                   correct=True))
+                    question.choices.append(
+                        Choice(choice=choice,
+                               label=str(i),
+                               points=1,
+                               correct=True))
 
             db.session.add(question)
 
@@ -125,6 +128,8 @@ def get_choices():
                 choice=row["answer_text"],
                 correct=row["correct"] == "yes",
                 label=row["answer_letter"])
+            if choice.correct:
+                choice.points = random.choice(range(1,5))
             db.session.add(choice)
     with open(os.path.join(DATA_ROOT, 'graph_table.csv')) as graphs_csv:
         graphs = csv.DictReader(graphs_csv)

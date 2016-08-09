@@ -17,6 +17,9 @@ Quiz{% endblock %}
 {% if exp.show_timers and not experiment_complete %}
 Time elapsed: <span class="stopwatch"></span>
 {% endif %}
+{% if exp.show_scores %}
+<span class="score">Current score: {{ cumulative_score }}</span>
+{% endif %}
 {% for media_item in assignment.media_items %}
 <div class="row media-item-container"
   {% if not experiment_complete and media_item.flash %}

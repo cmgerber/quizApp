@@ -192,6 +192,8 @@ def read_question(experiment, question, assignment):
     if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = part_exp.assignments[this_index - 1]
 
+    cumulative_score = assignment.participant_experiment.score
+
     return render_template("experiments/read_question.html",
                            exp=experiment,
                            question=question,
@@ -199,6 +201,7 @@ def read_question(experiment, question, assignment):
                            mc_form=question_form,
                            next_url=next_url,
                            explanation=explanation,
+                           cumulative_score=cumulative_score,
                            experiment_complete=part_exp.complete,
                            previous_assignment=previous_assignment)
 
@@ -256,18 +259,22 @@ def update_question_assignment(part_exp, assignment, this_index):
     if this_index == part_exp.progress:
         part_exp.progress += 1
 
-    # Record time to solve
-    # You may think it makes sense to have this in update_assignment, but we
-    # first need to know if the submission was successful, which depends on the
-    # kind of assignment.
-    if question_form.render_time.data and question_form.submit_time.data:
-        render_datetime = dateutil.parser.parse(question_form.render_time.data)
-        submit_datetime = dateutil.parser.parse(question_form.submit_time.data)
-        time_to_submit = submit_datetime - render_datetime
-        question.time_to_submit = time_to_submit
+    process_assignment(question_form, assignment)
 
     db.session.commit()
     return jsonify({"success": 1, "next_url": next_url})
+
+
+def process_assignment(activity_form, assignment):
+    """Do some assignment processing that's common across all Activity types,
+    but depends on the submission being valid.
+    """
+    # Record time to solve
+    if activity_form.render_time.data and activity_form.submit_time.data:
+        render_datetime = dateutil.parser.parse(activity_form.render_time.data)
+        submit_datetime = dateutil.parser.parse(activity_form.submit_time.data)
+        time_to_submit = submit_datetime - render_datetime
+        assignment.time_to_submit = time_to_submit
 
 
 def get_next_assignment_url(participant_experiment, current_index):
