@@ -131,6 +131,8 @@ class ParticipantExperiment(Base):
         progress (int): Which question the user is currently working on.
         complete (bool): True if the user has finalized their responses, False
             otherwise
+        score (int): The number of points accrued in this Experiment by this
+            Participant
         participant (Participant): Which Participant this refers to
         experiment (Experiment): Which Experiment this refers to
         assignments (list of Assignment): The assignments that this Participant
@@ -145,6 +147,8 @@ class ParticipantExperiment(Base):
                          info={"import_include": False})
     complete = db.Column(db.Boolean, default=False,
                          info={"import_include": False})
+    score = db.Column(db.Integer,
+                      info={"import_include": False})
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     participant = db.relationship("Participant", back_populates="experiments",
@@ -625,6 +629,8 @@ class Experiment(Base):
             modify previous activities.
         show_timers (bool): If True, display a timer on each activity
             expressing how long the user has been viewing this activity.
+        show_score (bool): If True, show the participant a cumulative score on
+            every activity.
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -633,6 +639,9 @@ class Experiment(Base):
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
+    show_score = db.Column(db.Boolean,
+                           info={"label": ("Show score tally during the"
+                                           " experiment?")})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "
