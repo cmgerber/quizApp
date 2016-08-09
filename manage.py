@@ -44,7 +44,5 @@ def run_populate_db():
     """
     populate_db.setup_db()
 
-
-
 if __name__ == '__main__':
     cli()
