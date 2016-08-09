@@ -233,6 +233,8 @@ class Assignment(Base):
 
         This method simply passes `result` to the `activity`'s `get_score`
         method and returns the result.
+
+        Note that if there is no `activity` this will raise an AttributeError.
         """
         return self.activity.get_score(self.result)
 

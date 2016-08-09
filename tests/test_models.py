@@ -9,7 +9,7 @@ from tests.factories import ExperimentFactory, ParticipantFactory, \
     ChoiceFactory, QuestionFactory
 from quizApp.models import ParticipantExperiment, Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
-    FreeAnswerQuestion, FreeAnswerQuestionResult
+    FreeAnswerQuestion, FreeAnswerQuestionResult, Result
 
 
 def test_db_rollback1():
@@ -180,3 +180,28 @@ def test_save():
     inspection = inspect(role2)
 
     assert inspection.pending
+
+
+def test_activity_get_score():
+    activity = Activity()
+    result = Result()
+    score = activity.get_score(result)
+    assert score is None
+
+
+def test_free_answer_question_get_score():
+    fa_question = FreeAnswerQuestion()
+    fa_result = FreeAnswerQuestionResult()
+
+    assert fa_question.get_score(fa_result) == 0
+
+    fa_result.text = "AAAA"
+
+    assert fa_question.get_score(fa_result) == 1
+
+
+def test_assignment_get_score():
+    assignment = Assignment()
+
+    with pytest.raises(AttributeError):
+        assert assignment.get_score() is None
