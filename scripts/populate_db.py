@@ -253,8 +253,6 @@ def get_students():
 
     return question_participant_id_list, heuristic_participant_id_list
 
-seen_combos = set()
-
 def create_participant_data(pid_list, participant_question_list, test, group):
     """
     sid_list: list of participant id's
@@ -262,7 +260,6 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
-    global seen_combos
     experiments = {"pre_test":
                    Experiment.query.filter_by(name="pre_test").one(),
                    "test": Experiment.query.filter_by(name="test").one(),
@@ -277,13 +274,10 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     for n, participant in enumerate(question_list):
         #n is the nth participant
         participant_id = pid_list[n]
-        combo = (participant_id, experiments[test].id)
-        if combo in seen_combos:
-            pdb.set_trace()
-        seen_combos.add(combo)
         participant_experiment = ParticipantExperiment.query.\
                 filter_by(participant_id=participant_id).\
                 filter_by(experiment_id=experiments[test].id).one()
+
         for graph in participant:
             dataset = graph[0]
             graph_id = int(str(dataset)+str(graph[1]+1))
