@@ -138,6 +138,7 @@ def get_choices():
         choice_reader = csv.DictReader(choices_csv)
         for row in choice_reader:
             choice = Choice(
+                points=1,
                 question_id=row["question_id"],
                 choice=row["answer_text"],
                 correct=row["correct"] == "yes",
@@ -277,13 +278,10 @@ def create_participant_data(pid_list, participant_question_list, test, group):
         participant_experiment = ParticipantExperiment.query.\
                 filter_by(participant_id=participant_id).\
                 filter_by(experiment_id=experiments[test].id).one()
-        #count the order for each participant per test
-        order = 0
         for graph in participant:
             dataset = graph[0]
             graph_id = int(str(dataset)+str(graph[1]+1))
             if test == 'pre_test' or test == 'post_test':
-                order += 1
                 question_id = int(str(dataset)+str(5))
 
                 if not Question.query.get(question_id):
@@ -308,7 +306,6 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     #three questions per dataset, three datasets, so 9 questions
                     # for the training part
                     for x in range(6, 9):
-                        order += 1
                         question_id = int(str(dataset)+str(x))
 
                         if not Question.query.get(question_id):
@@ -330,7 +327,6 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                 else:
                     #multiple choice questions
                     for x in range(3):
-                        order += 1
                         question_id = int(str(dataset)+str(x + 1))
                         #write row to db
 
@@ -351,7 +347,6 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                         db.session.add(assignment)
 
                 #only have rating question for training
-                order += 1
                 question_id = int(str(dataset)+str(4))
                 #write row to db
                 if not Question.query.get(question_id):
