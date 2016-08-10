@@ -253,6 +253,8 @@ def get_students():
 
     return question_participant_id_list, heuristic_participant_id_list
 
+seen_combos = set()
+
 def create_participant_data(pid_list, participant_question_list, test, group):
     """
     sid_list: list of participant id's
@@ -260,11 +262,11 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
+    global seen_combos
     experiments = {"pre_test":
                    Experiment.query.filter_by(name="pre_test").one(),
                    "test": Experiment.query.filter_by(name="test").one(),
                    "post_test": Experiment.query.filter_by(name="post_test").one()}
-    missing_qs = set()
 
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in participant_question_list]
@@ -275,6 +277,10 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     for n, participant in enumerate(question_list):
         #n is the nth participant
         participant_id = pid_list[n]
+        combo = (participant_id, experiments[test].id)
+        if combo in seen_combos:
+            pdb.set_trace()
+        seen_combos.add(combo)
         participant_experiment = ParticipantExperiment.query.\
                 filter_by(participant_id=participant_id).\
                 filter_by(experiment_id=experiments[test].id).one()
@@ -283,7 +289,7 @@ def create_participant_data(pid_list, participant_question_list, test, group):
             graph_id = int(str(dataset)+str(graph[1]+1))
             if test == 'pre_test' or test == 'post_test':
                 question_id = int(str(dataset)+str(5))
-                create_assignment(question_id, participant_id,
+                create_assignment(question_id,
                                   experiments[test],
                                   participant_experiment, graph_id)
 
@@ -293,7 +299,7 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     # for the training part
                     for x in range(5, 9):
                         question_id = int(str(dataset)+str(x))
-                        create_assignment(question_id, participant_id,
+                        create_assignment(question_id,
                                           experiments[test],
                                           participant_experiment, graph_id)
 
@@ -302,24 +308,20 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                     for x in range(1,5):
                         question_id = int(str(dataset)+str(x))
                         #write row to db
-                        create_assignment(question_id, participant_id,
+                        create_assignment(question_id,
                                           experiments[test],
                                           participant_experiment, graph_id)
 
 
     print "Completed storing {} {} tests".format(test, group)
-    if missing_qs:
-        print "Failed to find the following questions:"
-        print missing_qs
 
 
-def create_assignment(question_id, participant_id, experiment,
+def create_assignment(question_id, experiment,
                       participant_experiment, graph_id):
     if not Question.query.get(question_id):
         return
 
     assignment = Assignment(
-        participant_id=participant_id,
         activity_id=question_id,
         experiment_id=experiment.id,
         participant_experiment_id=participant_experiment.id,
