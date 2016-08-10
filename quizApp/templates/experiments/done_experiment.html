@@ -23,7 +23,7 @@ Thank you for participating.</h3>
   <thead>
     <tr>
       <th>Assignment</th>
-      {% if scorecard_settings.display_correct %}
+      {% if scorecard_settings.display_correctness %}
       <th>Correct?</th>
       {% endif %}
       {% if scorecard_settings.display_score %}
@@ -38,7 +38,7 @@ Thank you for participating.</h3>
     {% for assignment in participant_experiment.assignments %}
     {% if assignment.result %}
     <tr
-       {% if scorecard_settings.display_correct %}
+       {% if scorecard_settings.display_correctness %}
          class="{% if assignment.result.choice.correct %}
          success
          {% else%}
@@ -50,7 +50,7 @@ Thank you for participating.</h3>
         experiment_id=participant_experiment.experiment.id,
         a_id=assignment.id) }}">{{ assignment.id }}</a>
         </td>
-        {% if scorecard_settings.display_correct %}
+        {% if scorecard_settings.display_correctness %}
         <td>
           {% if assignment.result.choice.correct %}
           {{ macros.render_glyphicon("ok") }} Correct
