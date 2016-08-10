@@ -50,7 +50,7 @@ Thank you for participating.</h3>
         experiment_id=participant_experiment.experiment.id,
         a_id=assignment.id) }}">{{ assignment.id }}</a>
         </td>
-        {% if scorecard_settings.display_correct %}
+        {% if scorecard_settings.display_correctness %}
         <td>
           {% if assignment.result.choice.correct %}
           {{ macros.render_glyphicon("ok") }} Correct
