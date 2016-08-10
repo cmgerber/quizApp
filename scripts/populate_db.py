@@ -283,92 +283,52 @@ def create_participant_data(pid_list, participant_question_list, test, group):
             graph_id = int(str(dataset)+str(graph[1]+1))
             if test == 'pre_test' or test == 'post_test':
                 question_id = int(str(dataset)+str(5))
-
-                if not Question.query.get(question_id):
-                    missing_qs.add(question_id)
-                    continue
-
-                #write row to db
-                assignment = Assignment(
-                    participant_id=participant_id,
-                    activity_id=question_id,
-                    experiment_id=experiments[test].id,
-                    participant_experiment_id=participant_experiment.id,
-                    media_items=[Graph.query.get(graph_id)])
-
-
-                experiments[test].activities.append(
-                    Question.query.get(question_id))
-                db.session.add(assignment)
+                create_assignment(question_id, participant_id,
+                                  experiments[test],
+                                  participant_experiment, graph_id)
 
             else: #training
                 if group == 'heuristic':
                     #three questions per dataset, three datasets, so 9 questions
                     # for the training part
-                    for x in range(6, 9):
+                    for x in range(5, 9):
                         question_id = int(str(dataset)+str(x))
+                        create_assignment(question_id, participant_id,
+                                          experiments[test],
+                                          participant_experiment, graph_id)
 
-                        if not Question.query.get(question_id):
-                            missing_qs.add(question_id)
-                            continue
-
-                        #write row to db
-                        assignment = Assignment(
-                            participant_id=participant_id,
-                            activity_id=question_id,
-                            experiment_id=experiments[test].id,
-                            participant_experiment_id=participant_experiment.id,
-                            media_items=[Graph.query.get(graph_id)])
-
-                        experiments[test].activities.append(
-                            Question.query.get(question_id))
-
-                        db.session.add(assignment)
                 else:
                     #multiple choice questions
-                    for x in range(3):
-                        question_id = int(str(dataset)+str(x + 1))
+                    for x in range(1,5):
+                        question_id = int(str(dataset)+str(x))
                         #write row to db
+                        create_assignment(question_id, participant_id,
+                                          experiments[test],
+                                          participant_experiment, graph_id)
 
-                        if not Question.query.get(question_id):
-                            missing_qs.add(question_id)
-                            continue
-
-                        assignment = Assignment(
-                            participant_id=participant_id,
-                            activity_id=question_id,
-                            experiment_id=experiments[test].id,
-                            participant_experiment_id=participant_experiment.id,
-                            media_items=[Graph.query.get(graph_id)])
-
-                        experiments[test].activities.append(
-                            Question.query.get(question_id))
-
-                        db.session.add(assignment)
-
-                #only have rating question for training
-                question_id = int(str(dataset)+str(4))
-                #write row to db
-                if not Question.query.get(question_id):
-                    missing_qs.add(question_id)
-                    continue
-
-                assignment = Assignment(
-                    participant_id=participant_id,
-                    activity_id=question_id,
-                    experiment_id=experiments[test].id,
-                    participant_experiment_id=participant_experiment.id,
-                    media_items=[Graph.query.get(graph_id)])
-
-                experiments[test].activities.append(
-                    Question.query.get(question_id))
-
-                db.session.add(assignment)
 
     print "Completed storing {} {} tests".format(test, group)
     if missing_qs:
         print "Failed to find the following questions:"
         print missing_qs
+
+
+def create_assignment(question_id, participant_id, experiment,
+                      participant_experiment, graph_id):
+    if not Question.query.get(question_id):
+        return
+
+    assignment = Assignment(
+        participant_id=participant_id,
+        activity_id=question_id,
+        experiment_id=experiment.id,
+        participant_experiment_id=participant_experiment.id,
+        media_items=[Graph.query.get(graph_id)])
+
+    experiment.activities.append(
+        Question.query.get(question_id))
+
+    db.session.add(assignment)
 
 #create all the participant_test table data
 
