@@ -185,17 +185,28 @@ def test_read_experiment(client, users):
     """
     login_participant(client)
 
-    exp = create_experiment(1, 1)
+    exp = create_experiment(4, 1)
+    exp.participant_experiments[0].complete = False
+    exp.participant_experiments[0].progress = 0
     exp.save()
 
     url = "/experiments/" + str(exp.id)
 
     response = client.get(url)
-    assert str(exp.participant_experiments[0].assignments[0].id) in \
+    assert "/assignments/" + \
+        str(exp.participant_experiments[0].assignments[0].id) in \
         response.data
 
-    exp.participant_experiments[0].assignments = []
+    exp.participant_experiments[0].progress += 1
     db.session.commit()
+
+    response = client.get(url)
+    assert "/assignments/" + \
+        str(exp.participant_experiments[0].assignments[0].id) not in \
+        response.data
+    assert "/assignments/" + \
+        str(exp.participant_experiments[0].assignments[1].id) in \
+        response.data
 
 
 def test_update_experiment(client, users):
