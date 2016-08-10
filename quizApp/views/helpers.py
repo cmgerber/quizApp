@@ -43,8 +43,11 @@ def get_first_assignment(experiment):
         assignment = None
     elif len(participant_experiment.assignments) == 0:
         assignment = None
-    else:
+    elif participant_experiment.complete:
         assignment = participant_experiment.assignments[0]
+    else:
+        assignment = participant_experiment.\
+            assignments[participant_experiment.progress]
     return assignment
 
 
