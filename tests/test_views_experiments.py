@@ -18,9 +18,10 @@ from tests.helpers import json_success
 
 
 @mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_participant_experiment_or_abort(abort_mock, client):
+def test_get_participant_experiment_or_abort(abort_mock, users, client):
     """Make sure get_participant_experiment_or_abort actually aborts.
     """
+    login_participant(client)
     get_participant_experiment_or_abort(5, 500)
 
     abort_mock.assert_called_once_with(500)
@@ -354,6 +355,19 @@ def test_update_assignment(client, users):
     assert response.status_code == 200
     assert assignment.time_to_submit == time_to_submit
     assert json_success(response.data)
+
+    # Test scorecards
+    assignment.activity.scorecard_settings.display_scorecard = True
+    db.session.commit()
+    response = client.patch(url,
+                            data={"choices": choice.id,
+                                  "render_time": render_ts,
+                                  "submit_time": submit_ts}
+                            )
+
+    assert response.status_code == 200
+    assert json_success(response.data)
+    assert "scorecard" in json.loads(response.data)
 
     # Make sure we can edit choices
     participant_experiment.progress = 0
