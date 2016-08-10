@@ -262,6 +262,17 @@ def update_question_assignment(part_exp, assignment, this_index):
     process_assignment(question_form, assignment)
 
     db.session.commit()
+
+    if assignment.activity.scorecard_settings.display_scorecard:
+        return jsonify({
+            "success": 1,
+            "scorecard": render_template(
+                "experiments/interim_scorecard.html",
+                scorecard_settings=assignment.activity.scorecard_settings,
+                assignment=assignment,
+                next_url=next_url)
+        })
+
     return jsonify({"success": 1, "next_url": next_url})
 
 
@@ -410,7 +421,7 @@ def finalize_experiment(experiment_id):
 def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
     """
-    validate_model_id(Experiment, experiment_id)
+    experiment = validate_model_id(Experiment, experiment_id)
     participant_experiment = get_participant_experiment_or_abort(experiment_id)
 
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
@@ -422,7 +433,8 @@ def done_experiment(experiment_id):
 
     return render_template("experiments/done_experiment.html",
                            addendum=addendum,
-                           participant_experiment=participant_experiment)
+                           participant_experiment=participant_experiment,
+                           scorecard_settings=experiment.scorecard_settings)
 
 
 @experiments.app_template_filter("datetime_format")
