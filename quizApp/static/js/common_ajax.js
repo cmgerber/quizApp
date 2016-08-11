@@ -13,6 +13,7 @@ function form_ajax(selector, done_callback) {
 
     if($(this).find("input[type=file]")) {
       $.ajax({
+        context: this,
         type: this.getAttribute("method"),
         url: this.getAttribute("action"),
         data: new FormData(this),
@@ -23,6 +24,7 @@ function form_ajax(selector, done_callback) {
       .done(done_callback);
     } else {
       $.ajax({
+        context: this,
         type: this.getAttribute("method"),
         url: this.getAttribute("action"),
         data: $(this).serialize(),
@@ -45,6 +47,23 @@ function done_redirect(data) {
   }
 
 }
+
+
+function done_highlight(data) {
+  console.log(data);
+  if(data.success) {
+    $(this).find(".form-group").
+        addClass("has-success").
+        delay(1000).
+        queue(function(next) {
+            $(this).removeClass("has-success");
+            next();
+    })
+  } else {
+    render_errors(data.errors, data.prefix);
+  }
+}
+
 
 function done_refresh(data) {
   console.log(data);

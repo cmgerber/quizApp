@@ -16,7 +16,7 @@ class DatasetForm(OrderFormMixin, ModelForm):
         model = Dataset
         order = ('*', 'submit')
 
-    submit = SubmitField("Submit")
+    submit = SubmitField("Save")
 
 
 class GraphForm(OrderFormMixin, ModelForm):
@@ -30,4 +30,4 @@ class GraphForm(OrderFormMixin, ModelForm):
         order = ('*', 'submit')
 
     graph = FileField("Replace graph", render_kw={"accept": "image/*"})
-    submit = SubmitField("Submit")
+    submit = SubmitField("Save")
