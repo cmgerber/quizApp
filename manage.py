@@ -21,7 +21,7 @@ from scripts import populate_db
 def get_app(ctx, _):
     """Create an app with the correct config.
     """
-    return create_app(ctx.parent.params["config"])
+    return create_app(ctx.find_root().params["config"])
 
 
 @click.option("-c", "--config", default="development")
