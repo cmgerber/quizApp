@@ -17,15 +17,17 @@
     <title>QuizApp - {% block title %}{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css?family=Raleway"
           rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/sri-fallback.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
     <link rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-          data-fallback="foobar"
-          crossorigin="anonymous" onerror="script_error(this)">
-    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+          data-fallback="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+          crossorigin="anonymous" onerror="resource_error(this)">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            data-fallback="{{ url_for('static', filename='js/bootstrap.min.js') }}"
             integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-            crossorigin="anonymous"></script>
+            crossorigin="anonymous" onerror="resource_error(this)"></script>
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <script src="{{ url_for('static', filename='js/frame.js') }}"></script>
 
@@ -34,10 +36,12 @@
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"
               integrity="sha384-FFgGfda92tXC8nCNOxrCQ3R8x1TNkMFqDZVQdDaaJiiVbjkPBXIJBx0o7ETjy8Bh"
-              crossorigin="anonymous"></script>
+              data-fallback="{{ url_for('static', filename='js/html5shiv.min.js') }}"
+              crossorigin="anonymous" onerror="resource_error(this)"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"
               integrity="sha384-ZoaMbDF+4LeFxg6WdScQ9nnR1QC2MIRxA1O9KWEXQwns1G8UNyIEZIQidzb0T1fo"
-              crossorigin="anonymous"></script>
+              data-fallback="{{ url_for('static', filename='js/respond.min.js') }}"
+              crossorigin="anonymous" onerror="resource_error(this)"></script>
     <![endif]-->
     {% block head %}{% endblock %}
   </head>
