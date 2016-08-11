@@ -34,7 +34,6 @@ class Development(Config):
     """Configuration for development environments.
     """
     DEBUG = True
-    TESTING = True
     SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"
     SECRET_KEY = "Foobar"
     SECURITY_SEND_REGISTER_EMAIL = False

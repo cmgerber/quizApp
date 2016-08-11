@@ -158,6 +158,21 @@ class ParticipantExperiment(Base):
                                   back_populates="participant_experiment",
                                   info={"import_include": False})
 
+    @property
+    def score(self):
+        """Return the cumulative score of all assignments in this
+        ParticipantExperiment,
+
+        Currently this iterates through all assignments. Profiling will be
+        required to see if this is too slow.
+        """
+        score = 0
+
+        for assignment in self.assignments[:self.progress]:
+            score += assignment.score
+
+        return score
+
     @db.validates('assignments')
     def validate_assignments(self, _, assignment):
         """The Assignments in this model must be related to the same Experiment
@@ -214,9 +229,9 @@ class Assignment(Base):
     activity = db.relationship("Activity", back_populates="assignments",
                                info={"import_include": False})
 
-    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
-    choice = db.relationship("Choice", back_populates="assignments",
-                             info={"import_include": False})
+    result_id = db.Column(db.Integer, db.ForeignKey("result.id"))
+    result = db.relationship("Result", back_populates="assignment",
+                             info={"import_include": False}, uselist=False)
 
     experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
     experiment = db.relationship("Experiment", back_populates="assignments",
@@ -227,6 +242,17 @@ class Assignment(Base):
         db.ForeignKey("participant_experiment.id"))
     participant_experiment = db.relationship("ParticipantExperiment",
                                              back_populates="assignments")
+
+    @property
+    def score(self):
+        """Get the score for this assignment.
+
+        This method simply passes `result` to the `activity`'s `get_score`
+        method and returns the result.
+
+        Note that if there is no `activity` this will raise an AttributeError.
+        """
+        return self.activity.get_score(self.result)
 
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
@@ -265,6 +291,61 @@ class Assignment(Base):
 
         return choice
 
+    @db.validates("result")
+    def validate_result(self, _, result):
+        """Make sure that this assignment has the correct type of result.
+        """
+        assert isinstance(result, self.activity.Meta.result_class)
+        return result
+
+
+class Result(Base):
+    """A Result is the outcome of a Participant completing an Activity.
+
+    Different Activities have different data that they generate, so this model
+    does not actually contain any information on the outcome of an Activity.
+    That is something that child classes of this class must define in their
+    schemas.
+
+    On the Assignment level, the type of Activity will determine the type of
+    Result.
+
+    Attributes:
+        assignment (Assignment): The Assignment that owns this Result.
+    """
+
+    assignment = db.relationship("Assignment", back_populates="result",
+                                 uselist=False)
+    type = db.Column(db.String(50))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "result",
+        "polymorphic_on": type,
+    }
+
+
+class MultipleChoiceQuestionResult(Result):
+    """The Choice that a Participant picked in a MultipleChoiceQuestion.
+    """
+    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
+    choice = db.relationship("Choice", back_populates="results")
+
+    @db.event.listens_for(Result.assignment, "set", propagate=True)
+    def validate_choice(self, value, *_):
+        """Make sure this Choice is a valid option for this Question.
+        """
+        assert self.choice in value.activity.choices
+
+    __mapper_args__ = {
+        "polymorphic_identity": "mc_question_result",
+    }
+
+
+class FreeAnswerQuestionResult(Result):
+    """What a Participant entered into a text box.
+    """
+    text = db.Column(db.String(500))
+
 
 activity_experiment_table = db.Table(
     "activity_experiment", db.metadata,
@@ -286,15 +367,24 @@ class Activity(Base):
     Attributes:
         type (string): Discriminator column that determines what kind
             of Activity this is.
+        time_to_submit (timedelta): Time from the question being rendered to
+            the question being submitted.
         category (string): A description of this assignment's category, for the
             users' convenience.
         experiments (list of Experiment): What Experiments include this
             Activity
         assignments (list of Assignment): What Assignments include this
             Activity
+        scorecard_settings (ScorecardSettings): Settings for scorecards after
+            this Activity is done
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
+    time_to_submit = db.Column(db.Interval())
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities",
@@ -303,6 +393,26 @@ class Activity(Base):
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
+
+    scorecard_settings_id = db.Column(db.Integer,
+                                      db.ForeignKey("scorecard_settings.id"))
+    scorecard_settings = db.relationship("ScorecardSettings",
+                                         info={"import_include": False})
+
+    def __init__(self, *args, **kwargs):
+        """Make sure to populate scorecard_settings.
+        """
+        self.scorecard_settings = ScorecardSettings()
+        super(Activity, self).__init__(*args, **kwargs)
+
+    def get_score(self, result):
+        """Get the participant's score for this Activity.
+
+        Given a Result object, an Activity subclass should be able to
+        "score" the result in some way, and return an integer quantifying the
+        Participant's performance.
+        """
+        pass
 
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
@@ -376,6 +486,20 @@ class Question(Activity):
 class MultipleChoiceQuestion(Question):
     """A MultipleChoiceQuestion has one or more choices that are correct.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = MultipleChoiceQuestionResult
+
+    def get_score(self, result):
+        """If this Question was answered, return the point value of this
+        choice. Otherwise return 0.
+        """
+        try:
+            return result.choice.points
+        except AttributeError:
+            return 0
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc',
     }
@@ -413,6 +537,17 @@ class ScaleQuestion(SingleSelectQuestion):
 class FreeAnswerQuestion(Question):
     """A FreeAnswerQuestion allows a Participant to enter an arbitrary answer.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = FreeAnswerQuestionResult
+
+    def get_score(self, result):
+        """If this Question was answered, return 1.
+        """
+        if result.text:
+            return 1
+        return 0
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_freeanswer',
@@ -427,8 +562,8 @@ class Choice(Base):
         label (string): The label for this choice (1,2,3,a,b,c etc)
         correct (bool): "True" if this choice is correct, "False" otherwise
         question (Question): Which Question owns this Choice
-        assignment (Assignment): Which Assignments had Participants pick this
-            Choice as the correct answer
+        points (int): How many points the Participant gets for picking this
+            choice
     """
     choice = db.Column(db.String(200), nullable=False,
                        info={"label": "Choice"})
@@ -437,11 +572,12 @@ class Choice(Base):
     correct = db.Column(db.Boolean,
                         info={"label": "Correct?"})
 
+    points = db.Column(db.Integer)
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
-    assignments = db.relationship("Assignment", back_populates="choice",
-                                  info={"import_include": False})
+    results = db.relationship("MultipleChoiceQuestionResult",
+                              back_populates="choice")
 
 
 class MediaItem(Base):
@@ -450,8 +586,9 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-        flash_duration (int): How long to display the MediaItem (-1 for
-            indefinitely)
+        flash (bool): If True, flash the MediaItem for flash_duration
+        milliseconds
+        flash_duration (int): How long to display the MediaItem in milliseconds
         name (str): Name for this Media Item
         assignments (list of Assignment): Which Assignments display this
             MediaItem
@@ -462,8 +599,10 @@ class MediaItem(Base):
         "Assignment",
         secondary=assignment_media_item_table,
         back_populates="media_items")
+    flash = db.Column(db.Boolean,
+                      info={"label": "Flash this MediaItem when displaying?"})
     flash_duration = db.Column(db.Integer, nullable=False, default=-1,
-                               info={"label": "Flash duration"})
+                               info={"label": "Flash duration (ms)"})
     dataset = db.relationship("Dataset", back_populates="media_items")
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
     type = db.Column(db.String(80), nullable=False)
@@ -497,6 +636,40 @@ class Graph(MediaItem):
     }
 
 
+class ScorecardSettings(Base):
+    """A ScorecardSettings object represents the configuration of some kind of
+    scorecard.
+
+    Scorecards may be shown after each Activity or after each Experiment (or
+    both). Since the configuration of the two scorecards is identical, it has
+    been refactored to this class.
+
+    Attributes:
+        display_scorecard (bool): Whether or not to display this scorecard at
+            all.
+        display_score (bool): Whether or not to display a tally of points.
+        display_time (bool): Whether or not to display a count of how much time
+            elapsed.
+        display_correctness (bool): Whether or not to display correctness
+            grades.
+        display_feedback (bool): Whether or not to display feedback on
+            responses.
+    """
+
+    display_scorecard = db.Column(db.Boolean,
+                                  info={"label": "Display scorecards?"})
+    display_score = db.Column(db.Boolean,
+                              info={"label": "Display points on scorecard?"})
+    display_time = db.Column(db.Boolean,
+                             info={"label": "Display time on scorecard?"})
+    display_correctness = db.Column(db.Boolean,
+                                    info={"label":
+                                          "Display correctness on scorecard?"})
+    display_feedback = db.Column(db.Boolean,
+                                 info={"label":
+                                       "Display feedback on scorecard?"})
+
+
 class Experiment(Base):
     """An Experiment contains a list of Activities.
 
@@ -511,6 +684,25 @@ class Experiment(Base):
             ParticipantExperiments that are associated with this Experiment
         assignments (list of Assignment): Assignments that are present in this
             Experiment's ParticipantExperiments
+        disable_previous (bool): If True, don't allow Participants to view and
+            modify previous activities.
+        show_timers (bool): If True, display a timer on each activity
+            expressing how long the user has been viewing this activity.
+        show_scores (bool): If True, show the participant a cumulative score on
+            every activity.
+        scorecard_settings (ScorecardSettings): A ScorecardSettings instance
+            that determines how scorecards will be rendered in this Experiment.
+
+            If the ``display_scorecard`` field is ``False``, then no scorecards
+            will be displayed.
+
+            If the ``display_scorecard`` field is ``True``, then scorecards
+            will be displayed after Activities whose own ``ScorecardSettings``
+            objects specify that scorecards should be shown. They will be
+            rendered according to the ``ScorecardSettings`` of that Activity.
+
+            In addition, a scorecard will be rendered after the experiment
+            according to the Experiment's ``ScorecardSettings``.
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -519,6 +711,15 @@ class Experiment(Base):
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
+    show_scores = db.Column(db.Boolean,
+                            info={"label": ("Show score tally during the"
+                                            " experiment?")})
+    disable_previous = db.Column(db.Boolean,
+                                 info={"label": ("Don't let participants go "
+                                                 "back after submitting an "
+                                                 "activity?")})
+    show_timers = db.Column(db.Boolean,
+                            info={"label": "Show timers on activities?"})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,
@@ -531,6 +732,18 @@ class Experiment(Base):
 
     assignments = db.relationship("Assignment", back_populates="experiment",
                                   info={"import_include": False})
+
+    scorecard_settings_id = db.Column(db.Integer,
+                                      db.ForeignKey("scorecard_settings.id"))
+    scorecard_settings = db.relationship("ScorecardSettings",
+                                         uselist=False,
+                                         info={"import_include": False})
+
+    def __init__(self, *args, **kwargs):
+        """Make sure to populate scorecard_settings.
+        """
+        self.scorecard_settings = ScorecardSettings()
+        super(Experiment, self).__init__(*args, **kwargs)
 
 
 class Dataset(Base):

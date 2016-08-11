@@ -4,18 +4,25 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/jquery.runner.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/activity_timing.js') }}"></script>
 <script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 <script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}
-Quiz
-{% endblock %}
+Quiz{% endblock %}
 
 {% block content %}
+{% if exp.show_timers and not experiment_complete %}
+Time elapsed: <span class="stopwatch"></span>
+{% endif %}
+{% if exp.show_scores %}
+<span class="score">Current score: {{ cumulative_score }}</span>
+{% endif %}
 {% for media_item in assignment.media_items %}
 <div class="row media-item-container"
-  {% if not experiment_complete %}
+  {% if not experiment_complete and media_item.flash %}
   data-flash-duration="{{ media_item.flash_duration }}"
   {% endif %}
   >
@@ -26,7 +33,10 @@ Quiz
 <div id='question'>
   <h3>{{ question.question }}</h3>
   <form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
-  a_id=assignment.id)}}" method="patch" id="question-submit-form">
+  a_id=assignment.id)}}" method="patch" id="question-submit-form"
+  class="timed-form">
+    {{ macros.render_field(mc_form.render_time) }}
+    {{ macros.render_field(mc_form.submit_time) }}
     {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
     {% if question.needs_comment %}
     <p>Why do you think this is the correct choice?</p>
@@ -52,5 +62,7 @@ Quiz
       </div>
     </div>
   </form>
+  <div id="scorecard">
+  </div>
 </div>
 {% endblock %}

@@ -6,6 +6,7 @@ from datetime import datetime
 import json
 import os
 
+import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     current_app, request, session
 from flask_security import login_required, current_user, roles_required
@@ -16,7 +17,7 @@ from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
 from quizApp.models import Choice, Experiment, Assignment, \
-    ParticipantExperiment, Activity, Participant
+    ParticipantExperiment, Activity, Participant, MultipleChoiceQuestionResult
 from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.mturk import submit_assignment
 
@@ -144,6 +145,10 @@ def read_assignment(experiment_id, a_id):
     if assignment not in part_exp.assignments:
         abort(400)
 
+    if experiment.disable_previous and part_exp.progress > \
+            part_exp.assignments.index(assignment) and not part_exp.complete:
+        abort(400)
+
     activity = validate_model_id(Activity, assignment.activity_id)
 
     if "question" in activity.type:
@@ -158,12 +163,11 @@ def read_question(experiment, question, assignment):
     This function assumes that all necessary error checking has been done on
     its parameters.
     """
-
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
 
-    if assignment.choice_id:
-        question_form.choices.default = str(assignment.choice_id)
+    if assignment.result:
+        question_form.choices.default = str(assignment.result.choice_id)
         question_form.process()
 
     question_form.comment.data = assignment.comment
@@ -185,14 +189,19 @@ def read_question(experiment, question, assignment):
 
     previous_assignment = None
 
-    if this_index - 1 > -1:
+    if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = part_exp.assignments[this_index - 1]
 
-    return render_template("experiments/read_question.html", exp=experiment,
-                           question=question, assignment=assignment,
+    cumulative_score = assignment.participant_experiment.score
+
+    return render_template("experiments/read_question.html",
+                           exp=experiment,
+                           question=question,
+                           assignment=assignment,
                            mc_form=question_form,
                            next_url=next_url,
                            explanation=explanation,
+                           cumulative_score=cumulative_score,
                            experiment_complete=part_exp.complete,
                            previous_assignment=previous_assignment)
 
@@ -202,7 +211,7 @@ def update_assignment(experiment_id, a_id):
     """Record a user's answer to this assignment
     """
     assignment = validate_model_id(Assignment, a_id)
-    validate_model_id(Experiment, experiment_id)
+    experiment = validate_model_id(Experiment, experiment_id)
     part_exp = assignment.participant_experiment
 
     if part_exp.participant != current_user:
@@ -211,14 +220,20 @@ def update_assignment(experiment_id, a_id):
     if part_exp.complete:
         abort(400)
 
+    if experiment.disable_previous and part_exp.progress > \
+            part_exp.assignments.index(assignment):
+        abort(400)
+
+    this_index = part_exp.assignments.index(assignment)
+
     if "question" in assignment.activity.type:
-        return update_question_assignment(part_exp, assignment)
+        return update_question_assignment(part_exp, assignment, this_index)
 
     # Pass for now
     return jsonify({"success": 1})
 
 
-def update_question_assignment(part_exp, assignment):
+def update_question_assignment(part_exp, assignment, this_index):
     """Update an assignment whose activity is a question.
     """
     question = assignment.activity
@@ -233,17 +248,44 @@ def update_question_assignment(part_exp, assignment):
                                         int(question_form.choices.data), 400)
 
     # User has answered this question successfully
-    this_index = part_exp.assignments.index(assignment)
-    assignment.choice_id = selected_choice.id
+    result = MultipleChoiceQuestionResult(
+        choice=Choice.query.get(selected_choice.id))
+    result.assignment = assignment
+    db.session.add(result)
     assignment.comment = question_form.comment.data
+
+    next_url = get_next_assignment_url(part_exp, this_index)
 
     if this_index == part_exp.progress:
         part_exp.progress += 1
 
-    next_url = get_next_assignment_url(part_exp, this_index)
+    process_assignment(question_form, assignment)
 
     db.session.commit()
+
+    if assignment.activity.scorecard_settings.display_scorecard:
+        return jsonify({
+            "success": 1,
+            "scorecard": render_template(
+                "experiments/interim_scorecard.html",
+                scorecard_settings=assignment.activity.scorecard_settings,
+                assignment=assignment,
+                next_url=next_url)
+        })
+
     return jsonify({"success": 1, "next_url": next_url})
+
+
+def process_assignment(activity_form, assignment):
+    """Do some assignment processing that's common across all Activity types,
+    but depends on the submission being valid.
+    """
+    # Record time to solve
+    if activity_form.render_time.data and activity_form.submit_time.data:
+        render_datetime = dateutil.parser.parse(activity_form.render_time.data)
+        submit_datetime = dateutil.parser.parse(activity_form.submit_time.data)
+        time_to_submit = submit_datetime - render_datetime
+        assignment.time_to_submit = time_to_submit
 
 
 def get_next_assignment_url(participant_experiment, current_index):
@@ -303,10 +345,10 @@ def get_question_stats(assignment, question_stats):
             "question_text": question.question,
         }
 
-    if assignment.choice:
+    if assignment.result:
         question_stats[question.id]["num_responses"] += 1
 
-        if assignment.choice.correct:
+        if assignment.result:
             question_stats[question.id]["num_correct"] += 1
 
 
@@ -379,17 +421,20 @@ def finalize_experiment(experiment_id):
 def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
     """
+    experiment = validate_model_id(Experiment, experiment_id)
+    participant_experiment = get_participant_experiment_or_abort(experiment_id)
+
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)
     addendum = None
     if post_finalize:
         handler = POST_FINALIZE_HANDLERS[post_finalize]
         addendum = handler()
-    validate_model_id(Experiment, experiment_id)
-    get_participant_experiment_or_abort(experiment_id)
 
     return render_template("experiments/done_experiment.html",
-                           addendum=addendum)
+                           addendum=addendum,
+                           participant_experiment=participant_experiment,
+                           scorecard_settings=experiment.scorecard_settings)
 
 
 @experiments.app_template_filter("datetime_format")

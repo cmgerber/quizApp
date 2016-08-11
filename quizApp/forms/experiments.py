@@ -4,11 +4,11 @@
 from datetime import datetime
 
 from flask_wtf import Form
-from wtforms import SubmitField, RadioField, TextAreaField
+from wtforms import SubmitField, RadioField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired
-from wtforms_alchemy import ModelForm
+from wtforms_alchemy import ModelForm, ModelFormField
 
-from quizApp.forms.common import OrderFormMixin
+from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm
 from quizApp.models import Experiment
 
 
@@ -28,7 +28,15 @@ class LikertField(RadioField):
     pass
 
 
-class QuestionForm(Form):
+class ActivityForm(Form):
+    """Form for rendering a general Activity. Mostly just for keeping track of
+    render and submit time.
+    """
+    render_time = HiddenField()
+    submit_time = HiddenField()
+
+
+class QuestionForm(ActivityForm):
     """Form for rendering a general Question.
     """
     submit = SubmitField("Submit")
@@ -53,7 +61,7 @@ class MultipleChoiceForm(QuestionForm):
                                 for c in choice_pool]
 
 
-class ScaleForm(MultipleChoiceForm):
+class ScaleForm(QuestionForm):
     """Form for rendering a likert scale question.
     """
     choices = LikertField(validators=[DataRequired()])
@@ -74,8 +82,9 @@ class CreateExperimentForm(OrderFormMixin, ModelForm):
         """
         model = Experiment
         exclude = ['created']
-        order = ('*', 'submit')
+        order = ('*', 'scorecard_settings', 'submit')
 
+    scorecard_settings = ModelFormField(ScorecardSettingsForm)
     submit = SubmitField("Submit")
 
     def validate(self):

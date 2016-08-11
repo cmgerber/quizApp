@@ -12,7 +12,7 @@
 {% macro render_field(field, label_visible=true) -%}
 	{% if field.type == 'BooleanField' %}
     {{ render_checkbox_field(field, label_visible, **kwargs) }}
-  {% elif field.type == "LikertField" %}
+  {% elif field.type == 'LikertField' %}
     {{ render_likert_field(field, label_visible, **kwargs) }}
 	{% elif field.type == 'RadioField' %}
     {{ render_radio_field(field, label_visible, **kwargs) }}
@@ -24,11 +24,24 @@
     {{ render_date_time_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'FileField' %}
     {{ render_file_field(field, label_visible, **kwargs) }}
-  {% elif field.type == "HiddenField" %}
+  {% elif field.type == 'HiddenField' %}
     {{ render_string_field(field, False, **kwargs) }}
+  {% elif field.type == 'ModelFormField' %}
+    {{ render_model_form_field(field, label_visible) }}
   {% else %}
     {{ render_string_field(field, label_visible, **kwargs) }}
 	{% endif %}
+{% endmacro %}
+
+{% macro render_model_form_field(form_field, label_visible) %}
+<fieldset>
+  {% if label_visible %}
+  {{ form_field.label }}
+  {% endif %}
+  {% for field in form_field %}
+  {{ render_field(field, label_visible) }}
+  {% endfor %}
+</fieldset>
 {% endmacro %}
 
 {% macro render_file_field(field, label_visible=True) -%}

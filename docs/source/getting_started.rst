@@ -68,7 +68,7 @@ Running QuizApp
 This is essentally all you have to do to install QuizApp. To run QuizApp using
 the default Flask webserver, simply run::
 
-    python runserver.py
+    ./manage.py run
 
 However, it is not recommended to use this server for production environments.
 See :ref:`production_servers` for instructions on running QuizApp in a

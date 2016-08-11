@@ -18,9 +18,10 @@ from tests.helpers import json_success
 
 
 @mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_participant_experiment_or_abort(abort_mock, client):
+def test_get_participant_experiment_or_abort(abort_mock, users, client):
     """Make sure get_participant_experiment_or_abort actually aborts.
     """
+    login_participant(client)
     get_participant_experiment_or_abort(5, 500)
 
     abort_mock.assert_called_once_with(500)
@@ -184,17 +185,28 @@ def test_read_experiment(client, users):
     """
     login_participant(client)
 
-    exp = create_experiment(1, 1)
+    exp = create_experiment(4, 1)
+    exp.participant_experiments[0].complete = False
+    exp.participant_experiments[0].progress = 0
     exp.save()
 
     url = "/experiments/" + str(exp.id)
 
     response = client.get(url)
-    assert str(exp.participant_experiments[0].assignments[0].id) in \
+    assert "/assignments/" + \
+        str(exp.participant_experiments[0].assignments[0].id) in \
         response.data
 
-    exp.participant_experiments[0].assignments = []
+    exp.participant_experiments[0].progress += 1
     db.session.commit()
+
+    response = client.get(url)
+    assert "/assignments/" + \
+        str(exp.participant_experiments[0].assignments[0].id) not in \
+        response.data
+    assert "/assignments/" + \
+        str(exp.participant_experiments[0].assignments[1].id) in \
+        response.data
 
 
 def test_update_experiment(client, users):
@@ -244,6 +256,7 @@ def test_read_assignment(client, users):
         question = assignment.activity
         response = client.get(url + str(assignment.id))
         assert question.question in response.data
+        assert "Time elapsed" not in response.data
 
         # And save a random question
         choice = random.choice(assignment.activity.choices)
@@ -252,6 +265,25 @@ def test_read_assignment(client, users):
 
         assert response.status_code == 200
         assert json_success(response.data)
+
+    for assignment in participant_experiment.assignments:
+        # Make sure we can read it
+        question = assignment.activity
+        response = client.get(url + str(assignment.id))
+        assert response.status_code == 200
+        assert question.question in response.data
+
+    experiment.disable_previous = True
+    db.session.commit()
+
+    response = client.get(url + str(participant_experiment.assignments[0].id))
+    assert response.status_code == 400
+
+    response = client.patch(
+        url + str(participant_experiment.assignments[0].id),
+        data={"choices": str(participant_experiment.assignments[0].
+                             activity.choices[0].id)})
+    assert response.status_code == 400
 
     response = client.patch("/experiments/" + str(experiment.id) + "/finalize")
     assert response.status_code == 200
@@ -318,12 +350,35 @@ def test_update_assignment(client, users):
 
     choice = random.choice(assignment.activity.choices)
 
+    time_to_submit = timedelta(hours=1)
+    start_ts = datetime.now()
+    render_ts = start_ts.isoformat()
+    submit_ts = (start_ts + time_to_submit).isoformat()
+
     response = client.patch(url,
-                            data={"choices": choice.id}
+                            data={"choices": choice.id,
+                                  "render_time": render_ts,
+                                  "submit_time": submit_ts}
+                            )
+
+    db.session.refresh(assignment)
+
+    assert response.status_code == 200
+    assert assignment.time_to_submit == time_to_submit
+    assert json_success(response.data)
+
+    # Test scorecards
+    assignment.activity.scorecard_settings.display_scorecard = True
+    db.session.commit()
+    response = client.patch(url,
+                            data={"choices": choice.id,
+                                  "render_time": render_ts,
+                                  "submit_time": submit_ts}
                             )
 
     assert response.status_code == 200
     assert json_success(response.data)
+    assert "scorecard" in json.loads(response.data)
 
     # Make sure we can edit choices
     participant_experiment.progress = 0
@@ -422,7 +477,7 @@ def test_done_experiment_hook(client, users):
     login_participant(client)
     participant = get_participant()
 
-    experiment2 = create_experiment(3, 1)
+    experiment2 = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment2.save()
     participant_experiment2 = experiment2.participant_experiments[0]
     participant_experiment2.participant = participant
@@ -448,7 +503,7 @@ def test_done_experiment(client, users):
     login_participant(client)
     participant = get_participant()
 
-    experiment = create_experiment(3, 1)
+    experiment = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment.save()
     participant_experiment = experiment.participant_experiments[0]
     participant_experiment.participant = participant

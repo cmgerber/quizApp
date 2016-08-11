@@ -3,11 +3,28 @@
 
 from mock import MagicMock, patch
 
-from tests.auth import login_participant
+from tests.auth import login_participant, get_participant
 from tests.factories import create_experiment
 from quizApp.models import Base
 from quizApp.views.helpers import validate_model_id,\
-    get_or_create_participant_experiment
+    get_or_create_participant_experiment, get_first_assignment
+
+
+def test_get_first_assignment(client, users):
+    login_participant(client)
+    experiment = create_experiment(1, 1)
+    participant_experiment = experiment.participant_experiments[0]
+    participant_experiment.complete = True
+    participant_experiment.participant = get_participant()
+    experiment.save()
+
+    result = get_first_assignment(experiment)
+    assert result == participant_experiment.assignments[0]
+
+    experiment = create_experiment(0, 0)
+    experiment.save()
+    result = get_first_assignment(experiment)
+    assert result is None
 
 
 def test_get_or_create_participant_experiment(client, users):
