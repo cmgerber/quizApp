@@ -7,7 +7,10 @@
       <th class="col-md-3">Name</th>
       <th class="col-md-2">Start time</th>
       <th class="col-md-2">End time</th>
-      <th class="col-md-1"></th>
+      {% if admin_controls %}
+      <th class="col-md-1">Edit</th>
+      <th class="col-md-1">Results</th>
+      {% endif %}
     </tr>
   </thead>
   <tbody>
@@ -33,15 +36,18 @@
   </td>
   <td class="start">{{exp.start|datetime_format}}</td>
   <td class="stop">{{exp.stop|datetime_format}}</td>
-  <td>{% if admin_controls %}
+  {% if admin_controls %}
+  <td>
     <a href="{{ url_for('experiments.settings_experiment', experiment_id=exp.id) }}">
       {{ macros.render_glyphicon('cog') }}
     </a>
+  </td>
+  <td>
     <a href="{{ url_for('experiments.results_experiment', experiment_id=exp.id) }}">
       {{ macros.render_glyphicon('signal') }}
     </a>
-    {% endif %}
   </td>
+  {% endif %}
 </tr>
 {%- endmacro %}
 
