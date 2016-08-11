@@ -5,7 +5,7 @@ test.
 
 import pytest
 
-from clear_db import clear_db
+from scripts.clear_db import clear_db
 from quizApp import create_app
 from quizApp import db
 
