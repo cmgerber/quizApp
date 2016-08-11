@@ -6,11 +6,13 @@ from datetime import datetime, timedelta
 import os
 import csv
 import random
+import pdb
 
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
         ForeignKeyConstraint
 from flask_security.utils import encrypt_password
+from sqlalchemy.orm.exc import NoResultFound
 
 from clear_db import clear_db
 from quizApp import create_app
@@ -36,7 +38,7 @@ def get_experiments():
     blurb = ("You will be asked to respond to a series of multiple choice"
     " questions regarding various graphs and visualizations.")
 
-    pre_test = Experiment(name="pre_test",
+    pre_test = Experiment(name="Pretest",
                           blurb=blurb,
                           disable_previous=True,
                           show_timers=True,
@@ -49,12 +51,12 @@ def get_experiments():
     pre_test.scorecard_settings.display_time = True
     pre_test.scorecard_settings.display_feedback = True
 
-    test = Experiment(name="test",
+    test = Experiment(name="Main test",
                       blurb=blurb,
                       start=datetime.now(),
                       stop=datetime.now() + timedelta(days=5))
 
-    post_test = Experiment(name="post_test",
+    post_test = Experiment(name="Post-test",
                            blurb=blurb,
                            start=datetime.now() + timedelta(days=-3),
                            stop=datetime.now())
@@ -213,13 +215,8 @@ def create_participant(pid, experiments):
         active=True,
     )
     security.datastore.add_role_to_user(participant, "participant")
-    for exp in experiments:
-        part_exp = ParticipantExperiment(
-            progress=0,
-            participant_id=pid,
-            experiment_id=exp.id)
-        db.session.add(part_exp)
     db.session.add(participant)
+    db.session.commit()
 
 def get_students():
     """Get a list of students from csv files.
@@ -253,6 +250,7 @@ def get_students():
 
     return question_participant_id_list, heuristic_participant_id_list
 
+
 def create_participant_data(pid_list, participant_question_list, test, group):
     """
     sid_list: list of participant id's
@@ -260,23 +258,24 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
+    global seen_ids
     experiments = {"pre_test":
-                   Experiment.query.filter_by(name="pre_test").one(),
-                   "test": Experiment.query.filter_by(name="test").one(),
-                   "post_test": Experiment.query.filter_by(name="post_test").one()}
+                   Experiment.query.filter_by(name="Pretest").one(),
+                   "test": Experiment.query.filter_by(name="Main test").one(),
+                   "post_test": Experiment.query.filter_by(name="Post-test").one()}
 
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in participant_question_list]
     else:
         #pick last three
         question_list = [x[3:] for x in participant_question_list]
-
+    # pdb.set_trace()
     for n, participant in enumerate(question_list):
         #n is the nth participant
-        participant_id = pid_list[n]
-        participant_experiment = ParticipantExperiment.query.\
-                filter_by(participant_id=participant_id).\
-                filter_by(experiment_id=experiments[test].id).one()
+        participant_experiment = ParticipantExperiment(
+            progress=0,
+            experiment=experiments[test])
+        participant_experiment.save()
 
         for graph in participant:
             dataset = graph[0]
@@ -289,37 +288,34 @@ def create_participant_data(pid_list, participant_question_list, test, group):
 
             else: #training
                 if group == 'heuristic':
-                    #three questions per dataset, three datasets, so 9 questions
-                    # for the training part
-                    for x in range(5, 9):
-                        question_id = int(str(dataset)+str(x))
-                        create_assignment(question_id,
-                                          experiments[test],
-                                          participant_experiment, graph_id)
+                    dataset_range = range(5,9)
 
                 else:
-                    #multiple choice questions
-                    for x in range(1,5):
-                        question_id = int(str(dataset)+str(x))
-                        #write row to db
-                        create_assignment(question_id,
-                                          experiments[test],
-                                          participant_experiment, graph_id)
+                    dataset_range = range(1,5)
 
+                for x in dataset_range:
+                    question_id = int(str(dataset)+str(x))
+                    #write row to db
+                    create_assignment(question_id,
+                                      experiments[test],
+                                      participant_experiment, graph_id)
 
     print "Completed storing {} {} tests".format(test, group)
 
 
 def create_assignment(question_id, experiment,
                       participant_experiment, graph_id):
-    if not Question.query.get(question_id):
+    question = Question.query.get(question_id)
+    if not question:
         return
+    question.experiments.append(experiment)
 
     assignment = Assignment(
-        activity_id=question_id,
-        experiment_id=experiment.id,
-        participant_experiment_id=participant_experiment.id,
+        experiment=experiment,
+        participant=participant_experiment.participant,
         media_items=[Graph.query.get(graph_id)])
+    assignment.activity=question
+    assignment.participant_experiment=participant_experiment
 
     experiment.activities.append(
         Question.query.get(question_id))
