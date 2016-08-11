@@ -47,7 +47,9 @@ def test():
 
 
 @cli.command("create-db")
-def create_db():
+@click.option("-u", "--user")
+@click.option("-p", "--password")
+def create_db(password, user):
     """Bootstrap the database for this config.
 
     This means:
@@ -69,9 +71,13 @@ def create_db():
         click.echo(("If you enter the database credentials, I will try to "
                     "set up the database. If any conflicts exist, nothing "
                     "will happen - this operation is safe."))
-        root_name = click.prompt("Enter root username", type=str)
-        root_pass = click.prompt("Enter root password", type=str,
-                                 hide_input=True)
+        if not user:
+            root_name = click.prompt("Enter root username", type=str)
+            root_pass = click.prompt("Enter root password", type=str,
+                                     hide_input=True)
+        else:
+            root_name = user
+            root_pass = password
         db_uri = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
         root_uri = URL(db_uri.drivername,
                        root_name,
