@@ -92,10 +92,10 @@ def create_db(password, user):
         engine = create_engine(root_uri)
         conn = engine.connect()
         conn.execute("commit")
-        conn.execute(("CREATE USER IF NOT EXISTS '{}'@'{}' IDENTIFIED BY '{}';").
-                     format(db_uri.username, db_uri.host, db_uri.password))
-        conn.execute(("GRANT ALL ON {}.* TO '{}'@'{}';").format(
-            db_uri.database, db_uri.username, db_uri.host))
+        # conn.execute(("CREATE USER IF NOT EXISTS '{}'@'{}' IDENTIFIED BY '{}';").
+        #              format(db_uri.username, db_uri.host, db_uri.password))
+        conn.execute(("GRANT ALL ON {}.* TO '{}'@'{}' IDENTIFIED BY '{}';").format(
+            db_uri.database, db_uri.username, db_uri.host, db_uri.password))
         conn.close()
 
         return
