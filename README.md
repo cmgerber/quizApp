@@ -7,7 +7,7 @@ Platform for asking questions based on visualizations.
 ## Installation
 
     pip install -r requirements.txt
-    mysql -u root -p < setup_db.sql
+    ./manage.py create-db
     ./manage.py poplate-db
 
 For more detailed installation instructions, check out the
