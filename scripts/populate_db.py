@@ -36,7 +36,7 @@ def get_experiments():
     blurb = ("You will be asked to respond to a series of multiple choice"
     " questions regarding various graphs and visualizations.")
 
-    pre_test = Experiment(name="pre_test",
+    pre_test = Experiment(name="Pretest",
                           blurb=blurb,
                           disable_previous=True,
                           show_timers=True,
@@ -49,12 +49,12 @@ def get_experiments():
     pre_test.scorecard_settings.display_time = True
     pre_test.scorecard_settings.display_feedback = True
 
-    test = Experiment(name="test",
+    test = Experiment(name="Main test",
                       blurb=blurb,
                       start=datetime.now(),
                       stop=datetime.now() + timedelta(days=5))
 
-    post_test = Experiment(name="post_test",
+    post_test = Experiment(name="Post-test",
                            blurb=blurb,
                            start=datetime.now() + timedelta(days=-3),
                            stop=datetime.now())
@@ -261,9 +261,9 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     group: question or heuristic
     """
     experiments = {"pre_test":
-                   Experiment.query.filter_by(name="pre_test").one(),
-                   "test": Experiment.query.filter_by(name="test").one(),
-                   "post_test": Experiment.query.filter_by(name="post_test").one()}
+                   Experiment.query.filter_by(name="Pretest").one(),
+                   "test": Experiment.query.filter_by(name="Main test").one(),
+                   "post_test": Experiment.query.filter_by(name="Post-test").one()}
 
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in participant_question_list]
