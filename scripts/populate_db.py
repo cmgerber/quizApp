@@ -12,6 +12,7 @@ from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
         ForeignKeyConstraint
 from flask_security.utils import encrypt_password
+from sqlalchemy.orm.exc import NoResultFound
 
 from clear_db import clear_db
 from quizApp import create_app
@@ -214,12 +215,6 @@ def create_participant(pid, experiments):
         active=True,
     )
     security.datastore.add_role_to_user(participant, "participant")
-    for exp in experiments:
-        part_exp = ParticipantExperiment(
-            progress=0,
-            participant_id=pid,
-            experiment_id=exp.id)
-        db.session.add(part_exp)
     db.session.add(participant)
     db.session.commit()
 
@@ -255,7 +250,6 @@ def get_students():
 
     return question_participant_id_list, heuristic_participant_id_list
 
-seen_ids = set()
 
 def create_participant_data(pid_list, participant_question_list, test, group):
     """
@@ -275,17 +269,15 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     else:
         #pick last three
         question_list = [x[3:] for x in participant_question_list]
-    pdb.set_trace()
+    # pdb.set_trace()
     for n, participant in enumerate(question_list):
         #n is the nth participant
         participant_id = pid_list[n]
-        participant_experiment = ParticipantExperiment.query.\
-                filter_by(participant_id=participant_id).\
-                filter_by(experiment_id=experiments[test].id).one()
-
-        if participant_experiment.id in seen_ids:
-            pdb.set_trace()
-        seen_ids.add(participant_experiment.id)
+        participant_experiment = ParticipantExperiment(
+            progress=0,
+            participant_id=participant_id,
+            experiment=experiments[test])
+        participant_experiment.save()
 
         for graph in participant:
             dataset = graph[0]
