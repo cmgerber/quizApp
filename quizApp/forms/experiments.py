@@ -85,7 +85,7 @@ class CreateExperimentForm(OrderFormMixin, ModelForm):
         order = ('*', 'scorecard_settings', 'submit')
 
     scorecard_settings = ModelFormField(ScorecardSettingsForm)
-    submit = SubmitField("Submit")
+    submit = SubmitField("Save")
 
     def validate(self):
         """Validate the start and stop times, then do the rest as usual.

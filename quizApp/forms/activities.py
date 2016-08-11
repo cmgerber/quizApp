@@ -20,7 +20,7 @@ class ActivityForm(OrderFormMixin, ModelForm):
         exclude = ['time_to_submit']
 
     scorecard_settings = ModelFormField(ScorecardSettingsForm)
-    submit = SubmitField("Submit")
+    submit = SubmitField("Save")
 
 
 class QuestionForm(ActivityForm):
@@ -49,4 +49,4 @@ class ChoiceForm(OrderFormMixin, ModelForm):
         model = Choice
         order = ('*', 'submit')
 
-    submit = SubmitField("Submit")
+    submit = SubmitField("Save")

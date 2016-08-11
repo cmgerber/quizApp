@@ -277,3 +277,8 @@ ul#answers {
 .task-list > .done, .task-list > .done a {
   color: green;
 }
+
+.form-group * {
+  transition: all .5s;
+}
+
