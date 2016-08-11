@@ -82,6 +82,8 @@ def create_db(password, user):
             if password:
                 root_pass = click.prompt("Enter root password", type=str,
                                          hide_input=True)
+            else:
+                root_pass = ""
             root_name = user
 
         db_uri = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
