@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import os
 import csv
 import random
+import pdb
 
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
@@ -220,6 +221,7 @@ def create_participant(pid, experiments):
             experiment_id=exp.id)
         db.session.add(part_exp)
     db.session.add(participant)
+    db.session.commit()
 
 def get_students():
     """Get a list of students from csv files.
@@ -253,6 +255,8 @@ def get_students():
 
     return question_participant_id_list, heuristic_participant_id_list
 
+seen_ids = set()
+
 def create_participant_data(pid_list, participant_question_list, test, group):
     """
     sid_list: list of participant id's
@@ -260,6 +264,7 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     test: pre_test or training or post_test
     group: question or heuristic
     """
+    global seen_ids
     experiments = {"pre_test":
                    Experiment.query.filter_by(name="Pretest").one(),
                    "test": Experiment.query.filter_by(name="Main test").one(),
@@ -270,13 +275,17 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     else:
         #pick last three
         question_list = [x[3:] for x in participant_question_list]
-
+    pdb.set_trace()
     for n, participant in enumerate(question_list):
         #n is the nth participant
         participant_id = pid_list[n]
         participant_experiment = ParticipantExperiment.query.\
                 filter_by(participant_id=participant_id).\
                 filter_by(experiment_id=experiments[test].id).one()
+
+        if participant_experiment.id in seen_ids:
+            pdb.set_trace()
+        seen_ids.add(participant_experiment.id)
 
         for graph in participant:
             dataset = graph[0]
@@ -312,14 +321,17 @@ def create_participant_data(pid_list, participant_question_list, test, group):
 
 def create_assignment(question_id, experiment,
                       participant_experiment, graph_id):
-    if not Question.query.get(question_id):
+    question = Question.query.get(question_id)
+    if not question:
         return
+    question.experiments.append(experiment)
 
     assignment = Assignment(
-        activity_id=question_id,
-        experiment_id=experiment.id,
-        participant_experiment_id=participant_experiment.id,
+        experiment=experiment,
+        participant=participant_experiment.participant,
         media_items=[Graph.query.get(graph_id)])
+    assignment.activity=question
+    assignment.participant_experiment=participant_experiment
 
     experiment.activities.append(
         Question.query.get(question_id))
