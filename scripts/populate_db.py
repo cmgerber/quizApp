@@ -14,7 +14,7 @@ from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
 from flask_security.utils import encrypt_password
 from sqlalchemy.orm.exc import NoResultFound
 
-from clear_db import clear_db
+from scripts.clear_db import clear_db
 from quizApp import create_app
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice, Role
@@ -332,20 +332,19 @@ def create_assignments(participants_question, participants_heuristic):
                                 PARTICIPANT_QUESTION_LIST, test, 'heuristic')
 
 def setup_db():
-    app = create_app("development")
-    with app.app_context():
-        clear_db()
-        get_experiments()
-        get_questions()
-        get_choices()
-        questions, heuristics = get_students()
-        create_assignments(questions, heuristics)
+    # There needs to be an app context for this to run.
+    clear_db()
+    get_experiments()
+    get_questions()
+    get_choices()
+    questions, heuristics = get_students()
+    create_assignments(questions, heuristics)
 
-        # Random assortment of PE's to Participants
-        for participant_experiment in ParticipantExperiment.query.all():
-            participant_experiment.participant = None
+    # Random assortment of PE's to Participants
+    for participant_experiment in ParticipantExperiment.query.all():
+        participant_experiment.participant = None
 
-        db.session.commit()
+    db.session.commit()
 
 
 if __name__ == "__main__":

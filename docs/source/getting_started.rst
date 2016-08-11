@@ -55,12 +55,27 @@ you should `install MariaDB`_.
 
 Once you have MariaDB installed and running, you need to set up the database::
 
-    mysql -u root -p < setup_db.sql
+    ./manage.py create-db
 
 You will be prompted for your MySQL root password. This will create a database
 called ``quizapp`` and a user named ``quizapp``.  The default password is
 ``foobar``, so you are going to want to change it in ``setup_db.sql`` if you
 are using QuizApp in production. Otherwise your information will not be secure.
+
+..note::
+
+    ``manage.py`` can handle creation and population of multiple database
+    configurations. If you are running a development sever, the above command
+    is sufficient. This is because ``manage.py`` defaults to the ``development``
+    configuration.
+
+    If you want to set up a production server, you must specify the ``--config``
+    option:
+
+        ./mange.py --config production create-db
+
+    Keep this in mind when you see other commands using ``manage.py``.
+
 
 Running QuizApp
 ===============
