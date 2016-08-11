@@ -272,10 +272,8 @@ def create_participant_data(pid_list, participant_question_list, test, group):
     # pdb.set_trace()
     for n, participant in enumerate(question_list):
         #n is the nth participant
-        participant_id = pid_list[n]
         participant_experiment = ParticipantExperiment(
             progress=0,
-            participant_id=participant_id,
             experiment=experiments[test])
         participant_experiment.save()
 
@@ -290,23 +288,17 @@ def create_participant_data(pid_list, participant_question_list, test, group):
 
             else: #training
                 if group == 'heuristic':
-                    #three questions per dataset, three datasets, so 9 questions
-                    # for the training part
-                    for x in range(5, 9):
-                        question_id = int(str(dataset)+str(x))
-                        create_assignment(question_id,
-                                          experiments[test],
-                                          participant_experiment, graph_id)
+                    dataset_range = range(5,9)
 
                 else:
-                    #multiple choice questions
-                    for x in range(1,5):
-                        question_id = int(str(dataset)+str(x))
-                        #write row to db
-                        create_assignment(question_id,
-                                          experiments[test],
-                                          participant_experiment, graph_id)
+                    dataset_range = range(1,5)
 
+                for x in dataset_range:
+                    question_id = int(str(dataset)+str(x))
+                    #write row to db
+                    create_assignment(question_id,
+                                      experiments[test],
+                                      participant_experiment, graph_id)
 
     print "Completed storing {} {} tests".format(test, group)
 
