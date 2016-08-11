@@ -1,7 +1,7 @@
 language: python
 
 addons:
-    mariadb: '10.1'
+    mariadb: '15.1'
     ssh_known_hosts: 104.236.112.220
 
 install:
