@@ -58,8 +58,10 @@ target/
 
 #data
 *.db
-*.csv
-*.xlsx
 *.pkl
-*.png
-*.jpg
+
+# Instance config
+instance/*
+
+# Any new graphs, by default
+quizApp/static/graphs/*
